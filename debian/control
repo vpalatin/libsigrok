@@ -1,0 +1,30 @@
+Source: libsigrok
+Priority: extra
+Maintainer: Uwe Hermann <uwe@debian.org>
+Build-Depends: cdbs, debhelper (>= 8.0.0), autotools-dev, pkg-config (>= 0.22), libglib2.0-dev (>= 2.22.0), libusb-1.0-0-dev (>= 1.0.5), libzip-dev (>= 0.8), zlib1g-dev (>= 1.2.3.1), libftdi-dev (>= 0.16), libudev-dev (>= 151)
+Standards-Version: 3.9.3
+Section: libs
+Homepage: http://sigrok.org/wiki/Libsigrok
+
+Package: libsigrok0-dev
+Section: libdevel
+Provides: libsigrok-dev
+Conflicts: libsigrok-dev
+Architecture: any
+Depends: libsigrok0 (= ${binary:Version}), ${misc:Depends}
+Description: sigrok hardware driver library - development files
+ libsigrok is a shared library which provides basic hardware access
+ drivers for logic analyzers, as well as input/output file format support.
+ .
+ This package contains the header files and other development files.
+
+Package: libsigrok0
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: sigrok hardware driver library - shared library
+ libsigrok is a shared library which provides basic hardware access
+ drivers for logic analyzers, as well as input/output file format support.
+ .
+ This package contains the shared library.
+

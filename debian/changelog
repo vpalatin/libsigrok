@@ -1,0 +1,5 @@
+libsigrok (0.1.0-1) unstable; urgency=low
+
+  * Initial release (Closes: #669070).
+
+ -- Uwe Hermann <uwe@debian.org>  Sat, 21 Apr 2012 20:03:56 +0200
