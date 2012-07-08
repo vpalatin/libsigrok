@@ -1,3 +1,10 @@
+libsigrok (0.1.1-1) unstable; urgency=low
+
+  * New upstream release.
+  * Drop zlib dependency, no longer needed upstream.
+
+ -- Uwe Hermann <uwe@debian.org>  Sun, 08 Jul 2012 21:53:18 +0200
+
 libsigrok (0.1.0-2) unstable; urgency=low
 
   * libsigrok0-dev: Add missing dependencies on -dev libs.

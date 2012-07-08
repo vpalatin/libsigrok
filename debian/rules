@@ -4,7 +4,7 @@ include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/class/autotools.mk
 include /usr/share/cdbs/1/rules/utils.mk
 
-# DEB_INSTALL_CHANGELOGS_ALL := debian/ChangeLog
+DEB_INSTALL_CHANGELOGS_ALL := ChangeLog
 
 # Reduce the number of unneeded dependencies with --as-needed.
 LDFLAGS += "-Wl,--as-needed"

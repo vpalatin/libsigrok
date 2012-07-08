@@ -1,3 +1,832 @@
+commit b455c51fa44d480db613b5afb131c10681ea3fb4
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 23:31:03 2012 +0200
+
+    sr: fx2lafw: Forgot to add (C) line to fx2lafw.h in recent commit.
+
+commit d989e4be59507d131780dc2db80209c11dc97257
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 23:15:23 2012 +0200
+
+    sr: fx2lafw: Only check for correct major FW version.
+    
+    Changes in the minor version number are OK, as those should never
+    contain any incompatible/API changes.
+
+commit cba01c003ba6d6c8ed62a0651a09ae262d2bf7e5
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 22:55:03 2012 +0200
+
+    sr: Consistently use ZEROPLUS spelling.
+    
+    This is the version used throughout their website, let's use it.
+
+commit 42ddb3a45b79940db99f328a419d331692d917e5
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 22:43:50 2012 +0200
+
+    cli: configure.ac: Bump version number to 0.3.1.
+
+commit f280d370f70ea5fdc4df14d0eaa22391f35fb86f
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 22:42:19 2012 +0200
+
+    sr: Fix typos.
+
+commit 1d54b5c46d0a0653dfddcf3c270b526f78be24fe
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 22:40:59 2012 +0200
+
+    sr: fx2lafw: Add (C) line from old saleae driver it's based on.
+
+commit 68af1d00fb13b173adf96b9ff42a3ab1deccbd7b
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 22:23:36 2012 +0200
+
+    sr: README: Add section about firmware files.
+
+commit 093c4c6149779fd7d68aac316a69c97fe601951a
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 22:15:29 2012 +0200
+
+    cli: Constify a few char *pointers.
+
+commit ee74ee9279a1653b4ed4da04453d7aba844433ef
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 21:57:44 2012 +0200
+
+    cli: Update NEWS in preparation of 0.3.1 the release.
+
+commit 6a5b5b3b5329d3da2025c60383d9ba404b5707ba
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 21:48:40 2012 +0200
+
+    sr: udev file: Minor fixes/additions.
+
+commit c0f3ab8aa20acf345301e4f4654929d7a4863b3d
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 21:36:28 2012 +0200
+
+    sr: NEWS: Minor updates/fixes.
+
+commit 85da890173b23ae613ea0956cb2008f0e8c1fa97
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 09:26:15 2012 +0200
+
+    sr: Increase version number to 0.1.1.
+
+commit 4ce517d861bbaf6604fa49ad7b73fff5053fd14d
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 09:25:11 2012 +0200
+
+    sr: Update NEWS in preparation of upcoming 0.1.1 release.
+
+commit 873eb979c536a2343775a12dfcdec9af4ec7ce23
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 09:24:01 2012 +0200
+
+    sr: fx2lafw: s/MAX_RENUM_DELAY/MAX_RENUM_DELAY_MS/.
+
+commit 24420c5c818d5fa0b8704ba6a356dbb06788e73c
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 09:10:41 2012 +0200
+
+    sr: fx2lafw: Fix a firmware upload bug on 32bit systems.
+    
+    The glib GTimeVal data type (and some functions using it) will be faded
+    out from glib sooner or later, so it's not a good idea to use them anyway.
+    
+    In this specific case GTimeVal.tv_sec was overflowing, leading a check in
+    libsigrok to fail, and thus to FX2 firmware upload errors, i.e.
+    non-working fx2lafw devices.
+    
+      http://thread.gmane.org/gmane.comp.debugging.sigrok.devel/166
+    
+    The root cause is that GTimeVal.tv_sec is a 'glong' (8 bytes on 64bit
+    systems, but only 4 on 32bit systems).
+    
+    We now use an int64_t (and g_get_monotonic_time() instead of the more
+    problematics g_get_current_time() which uses a GTimeVal).
+    
+    This has been verified to fix the issue on a 32bit system.
+    
+    Other uses of GTimeVal in libsigrok will be removed in a later release.
+    
+    Also, drop unneeded GTV_TO_MSEC.
+
+commit 70ca0a609d51dcf4b50eaefee4cb8cab37c34152
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 02:27:30 2012 +0200
+
+    sr: input/chronovu_la8.c: Add missing #include.
+    
+    This fixes a compiler warning.
+
+commit 6414729a62924a23a2e14a4eb0e6e2dee442aadb
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 01:04:48 2012 +0200
+
+    srd: Cosmetics.
+
+commit ebe704d43bfbab9327721ffebf8142f9da098c56
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 01:04:29 2012 +0200
+
+    srd: Disable 'onewire' PD for now, until it's working.
+
+commit 5cdc00d2e6eaf869b87d1fc2620dcaea0ff83e45
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 00:18:59 2012 +0200
+
+    cli: Cosmetic fix for --help output.
+
+commit ed22099dc0ffafa7e5baa53c8b186b855a92f142
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 30 00:00:33 2012 +0200
+
+    sr: New default firmware dir: $prefix/share/sigrok-firmware.
+    
+    We no longer expect firmware files to be in the
+    $prefix/share/libsigrok/firmware directory, as that would require an
+    additional (distro) package 'sigrok-firmware' or the like to install
+    files into another package's (libsigrok) path, which can be problematic.
+    
+    The current 'sigrok-firmware' repo's "make install" will already install
+    all files into $prefix/share/sigrok-firmware.
+
+commit 736006544eb4908c410cd3dcf4ee568aca8553c4
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Tue May 29 22:35:38 2012 +0200
+
+    cli: Fix compile error.
+
+commit 5dc235a8defe3207fd4a1a516bb479102efbee5c
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Tue May 29 21:00:15 2012 +0200
+
+    gtk: Consistent 'sigrok' spelling.
+
+commit e7df521ec59dfe1b0e3d3feed1ee110d9da573b7
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Tue May 29 20:55:22 2012 +0200
+
+    cli: Make --protocol-decoder-annotations plural.
+    
+    This option supports (will support) multiple annotations from multiple
+    PDs, as well as multiple annotation formats per PD, so use plural.
+
+commit c5cafe6b01029028e9fb24818246831a9576dd59
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Tue May 29 20:48:54 2012 +0200
+
+    cli: Add -A (alias for --protocol-decoder-annotation).
+
+commit 8b845fd4b4c8bbd23e6fbefc595a9b938b323f5d
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Tue May 29 20:39:57 2012 +0200
+
+    cli: manpage cosmetics, updates.
+
+commit 445ed5820a8d767e2dea650af1d4657ade89490f
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Tue May 29 20:30:15 2012 +0200
+
+    sr/srd/cli/gtk: ChangeLog -> MAINTAINERCLEANFILES.
+    
+    If the (generated) ChangeLog file is marked for DISTCLEANFILES, it'll be
+    removed whenever "make distclean" is called (and is then gone forever if
+    you use the tarballs, for example).
+
+commit 564c9c5c7cf45c0b40b02c08e23ba62cece3fd70
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Tue May 29 00:23:33 2012 +0200
+
+    cli: Output which file format was autodetected.
+
+commit 369b53172feb3523c1a09520c2b99e81963c9cda
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Tue May 29 00:21:21 2012 +0200
+
+    sr: la8 in: Files must be exactly 8388613 bytes.
+    
+    All ChronoVu LA8 files (*.kdt extension usually) are exactly 8388613
+    bytes in size (8MB + 5 bytes). Check this, when trying to autodetect the
+    file format, to reduce the likelihood of 'chronovu-la8' being
+    autodetected on all binary files (instead of 'binary').
+
+commit d033d55ffb6d686d9bac78d7de1b7980e660a1c9
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Mon May 28 23:40:12 2012 +0200
+
+    sr: ARMFLY AX-Pro is supported by fx2lafw (LA only).
+
+commit 4b8eeddbd22b79808ef3fdb3b7cca5ec384363c1
+Author: Bert Vermeulen <bert@biot.com>
+Date:   Tue May 29 16:06:40 2012 +0200
+
+    document --protocol-decoder-annotation, and note PD stack is optional.
+
+commit 016946696ed3ddb185fc7b55b7fa39f1ea5dd779
+Author: Bert Vermeulen <bert@biot.com>
+Date:   Tue May 29 15:44:17 2012 +0200
+
+    cli: factor out output format setup
+    
+    main() is now clean.
+
+commit 0f939ae1cc309e4175386d022e7521cc1368452e
+Author: Bert Vermeulen <bert@biot.com>
+Date:   Tue May 29 14:50:02 2012 +0200
+
+    cli: option to specify which annotation(s) to show
+    
+    Also factor out PD stack setup, and remove redundant error messages.
+
+commit 575ae7c9aa94f020bcd8b104482cc1bd63552f53
+Author: Bert Vermeulen <bert@biot.com>
+Date:   Tue May 29 12:38:36 2012 +0200
+
+    cli: stop immediately if SRD PD registration fails
+
+commit 8b71ce50066777bd84fd83f75fa46d8592a2d0b5
+Author: Bert Vermeulen <bert@biot.com>
+Date:   Tue May 29 12:12:51 2012 +0200
+
+    cli: loose string comparison helper
+
+commit 03ed10bca97c3b92ad452b0bdf45eba20abaa35e
+Author: Bert Vermeulen <bert@biot.com>
+Date:   Tue May 29 11:36:31 2012 +0200
+
+    cli: always show G_LOG_LEVEL_CRITICAL messages
+
+commit 6931171fc3b22f3d20e225f8dd63ca20b9029371
+Author: Bert Vermeulen <bert@biot.com>
+Date:   Mon May 28 16:57:33 2012 +0200
+
+    cli: cosmetics
+
+commit 26231359d3e4748042a010f67178e56967c858b2
+Author: Bert Vermeulen <bert@biot.com>
+Date:   Sun May 27 19:30:30 2012 +0200
+
+    cli: halt session if SRD session fails to initialize
+
+commit 85c82b92876ec6d01f87eb56fff232dd4927fc59
+Author: Bert Vermeulen <bert@biot.com>
+Date:   Sat May 26 04:54:34 2012 +0200
+
+    cli: only output module or PD goes to stdout, everything else to stderr
+
+commit 3aca358e58d9d2dc645672fcb79442857ab12fa9
+Author: Bert Vermeulen <bert@biot.com>
+Date:   Wed May 23 01:35:23 2012 +0200
+
+    cli: removed obsolete debugging, setup for proper stderr logging
+
+commit 0840500d41fd3ea5943b8f3b3eb38620da8c3fd7
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 23 01:12:11 2012 +0200
+
+    srd: onewire: Fix incorrect format for annotation output.
+    
+    Should be a list containing:
+    
+     - Annotation format number (e.g. 0, or ANN_DEC, etc).
+    
+     - A list of strings (the annotation). If more than one string is
+       supplied, the other ones should be short versions of the string.
+       Example: [ANN_DEC, ["Foobarbaz", "Foo", "F"]]
+    
+       This is optional, and mostly useful for GUIs.
+
+commit bb924a2c9a68e93530fbea27abd31b55868ee246
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 23 01:09:49 2012 +0200
+
+    srd: onewire: Fix %d and %s mismatch.
+
+commit 7dc4fb014730d93eabb3bc0b4cbb0caf809c6db1
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 23 01:01:03 2012 +0200
+
+    srd: onewire: Get optional 'pwr' probe value, too.
+
+commit 0f52d3ad386a4fb20b69212b4f00a1b8d10af1f1
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 23 00:59:50 2012 +0200
+
+    srd: onewire: Drop UART leftover comments.
+
+commit d3f3bb375ecd1689fcbbaad1852098d0a3f8f6dc
+Author: Iztok Jeras <iztok.jeras@gmail.com>
+Date:   Tue May 22 22:27:25 2012 +0200
+
+    removed some code copied from UART decoder, fixed some Python syntax issues
+
+commit 77af23a93e762c416dc362ddac07ead0eb224b30
+Author: Iztok Jeras <iztok.jeras@gmail.com>
+Date:   Wed May 16 22:01:32 2012 +0200
+
+    unfinished update to onewire protocol decoder
+
+commit 12e4eab6a397888e446f2148c068ed4f190da043
+Author: Iztok Jeras <iztok.jeras@gmail.com>
+Date:   Tue May 15 23:15:26 2012 +0200
+
+    commiting new unfinished 1-wire decoder
+
+commit 75c37d8fc56702d00b0f461acf1a70f5b6d09f3d
+Author: Bert Vermeulen <bert@biot.com>
+Date:   Tue May 22 20:16:56 2012 +0200
+
+    cli: no need to specify stacking order if it's the same as the PD list
+
+commit 7269fcabfd08834b25761dd55348d15a7da5c7e0
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Fri May 18 21:42:29 2012 +0200
+
+    srd: MX25Lxx05D: Fix inverted SRWD bit handling.
+
+commit 5c9e1940eb621737f915c3bfeef4b43f3305675a
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Fri May 18 19:58:58 2012 +0200
+
+    srd: MX25Lxx05D: Decode status register bits.
+
+commit 5663ee52a6d462ea20f21abe188552532bf590d8
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Fri May 18 15:28:52 2012 +0200
+
+    srd: MX25Lxx05D: Fix SE command.
+
+commit 47b6459989ee6c55b38b7f02bf51840b4616d411
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Fri May 18 15:05:03 2012 +0200
+
+    srd: MX25Lxx05D: Implement READ command.
+
+commit faca7792e15b4dd2cbd6f6a7fb9faff33c79c87c
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 16 23:06:21 2012 +0200
+
+    srd: MX25Lxx05D: Implement RDSR and PP commands.
+    
+    Also, some small fixes and additional debug code/output.
+
+commit 3801d9f47a864198ebdeb31f615b45c242181417
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 16 22:48:47 2012 +0200
+
+    srd: spi: Document output protocol, send CS# changes.
+    
+    As per guidelines in HACKING, the protocol "commands"/items should be ALLCAPS,
+    thus change 'data' to 'DATA'. Also, fix MX25Lxx05D protocol decoder
+    accordingly, currently the only one we have which stacks on top of SPI.
+    
+    Add a new 'CS-CHANGE' output protocol item, which is sent upon every
+    change of the CS# pin value (either 0->1, or vice versa). This is needed
+    by various higher-level PDs.
+
+commit 8e5b124294f85619368baea05319d8b7ddae21fe
+Author: Pekka Nikander <pekka.nikander@senseg.com>
+Date:   Fri May 11 19:23:21 2012 +0300
+
+    sr/srd/cli: Fix compiling with Homebrew.
+    
+    Add ACLOCAL_DIR setting and AM_PROG_AR macro for compiling with Homebrew
+    under Mac OS X.
+    
+    Applies essentially the same change to
+    {libsigrok,libsigrokdecode,sigrok-cli}/{autogen.sh,configure.ac}
+    
+    It may be that the same fix is needed for the other autogen.sh and/or
+    configure.ac files, but that hasn't been tested and therefore not in
+    this commit.
+
+commit 1742298175c6164d96b9e3dc29215c18175ebb4a
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Thu May 10 21:27:17 2012 +0200
+
+    NEWS: Add some news items.
+
+commit dcfa7d3ee435f1c5580202bfec552ddc7883aa90
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Fri May 11 00:19:01 2012 +0200
+
+    fx2lafw: Cosmetics.
+
+commit fce18940f32f34886e6e326469475a46c0b23f2b
+Author: Joel Holdsworth <joel@airwebreathe.org.uk>
+Date:   Thu May 10 17:55:56 2012 +0100
+
+    gtk: Fixed enabling/disabling sample control buttons
+
+commit 16b13b0dc3d88e9b9fe17c9be65dbf529ce6623a
+Author: Joel Holdsworth <joel@airwebreathe.org.uk>
+Date:   Mon May 7 16:44:25 2012 +0100
+
+    fx2lafw: Added a gpif delay debug message
+
+commit 3c124a1668fb24f95c24578ade455f1fe6091670
+Author: Joel Holdsworth <joel@airwebreathe.org.uk>
+Date:   Mon May 7 16:42:50 2012 +0100
+
+    fx2lafw: Added support for 20kHz and 25kHz sampling
+
+commit 85470187bc2da6514fe525ce792cbe6384dc51c5
+Author: Joel Holdsworth <joel@airwebreathe.org.uk>
+Date:   Mon May 7 12:40:52 2012 +0100
+
+    fx2lafw: Added support for 100kHz and 50kHz sampling
+
+commit 74aca52a7c9e5a3b3f35e42498009f9b7dad053c
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 9 18:59:17 2012 +0200
+
+    cli: Print required/optional probes info.
+    
+    When running 'sigrok-cli -a uart' (for example), we now additionally
+    print which required/optional probes the decoder needs.
+
+commit 2907aacf01e1fb8eab8c01ba9fe45f2cb0dfaa0d
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Thu May 10 09:38:54 2012 +0200
+
+    srd: JTAG: Enavble and get/use optional probes.
+
+commit e0a93daf61bd5b3c2f6a70d8ca2ac1bf455539b8
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Thu May 10 09:34:13 2012 +0200
+
+    srd: Support for one or more optional probes.
+    
+    In the protocol decoder you always get all required probes, then _all_
+    optional probes in the list of probes in the decode() call.
+    
+    Example:
+    
+     (r1, r2, r3, o1, o2, o3, o4) = pins
+    
+    In this case r1-r3 are required probes, o1-o4 are optional probes.
+    However, the value of valid/used/specified probes will be 0 or 1,
+    whereas the value of probes that were not specified/assigned by the user
+    will be (at the moment) 42.
+    
+    The PD can check for a valid probe like this:
+    
+      if p in (0, 1):
+        ...
+    
+    Or check for an invalid probe:
+    
+      if (p > 1):
+        ...
+    
+    The value of 42 could change to be -1 or None later.
+
+commit dccffe1e633afbd773829778a13ed1dc7c1ff659
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 9 01:06:01 2012 +0200
+
+    srd: Fix a few Doxygen errors.
+
+commit c1dd657400a64b4b81e5069ea7c2074602c9bf70
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 9 00:42:29 2012 +0200
+
+    HACKING: Document PD description guidelines.
+
+commit 1f23e9714a47faef95c4222a86498395ea6be4b6
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 9 00:35:30 2012 +0200
+
+    srd: Add usable one-liner descriptions for all PDs.
+
+commit 096ca09bcdf7c1e8f010642584bb463bb0ead664
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 9 00:06:01 2012 +0200
+
+    cli: -V: Print protocol description upon "-l 3" or higher.
+
+commit 2065fb9ee842c6ebbaf9d4d3315ec1bbc5ce4779
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Tue May 8 23:53:48 2012 +0200
+
+    srd: Remove TODOs from annotation format names.
+    
+    Also, fix minor consistency issues, cosmetics, typos.
+
+commit b2852d2cf5e481f76557a110f109ed31558684fe
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Tue May 8 23:20:10 2012 +0200
+
+    HACKING: Some more hints for contributions.
+
+commit f2c0bb5c5476c53cd9be2260914c5ff7e81099bf
+Author: Thomas Jarosch <thomas.jarosch@intra2net.com>
+Date:   Tue May 8 14:14:50 2012 +0200
+
+    Add note where to send patches
+    
+    Signed-off-by: Thomas Jarosch <thomas.jarosch@intra2net.com>
+
+commit 60db5f6f2c16e1f606eda1f68e46b9f575d19f07
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Sun May 6 19:54:46 2012 +0200
+
+    sr: fx2lafw: Get/display FX2 REVID.
+
+commit 869ed7f0d1929caa7cfc96f02d859de546e52f18
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Sun May 6 17:13:49 2012 +0200
+
+    sr: fx2lafw: Braintechnology USB-LPS support.
+
+commit 2d2243c59e23f78509f8e3d3a40594a75ce9b306
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Sat May 5 19:51:30 2012 +0200
+
+    srd: JTAG/SMT32: Some more improvements.
+    
+    Add APB-AP register offsets/names, refactor and fix some code, handle
+    in/out APACC/DPACC better.
+
+commit 572307e1d52e7137d9da4e7c298007fecb6b975d
+Author: Thomas Jarosch <thomas.jarosch@intra2net.com>
+Date:   Fri May 4 10:18:22 2012 +0200
+
+    Fix bracket placing
+    
+    Make it consistent with the rest of the code
+    
+    Signed-off-by: Thomas Jarosch <thomas.jarosch@intra2net.com>
+
+commit e93f863664184aa980d721e5c4198e3778952fca
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Thu May 3 21:22:03 2012 +0200
+
+    srd: JTAG/STM32: Factor out dpacc_data_in/out.
+    
+    Also, add a few code comments.
+
+commit 46823efafdc6ac84c9bb6e86053eebe4a6ecb465
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Thu May 3 19:19:01 2012 +0200
+
+    srd: JTAG/STM32: Decode IDCODE[31:0] parts.
+
+commit b28dc543c0bea683e0de79704901450c1239dc51
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Thu May 3 01:39:30 2012 +0200
+
+    srd: JTAG: Also show the bitstrings in hex (for now).
+
+commit f42c0c403b4158dd9509c6348624e589ad2ae3d9
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Thu May 3 01:39:16 2012 +0200
+
+    srd: JTAG/STM32: Various improvements, fixes.
+    
+    Add APACC register handling, fix DPACC handling (esp. 'A' register size),
+    ouput a warning upon reserved DAPABORT bits being non-zero, implement
+    preliminary state machine, add various TODOs.
+    
+    This is still work in progress, not yet finished or working properly.
+
+commit 09cafaae098b3c8c4069e0c62169ee8b661dace1
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed May 2 19:02:03 2012 +0200
+
+    sr: We support both SIGMA and SIGMA2.
+    
+    Also, a few minor coding-style fixes etc.
+
+commit b56a9ab4f483ea75970658205e2d5df6b4b02baa
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Tue May 1 19:09:06 2012 +0200
+
+    sr: udev: Add Ideofy LA-08 entry.
+
+commit 22921f30f188d318dc6af03fd5563328599a7d10
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Tue May 1 19:05:09 2012 +0200
+
+    sr: udev: Add Velleman PCSU1000 entry.
+
+commit 1b9c022b6291c99d2bbd4d2d83cf93529f670606
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Tue May 1 19:03:44 2012 +0200
+
+    sr: udev: Fix alphabetical order.
+
+commit e2c637e57bb105495e7d737f9e4bc95bd8a04333
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Tue May 1 19:00:28 2012 +0200
+
+    sr: udev: Add Robomotic BugLogic 3.
+
+commit 95d5d31b130a2ca54195b3cf54b6a8c6c1053198
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Sat Apr 28 19:24:57 2012 +0200
+
+    srd: Add initial JTAG/STM32 protocol decoder.
+    
+    (not yet finished)
+    
+    This protocol decoder can decode ST STM32 specific JTAG accesses, knows
+    about the STM32-specific registers and bits.
+
+commit 834716e425193f8669aa49fa1174db51aa727709
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Sun Apr 29 00:46:02 2012 +0200
+
+    srd: JTAG: Add some more docs.
+
+commit 17a78e1bda7676d01168cac84d25b3f481debbdb
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Sun Apr 29 00:35:52 2012 +0200
+
+    srd: JTAG: The TRST# (and SRST#) signals are optional.
+    
+    Don't handle them for now, will do this later.
+
+commit 59194b8d89d248156f73d4e735583269d23c7529
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Sat Apr 28 19:24:14 2012 +0200
+
+    srd: jtag: Various bugfixes.
+    
+    Most importantly, both TDI and TDO are sampled at the rising TCK edge,
+    and only upon transitions from SHIFT-DR to SHIFT-DR and SHIFT-IR to SHIFT-IR
+    are we to save the TDI/TDO values (if I understood this correcly).
+    
+    Also, start out in RUN-TEST/IDLE state for now. This is useful if you
+    have JTAG dumps which start "in the middle" somewhere, not in the
+    TEST-LOGIC-RESET state. For full dumps, the JTAG software usually issues
+    five TMS=1 cycles to force the JTAG state machine into TEST-LOGIC-RESET
+    anyway, so this works fine too.
+
+commit dbb459984d7d90ae6184a8edfe9eb493c75489e0
+Author: Bert Vermeulen <bert@biot.com>
+Date:   Fri Apr 27 01:28:47 2012 +0200
+
+    fx2lafw: use iManufacturer/iProduct fields to identify our firmware
+    
+    It's more deterministic than the endpoint profile check we did before. Which
+    was also broken.
+
+commit 6db37fc814f63ea2a4db4cb7f5fcfbea023e6b68
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Thu Apr 26 23:18:05 2012 +0200
+
+    sr: zeroplus: Fix segfault, add debug output.
+    
+    There are various ZEROPLUS models with different probe numbers. For now
+    hardcode to 16 (for the popular LAP-C(16032)). This will need to be
+    fixed in a dynamic way later.
+    
+    This fixes a segfault due to only 16 probe-names being defined, but the
+    drivers returning 32 as probecount.
+    
+    Also, add some additional debug output.
+
+commit 7f767cfb2ec0f308010d97ea8bf2a6e8a6f7f9d9
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Thu Apr 26 22:51:26 2012 +0200
+
+    srd: Add initial JTAG protocol decoder.
+    
+    This is unfinished, needs some more work.
+
+commit 86649ac2d2ea01f67fa1819e7d6e8f79235c51b6
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed Apr 25 18:44:50 2012 +0200
+
+    srd: lpc: Minor additions/fixes.
+
+commit 90982e1b707b1ed40542d5f3f9a02f339ab5abf6
+Author: Håvard Espeland <haavares@ifi.uio.no>
+Date:   Tue Apr 24 22:30:43 2012 +0200
+
+    gtk: Select timeunit based on device's hw cap.
+
+commit 165d3e8e4ab892496f5121ba502bd4d56fada044
+Author: Håvard Espeland <haavares@ifi.uio.no>
+Date:   Tue Apr 24 19:28:26 2012 +0200
+
+    gtk: Use +/- to zoom in/out.
+    
+    Convenient and intuitive.
+
+commit 1f4387848ea893b8833bda7dd39921079aaf732e
+Author: Bert Vermeulen <bert@biot.com>
+Date:   Mon Apr 23 15:31:41 2012 +0200
+
+    sr: don't use deprecated glib functions
+    
+    As of the recent glib 2.32 release, these produce deprecation warnings
+    at compile time.
+
+commit e33225b20a15e1b3e4746ad2e50fbb8907e3c149
+Author: Håvard Espeland <haavares@ifi.uio.no>
+Date:   Mon Apr 23 13:36:17 2012 +0200
+
+    sigma: Fix segfault when no Sigma present.
+
+commit 2c654db3f9da360f41ed887c5a677a5f1710ec45
+Author: Håvard Espeland <haavares@ifi.uio.no>
+Date:   Sun Apr 22 15:10:46 2012 +0200
+
+    sigma: Bump copyright notice.
+
+commit da1d7fcf25af2a0cfa29c9ded3189b2afd5578ee
+Author: Håvard Espeland <haavares@ifi.uio.no>
+Date:   Sun Apr 22 14:31:40 2012 +0200
+
+    sr: Remove zlib dependency.
+    
+    No longer needed by Sigma driver.
+
+commit f9393f173b91c566d81009dd7eb8a212feffd2f7
+Author: Håvard Espeland <haavares@ifi.uio.no>
+Date:   Sun Apr 22 14:24:02 2012 +0200
+
+    sigma: Add support for SIGMA2 (req. new firmware).
+
+commit a283c66f61321a910cf47dc638c0270cbd5cf112
+Author: Håvard Espeland <haavares@ifi.uio.no>
+Date:   Sun Apr 22 13:08:16 2012 +0200
+
+    sigma: Use heap for datafeed packet and header.
+
+commit aa05d3eefc4aaaffbce3fa6fc531cefa611882cd
+Author: Håvard Espeland <haavares@ifi.uio.no>
+Date:   Sun Apr 22 13:05:10 2012 +0200
+
+    sigma: Fix bugs in receive_data callback.
+    
+    - Poll data position on Sigma for every iteration.
+    - Return TRUE when no data ready.
+
+commit d24e7a8fbd7f0265cfac35432a9f9bb0ca1fee39
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Sat Apr 21 19:58:47 2012 +0200
+
+    srd: MXC6225XU: Bugfixes, add missing bits/registers.
+
+commit 0b8a6f51bc3f3089929c2e29c0f3e85a3c5c4106
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Thu Apr 19 20:18:10 2012 +0200
+
+    srd: Initial MEMSIC MXC6225XU protocol decoder.
+    
+    Not quite finished yet, but relatively close.
+
+commit c4383ef58437c94f8580d6fb5de7688ad2d35cdd
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Thu Apr 19 00:55:29 2012 +0200
+
+    fx2lafw: supported_samplerates[] should be 0-terminated.
+
+commit 782d8762bd379148f9ac9cdc646ae64958ed6f1d
+Author: Joel Holdsworth <joel@airwebreathe.org.uk>
+Date:   Wed Apr 18 22:28:52 2012 +0100
+
+    fx2lafw: Added support for default Cypess FX2 without EEPROM
+
+commit e247ca604418189d1a99b018f30e01e8e984c9c1
+Author: Joel Holdsworth <joel@airwebreathe.org.uk>
+Date:   Wed Apr 18 19:17:25 2012 +0100
+
+    sr: Deleted the saleae-logic driver, fx2lafw has superceded it.
+
+commit 023f747c4789834b14d481b5d3bfc8e5caa5a463
+Author: Joel Holdsworth <joel@airwebreathe.org.uk>
+Date:   Wed Apr 18 19:10:15 2012 +0100
+
+    sr: Disable saleae-logic driver by default and enable fx2lafw
+
+commit 0574e4c04dac739d758ec609c3737f1a64fea7ac
+Author: Joel Holdsworth <joel@airwebreathe.org.uk>
+Date:   Wed Apr 18 19:07:30 2012 +0100
+
+    fx2lafw: Added slower sample rates
+
+commit 52e676a02cd69320119d9357387ffa191d777b10
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Wed Apr 18 00:02:54 2012 +0200
+
+    cli: Generate ChangeLog upon 'make dist'.
+
+commit bd811a58bb7837d99c42d93661e192c2c72b39c8
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Tue Apr 17 23:28:12 2012 +0200
+
+    Initial LPC protocol decoder implementation.
+    
+    This is unfinished and not tested, and probably not really working, yet.
+
 commit 751520b5813e4b2c09cdda3697b5773d94141ad4
 Author: Uwe Hermann <uwe@hermann-uwe.de>
 Date:   Tue Apr 17 00:11:25 2012 +0200

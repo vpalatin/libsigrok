@@ -1,7 +1,7 @@
 /*
  * This file is part of the sigrok project.
  *
- * Copyright (C) 2010 Håvard Espeland <gus@ping.uio.no>,
+ * Copyright (C) 2010-2012 Håvard Espeland <gus@ping.uio.no>,
  * Copyright (C) 2010 Martin Stensgård <mastensg@ping.uio.no>
  * Copyright (C) 2010 Carl Henrik Lunde <chlunde@ping.uio.no>
  *
@@ -20,14 +20,13 @@
  */
 
 /*
- * ASIX SIGMA Logic Analyzer Driver
+ * ASIX SIGMA/SIGMA2 logic analyzer driver
  */
 
 #include <glib.h>
 #include <glib/gstdio.h>
 #include <ftdi.h>
 #include <string.h>
-#include <zlib.h>
 #include "sigrok.h"
 #include "sigrok-internal.h"
 #include "asix-sigma.h"
@@ -330,14 +329,14 @@ static int bin2bitbang(const char *filename,
 		       unsigned char **buf, size_t *buf_size)
 {
 	FILE *f;
-	long file_size;
+	unsigned long file_size;
 	unsigned long offset = 0;
 	unsigned char *p;
-	uint8_t *compressed_buf, *firmware;
-	uLongf csize, fwsize;
+	uint8_t *firmware;
+	unsigned long fwsize = 0;
 	const int buffer_size = 65536;
 	size_t i;
-	int c, ret, bit, v;
+	int c, bit, v;
 	uint32_t imm = 0x3f6df2ab;
 
 	f = g_fopen(filename, "rb");
@@ -356,44 +355,30 @@ static int bin2bitbang(const char *filename,
 
 	fseek(f, 0, SEEK_SET);
 
-	if (!(compressed_buf = g_try_malloc(file_size))) {
-		sr_err("sigma: %s: compressed_buf malloc failed", __func__);
-		fclose(f);
-		return SR_ERR_MALLOC;
-	}
-
 	if (!(firmware = g_try_malloc(buffer_size))) {
 		sr_err("sigma: %s: firmware malloc failed", __func__);
 		fclose(f);
-		g_free(compressed_buf);
 		return SR_ERR_MALLOC;
 	}
 
-	csize = 0;
 	while ((c = getc(f)) != EOF) {
 		imm = (imm + 0xa853753) % 177 + (imm * 0x8034052);
-		compressed_buf[csize++] = c ^ imm;
+		firmware[fwsize++] = c ^ imm;
 	}
 	fclose(f);
 
-	fwsize = buffer_size;
-	ret = uncompress(firmware, &fwsize, compressed_buf, csize);
-	if (ret < 0) {
-		g_free(compressed_buf);
-		g_free(firmware);
-		sr_err("sigma: Could not unpack Sigma firmware. "
-		       "(Error %d).", ret);
-		return SR_ERR;
+	if(fwsize != file_size) {
+	    sr_err("sigma: %s: Error reading firmware", filename);
+	    fclose(f);
+	    g_free(firmware);
+	    return SR_ERR;
 	}
-
-	g_free(compressed_buf);
 
 	*buf_size = fwsize * 2 * 8;
 
 	*buf = p = (unsigned char *)g_try_malloc(*buf_size);
 	if (!p) {
 		sr_err("sigma: %s: buf/p malloc failed", __func__);
-		g_free(compressed_buf);
 		g_free(firmware);
 		return SR_ERR_MALLOC;
 	}
@@ -424,21 +409,38 @@ static int hw_init(const char *devinfo)
 {
 	struct sr_dev_inst *sdi;
 	struct context *ctx;
+	struct ftdi_device_list *devlist;
+	char serial_txt[10];
+	uint32_t serial;
 
 	/* Avoid compiler warnings. */
 	(void)devinfo;
 
 	if (!(ctx = g_try_malloc(sizeof(struct context)))) {
 		sr_err("sigma: %s: ctx malloc failed", __func__);
-		return 0; /* FIXME: Should be SR_ERR_MALLOC. */
+		return SR_ERR_MALLOC;
 	}
 
 	ftdi_init(&ctx->ftdic);
 
 	/* Look for SIGMAs. */
-	if (ftdi_usb_open_desc(&ctx->ftdic, USB_VENDOR, USB_PRODUCT,
-			       USB_DESCRIPTION, NULL) < 0)
+
+	if (ftdi_usb_find_all(&ctx->ftdic, &devlist,
+	    USB_VENDOR, USB_PRODUCT) <= 0)
 		goto free;
+
+	/* Make sure it's a version 1 or 2 SIGMA. */
+	ftdi_usb_get_strings(&ctx->ftdic, devlist->dev, NULL, 0, NULL, 0,
+			     serial_txt, sizeof(serial_txt));
+	sscanf(serial_txt, "%x", &serial);
+
+	if (serial < 0xa6010000 || serial > 0xa602ffff) {
+		sr_err("sigma: Only SIGMA and SIGMA2 are supported "
+		       "in this version of sigrok.");
+		goto free;
+	}
+
+	sr_info("Found ASIX SIGMA - Serial: %s", serial_txt);
 
 	ctx->cur_samplerate = 0;
 	ctx->period_ps = 0;
@@ -461,7 +463,7 @@ static int hw_init(const char *devinfo)
 	dev_insts = g_slist_append(dev_insts, sdi);
 
 	/* We will open the device again when we need it. */
-	ftdi_usb_close(&ctx->ftdic);
+	ftdi_list_free(&devlist);
 
 	return 1;
 
@@ -529,6 +531,7 @@ static int upload_firmware(int firmware_idx, struct context *ctx)
 	}
 
 	/* Upload firmare. */
+	sr_info("sigma: Uploading firmware %s", firmware_files[firmware_idx]);
 	sigma_write(buf, buf_size, ctx);
 
 	g_free(buf);
@@ -557,6 +560,8 @@ static int upload_firmware(int firmware_idx, struct context *ctx)
 	}
 
 	ctx->cur_firmware = firmware_idx;
+
+	sr_info("sigma: Firmware uploaded");
 
 	return SR_OK;
 }
@@ -616,8 +621,6 @@ static int set_samplerate(struct sr_dev_inst *sdi, uint64_t samplerate)
 	ctx->period_ps = 1000000000000 / samplerate;
 	ctx->samples_per_event = 16 / ctx->num_probes;
 	ctx->state.state = SIGMA_IDLE;
-
-	sr_info("sigma: Firmware uploaded");
 
 	return ret;
 }
@@ -1023,10 +1026,13 @@ static int receive_data(int fd, int revents, void *cb_data)
 	(void)fd;
 	(void)revents;
 
+	/* Get the current position. */
+	sigma_read_pos(&ctx->state.stoppos, &ctx->state.triggerpos, ctx);
+
 	numchunks = (ctx->state.stoppos + 511) / 512;
 
 	if (ctx->state.state == SIGMA_IDLE)
-		return FALSE;
+		return TRUE;
 
 	if (ctx->state.state == SIGMA_CAPTURE) {
 		/* Check if the timer has expired, or memory is full. */
@@ -1035,11 +1041,10 @@ static int receive_data(int fd, int revents, void *cb_data)
 			(tv.tv_usec - ctx->start_tv.tv_usec) / 1000;
 
 		if (running_msec < ctx->limit_msec && numchunks < 32767)
-			return FALSE;
+			return TRUE; /* While capturing... */
+		else
+			hw_dev_acquisition_stop(sdi->index, sdi);
 
-		hw_dev_acquisition_stop(sdi->index, sdi);
-
-		return FALSE;
 	} else if (ctx->state.state == SIGMA_DOWNLOAD) {
 		if (ctx->state.chunks_downloaded >= numchunks) {
 			/* End of samples. */
@@ -1258,8 +1263,8 @@ static int hw_dev_acquisition_start(int dev_index, void *cb_data)
 {
 	struct sr_dev_inst *sdi;
 	struct context *ctx;
-	struct sr_datafeed_packet packet;
-	struct sr_datafeed_header header;
+	struct sr_datafeed_packet *packet;
+	struct sr_datafeed_header *header;
 	struct clockselect_50 clockselect;
 	int frac, triggerpin, ret;
 	uint8_t triggerselect;
@@ -1343,7 +1348,7 @@ static int hw_dev_acquisition_start(int dev_index, void *cb_data)
 
 	/* Setup maximum post trigger time. */
 	sigma_set_register(WRITE_POST_TRIGGER,
-			(ctx->capture_ratio * 255) / 100, ctx);
+			   (ctx->capture_ratio * 255) / 100, ctx);
 
 	/* Start acqusition. */
 	gettimeofday(&ctx->start_tv, 0);
@@ -1351,17 +1356,29 @@ static int hw_dev_acquisition_start(int dev_index, void *cb_data)
 
 	ctx->session_dev_id = cb_data;
 
-	/* Send header packet to the session bus. */
-	packet.type = SR_DF_HEADER;
-	packet.payload = &header;
-	header.feed_version = 1;
-	gettimeofday(&header.starttime, NULL);
-	header.samplerate = ctx->cur_samplerate;
-	header.num_logic_probes = ctx->num_probes;
-	sr_session_send(ctx->session_dev_id, &packet);
+	if (!(packet = g_try_malloc(sizeof(struct sr_datafeed_packet)))) {
+		sr_err("sigma: %s: packet malloc failed.", __func__);
+		return SR_ERR_MALLOC;
+	}
+
+	if (!(header = g_try_malloc(sizeof(struct sr_datafeed_header)))) {
+		sr_err("sigma: %s: header malloc failed.", __func__);
+		return SR_ERR_MALLOC;
+	}
 
 	/* Add capture source. */
 	sr_source_add(0, G_IO_IN, 10, receive_data, sdi);
+
+	/* Send header packet to the session bus. */
+	packet->type = SR_DF_HEADER;
+	packet->payload = header;
+	header->feed_version = 1;
+	gettimeofday(&header->starttime, NULL);
+	header->samplerate = ctx->cur_samplerate;
+	header->num_logic_probes = ctx->num_probes;
+	sr_session_send(ctx->session_dev_id, packet);
+	g_free(header);
+	g_free(packet);
 
 	ctx->state.state = SIGMA_CAPTURE;
 
@@ -1412,7 +1429,7 @@ static int hw_dev_acquisition_stop(int dev_index, void *cb_data)
 
 SR_PRIV struct sr_dev_driver asix_sigma_driver_info = {
 	.name = "asix-sigma",
-	.longname = "ASIX SIGMA",
+	.longname = "ASIX SIGMA/SIGMA2",
 	.api_version = 1,
 	.init = hw_init,
 	.cleanup = hw_cleanup,

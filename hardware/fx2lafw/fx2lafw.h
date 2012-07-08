@@ -1,6 +1,7 @@
 /*
  * This file is part of the sigrok project.
  *
+ * Copyright (C) 2010-2012 Bert Vermeulen <bert@biot.com>
  * Copyright (C) 2012 Joel Holdsworth <joel@airwebreathe.org.uk>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <glib.h>
+
 #ifndef LIBSIGROK_HARDWARE_FX2LAFW_FX2LAFW_H
 #define LIBSIGROK_HARDWARE_FX2LAFW_FX2LAFW_H
 
@@ -25,13 +28,14 @@
 #define NUM_TRIGGER_STAGES	4
 #define TRIGGER_TYPES		"01"
 
-#define MAX_RENUM_DELAY		3000 /* ms */
+#define MAX_RENUM_DELAY_MS	3000
 #define NUM_SIMUL_TRANSFERS	32
 #define MAX_EMPTY_TRANSFERS	(NUM_SIMUL_TRANSFERS * 2)
 
-#define FX2LAFW_VERSION_MAJOR	1
-#define FX2LAFW_VERSION_MINOR	0
+#define FX2LAFW_REQUIRED_VERSION_MAJOR	1
 
+/* 6 delay states of up to 256 clock ticks */
+#define MAX_SAMPLE_DELAY	(6 * 256)
 
 /* Software trigger implementation: positive values indicate trigger stage. */
 #define TRIGGER_FIRED          -1
@@ -58,9 +62,9 @@ struct context {
 	 * after the upgrade) this is like a global lock. No device will open
 	 * until a proper delay after the last device was upgraded.
 	 */
-	GTimeVal fw_updated;
+	int64_t fw_updated;
 
-	/* Device/Capture Settings */
+	/* Device/capture settings */
 	uint64_t cur_samplerate;
 	uint64_t limit_samples;
 

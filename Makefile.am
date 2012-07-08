@@ -21,7 +21,7 @@ ACLOCAL_AMFLAGS = -I autostuff
 
 AM_CPPFLAGS = -I$(top_srcdir)
 
-SUBDIRS = contrib hardware input output firmware
+SUBDIRS = contrib hardware input output
 
 lib_LTLIBRARIES = libsigrok.la
 
@@ -54,7 +54,7 @@ pkgconfig_DATA = libsigrok.pc
 
 EXTRA_DIST = Doxyfile
 
-DISTCLEANFILES = ChangeLog
+MAINTAINERCLEANFILES = ChangeLog
 
 .PHONY: ChangeLog
 ChangeLog:

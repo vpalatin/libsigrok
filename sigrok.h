@@ -41,10 +41,10 @@ extern "C" {
 #define SR_PACKAGE_VERSION_MINOR 1
 
 /** The libsigrok package 'micro' version number. */
-#define SR_PACKAGE_VERSION_MICRO 0
+#define SR_PACKAGE_VERSION_MICRO 1
 
 /** The libsigrok package version ("major.minor.micro") as string. */
-#define SR_PACKAGE_VERSION_STRING "0.1.0"
+#define SR_PACKAGE_VERSION_STRING "0.1.1"
 
 /*
  * Library/libtool version macros (can be used for conditional compilation).

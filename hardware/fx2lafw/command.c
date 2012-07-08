@@ -18,6 +18,8 @@
  */
 
 #include <libusb.h>
+
+#include "fx2lafw.h"
 #include "command.h"
 #include "sigrok.h"
 #include "sigrok-internal.h"
@@ -39,6 +41,23 @@ SR_PRIV int command_get_fw_version(libusb_device_handle *devhdl,
 	return SR_OK;
 }
 
+SR_PRIV int command_get_revid_version(libusb_device_handle *devhdl,
+				      uint8_t *revid)
+{
+	int ret;
+
+	ret = libusb_control_transfer(devhdl, LIBUSB_REQUEST_TYPE_VENDOR |
+		LIBUSB_ENDPOINT_IN, CMD_GET_REVID_VERSION, 0x0000, 0x0000,
+		revid, 1, 100);
+
+	if (ret < 0) {
+		sr_err("fx2lafw: Unable to get REVID: %d.", ret);
+		return SR_ERR;
+	}
+
+	return SR_OK;
+}
+
 SR_PRIV int command_start_acquisition(libusb_device_handle *devhdl,
 				      uint64_t samplerate)
 {
@@ -49,19 +68,26 @@ SR_PRIV int command_start_acquisition(libusb_device_handle *devhdl,
 	if ((SR_MHZ(48) % samplerate) == 0) {
 		cmd.flags = CMD_START_FLAGS_CLK_48MHZ;
 		delay = SR_MHZ(48) / samplerate - 1;
-	} else if ((SR_MHZ(30) % samplerate) == 0) {
+		if (delay > MAX_SAMPLE_DELAY)
+			delay = 0;
+	}
+
+	if (delay == 0 && (SR_MHZ(30) % samplerate) == 0) {
 		cmd.flags = CMD_START_FLAGS_CLK_30MHZ;
 		delay = SR_MHZ(30) / samplerate - 1;
 	}
 
-	/* Note: sample_delay=0 is treated as sample_delay=256. */
-	if (delay <= 0 || delay > 256) {
+	sr_info("fx2lafw: GPIF delay = %d, clocksource = %sMHz", delay,
+		(cmd.flags & CMD_START_FLAGS_CLK_48MHZ) ? "48" : "30");
+
+	if (delay <= 0 || delay > MAX_SAMPLE_DELAY) {
 		sr_err("fx2lafw: Unable to sample at %" PRIu64 "Hz.",
 		       samplerate);
 		return SR_ERR;
 	}
 
-	cmd.sample_delay = delay;
+	cmd.sample_delay_h = (delay >> 8) & 0xff;
+	cmd.sample_delay_l = delay & 0xff;
 
 	/* Send the control message. */
 	ret = libusb_control_transfer(devhdl, LIBUSB_REQUEST_TYPE_VENDOR |

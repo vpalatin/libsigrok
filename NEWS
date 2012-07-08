@@ -1,3 +1,46 @@
+0.1.1 (2012-05-30)
+------------------
+
+Note: This release does NOT change the libsigrok API.
+
+ * The 'saleae-logic' driver (which depends on the Saleae firmware), has
+   been replaced with the new 'fx2lafw' driver, which uses an open-source
+   firmware for Cypress FX2 chips which is also named 'fx2lafw'.
+   Details: http://sigrok.org/wiki/Fx2lafw
+   This new driver (+ firmware) currently supports the following devices:
+     - ARMFLY AX-Pro
+     - Braintechnology USB-LPS
+     - EE Electronics ESLA100
+     - EE Electronics ESLA201A
+     - Robomotic MiniLogic
+     - Robomotic BugLogic 3
+     - Saleae Logic
+     - USBee AX
+     - USBee SX
+     - All Cypress FX2 eval boards with stock Cypress VID/PID, including:
+       - Lcsoft Mini Board
+       - Braintechnology USB Interface V2.x
+   Only acquisition with 8 probes is supported so far. Support for 16 probes
+   and support for analog signal acquisition (on devices which have these
+   capabilities) will be added later.
+ * ASIX SIGMA driver:
+   - Add support for the ASIX SIGMA2. This requires the latest version of
+     the SIGMA/SIGMA2 firmware files.
+     Details: http://sigrok.org/wiki/Firmware
+   - Various bugfixes.
+ * ZEROPLUS Logic Cube LAP-C (16032): Fix a segfault.
+ * udev file: Add entries for Robomotic BugLogic 3, Velleman PCSU1000,
+   Ideofy LA-08, ARMFLY AX-Pro, and Braintechnology USB Interface V2.x.
+ * The zlib dependency has been removed (no longer needed).
+ * Fix compiling with "Homebrew" (Mac OS X).
+ * libsigrok now expects firmware files in $prefix/share/sigrok-firmware by
+   default (was $prefix/share/libsigrok/firmware before).
+ * Fix a Makefile.am bug which caused the generated ChangeLog files being
+   accidentally deleted upon 'make distclean'.
+ * ChronoVu LA8 input file format: Improve autodetection of the file format.
+   We now only accept files of the size 8388613 bytes (all LA8 files have
+   exactly this amount of bytes).
+
 0.1.0 (2012-04-17)
 ------------------
 

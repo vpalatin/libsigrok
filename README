@@ -24,7 +24,6 @@ Requirements
  - libglib >= 2.22.0
  - libusb >= 1.0.5 (for most logic analyzer hardware)
  - libzip >= 0.8
- - zlib >= 1.2.3.1
  - libftdi >= 0.16 (for some logic analyzer hardware)
  - libudev >= 151 (for some logic analyzer hardware)
 
@@ -50,6 +49,23 @@ Please see the following wiki pages for more detailed instructions:
  http://sigrok.org/wiki/Mac_OS_X
  http://sigrok.org/wiki/Windows
  http://sigrok.org/wiki/FreeBSD
+
+
+Firmware
+--------
+
+Some devices supported by libsigrok need a firmware to be uploaded before the
+device can be used. 
+
+The default location where libsigrok expects the firmware files is:
+
+  $prefix/share/sigrok-firmware
+
+($prefix is usually /usr/local or /usr, depending on your ./configure options)
+
+For further information see:
+
+  http://sigrok.org/wiki/Firmware
 
 
 Mailing lists
