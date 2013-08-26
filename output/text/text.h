@@ -1,5 +1,5 @@
 /*
- * This file is part of the sigrok project.
+ * This file is part of the libsigrok project.
  *
  * Copyright (C) 2010-2012 Bert Vermeulen <bert@biot.com>
  *
@@ -36,13 +36,13 @@ struct context {
 	unsigned int unitsize;
 	int line_offset;
 	int linebuf_len;
-	char *probelist[SR_MAX_NUM_PROBES + 1];
+	GSList *probenames;
 	uint8_t *linebuf;
 	int spl_cnt;
 	uint8_t *linevalues;
 	char *header;
 	int mark_trigger;
-	uint64_t prevsample;
+	uint8_t *prevsample;
 	enum outputmode mode;
 };
 

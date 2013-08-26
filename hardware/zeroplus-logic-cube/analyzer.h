@@ -1,5 +1,5 @@
 /*
- * This file is part of the sigrok project.
+ * This file is part of the libsigrok project.
  *
  * Copyright (C) 2010 Sven Peter <sven@fail0verflow.com>
  * Copyright (C) 2010 Haxx Enterprises <bushing@gmail.com>
@@ -33,7 +33,7 @@
 #define LIBSIGROK_HARDWARE_ZEROPLUS_LOGIC_CUBE_ANALYZER_H
 
 #include <libusb.h>
-#include "sigrok.h"
+#include "libsigrok.h"
 
 #define STATUS_FLAG_NONE	0x00
 #define STATUS_FLAG_RESET	0x01
@@ -85,6 +85,7 @@ SR_PRIV void analyzer_add_trigger(int channel, int type);
 SR_PRIV void analyzer_set_trigger_count(int count);
 SR_PRIV void analyzer_add_filter(int channel, int type);
 
+SR_PRIV unsigned int analyzer_read_status(libusb_device_handle *devh);
 SR_PRIV unsigned int analyzer_read_id(libusb_device_handle *devh);
 SR_PRIV unsigned int analyzer_get_stop_address(libusb_device_handle *devh);
 SR_PRIV unsigned int analyzer_get_now_address(libusb_device_handle *devh);

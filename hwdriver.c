@@ -1,7 +1,7 @@
 /*
- * This file is part of the sigrok project.
+ * This file is part of the libsigrok project.
  *
- * Copyright (C) 2010-2012 Bert Vermeulen <bert@biot.com>
+ * Copyright (C) 2013 Bert Vermeulen <bert@biot.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,27 +23,97 @@
 #include <dirent.h>
 #include <string.h>
 #include <glib.h>
-#include "sigrok.h"
-#include "sigrok-internal.h"
+#include "config.h" /* Needed for HAVE_LIBUSB_1_0 and others. */
+#include "libsigrok.h"
+#include "libsigrok-internal.h"
 
-/*
- * This enumerates which driver capabilities correspond to user-settable
- * options.
+/* Message logging helpers with subsystem-specific prefix string. */
+#define LOG_PREFIX "hwdriver: "
+#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
+#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
+#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
+#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
+#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
+#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+
+/**
+ * @file
+ *
+ * Hardware driver handling in libsigrok.
  */
-/* TODO: This shouldn't be a global. */
-SR_API struct sr_hwcap_option sr_hwcap_options[] = {
-	{SR_HWCAP_SAMPLERATE, SR_T_UINT64, "Sample rate", "samplerate"},
-	{SR_HWCAP_CAPTURE_RATIO, SR_T_UINT64, "Pre-trigger capture ratio", "captureratio"},
-	{SR_HWCAP_PATTERN_MODE, SR_T_CHAR, "Pattern generator mode", "pattern"},
-	{SR_HWCAP_RLE, SR_T_BOOL, "Run Length Encoding", "rle"},
-	{0, 0, NULL, NULL},
+
+/**
+ * @defgroup grp_driver Hardware drivers
+ *
+ * Hardware driver handling in libsigrok.
+ *
+ * @{
+ */
+
+static struct sr_config_info sr_config_info_data[] = {
+	{SR_CONF_CONN, SR_T_CHAR, "conn",
+		"Connection", NULL},
+	{SR_CONF_SERIALCOMM, SR_T_CHAR, "serialcomm",
+		"Serial communication", NULL},
+	{SR_CONF_SAMPLERATE, SR_T_UINT64, "samplerate",
+		"Sample rate", NULL},
+	{SR_CONF_CAPTURE_RATIO, SR_T_UINT64, "captureratio",
+		"Pre-trigger capture ratio", NULL},
+	{SR_CONF_PATTERN_MODE, SR_T_CHAR, "pattern",
+		"Pattern generator mode", NULL},
+	{SR_CONF_TRIGGER_TYPE, SR_T_CHAR, "triggertype",
+		"Trigger types", NULL},
+	{SR_CONF_RLE, SR_T_BOOL, "rle",
+		"Run Length Encoding", NULL},
+	{SR_CONF_TRIGGER_SLOPE, SR_T_UINT64, "triggerslope",
+		"Trigger slope", NULL},
+	{SR_CONF_TRIGGER_SOURCE, SR_T_CHAR, "triggersource",
+		"Trigger source", NULL},
+	{SR_CONF_HORIZ_TRIGGERPOS, SR_T_FLOAT, "horiz_triggerpos",
+		"Horizontal trigger position", NULL},
+	{SR_CONF_BUFFERSIZE, SR_T_UINT64, "buffersize",
+		"Buffer size", NULL},
+	{SR_CONF_TIMEBASE, SR_T_RATIONAL_PERIOD, "timebase",
+		"Time base", NULL},
+	{SR_CONF_FILTER, SR_T_CHAR, "filter",
+		"Filter targets", NULL},
+	{SR_CONF_VDIV, SR_T_RATIONAL_VOLT, "vdiv",
+		"Volts/div", NULL},
+	{SR_CONF_COUPLING, SR_T_CHAR, "coupling",
+		"Coupling", NULL},
+	{SR_CONF_DATALOG, SR_T_BOOL, "datalog",
+		"Datalog", NULL},
+	{0, 0, NULL, NULL, NULL},
 };
 
+/** @cond PRIVATE */
+#ifdef HAVE_HW_BRYMEN_DMM
+extern SR_PRIV struct sr_dev_driver brymen_bm857_driver_info;
+#endif
+#ifdef HAVE_HW_COLEAD_SLM
+extern SR_PRIV struct sr_dev_driver colead_slm_driver_info;
+#endif
 #ifdef HAVE_LA_DEMO
 extern SR_PRIV struct sr_dev_driver demo_driver_info;
 #endif
+#ifdef HAVE_HW_LASCAR_EL_USB
+extern SR_PRIV struct sr_dev_driver lascar_el_usb_driver_info;
+#endif
+#ifdef HAVE_HW_MIC_985XX
+extern SR_PRIV struct sr_dev_driver mic_98581_driver_info;
+extern SR_PRIV struct sr_dev_driver mic_98583_driver_info;
+#endif
 #ifdef HAVE_LA_OLS
 extern SR_PRIV struct sr_dev_driver ols_driver_info;
+#endif
+#ifdef HAVE_HW_RIGOL_DS1XX2
+extern SR_PRIV struct sr_dev_driver rigol_ds1xx2_driver_info;
+#endif
+#ifdef HAVE_HW_TONDAJ_SL_814
+extern SR_PRIV struct sr_dev_driver tondaj_sl_814_driver_info;
+#endif
+#ifdef HAVE_HW_VICTOR_DMM
+extern SR_PRIV struct sr_dev_driver victor_dmm_driver_info;
 #endif
 #ifdef HAVE_LA_ZEROPLUS_LOGIC_CUBE
 extern SR_PRIV struct sr_dev_driver zeroplus_logic_cube_driver_info;
@@ -54,22 +124,79 @@ extern SR_PRIV struct sr_dev_driver asix_sigma_driver_info;
 #ifdef HAVE_LA_CHRONOVU_LA8
 extern SR_PRIV struct sr_dev_driver chronovu_la8_driver_info;
 #endif
-#ifdef HAVE_LA_LINK_MSO19
-extern SR_PRIV struct sr_dev_driver link_mso19_driver_info;
-#endif
-#ifdef HAVE_LA_ALSA
+#ifdef HAVE_HW_ALSA
 extern SR_PRIV struct sr_dev_driver alsa_driver_info;
 #endif
 #ifdef HAVE_LA_FX2LAFW
 extern SR_PRIV struct sr_dev_driver fx2lafw_driver_info;
 #endif
+#ifdef HAVE_HW_HANTEK_DSO
+extern SR_PRIV struct sr_dev_driver hantek_dso_driver_info;
+#endif
+#ifdef HAVE_HW_AGILENT_DMM
+extern SR_PRIV struct sr_dev_driver agdmm_driver_info;
+#endif
+#ifdef HAVE_HW_FLUKE_DMM
+extern SR_PRIV struct sr_dev_driver flukedmm_driver_info;
+#endif
+#ifdef HAVE_HW_SERIAL_DMM
+extern SR_PRIV struct sr_dev_driver digitek_dt4000zc_driver_info;
+extern SR_PRIV struct sr_dev_driver tekpower_tp4000zc_driver_info;
+extern SR_PRIV struct sr_dev_driver metex_me31_driver_info;
+extern SR_PRIV struct sr_dev_driver peaktech_3410_driver_info;
+extern SR_PRIV struct sr_dev_driver mastech_mas345_driver_info;
+extern SR_PRIV struct sr_dev_driver va_va18b_driver_info;
+extern SR_PRIV struct sr_dev_driver metex_m3640d_driver_info;
+extern SR_PRIV struct sr_dev_driver peaktech_4370_driver_info;
+extern SR_PRIV struct sr_dev_driver pce_pce_dm32_driver_info;
+extern SR_PRIV struct sr_dev_driver radioshack_22_168_driver_info;
+extern SR_PRIV struct sr_dev_driver radioshack_22_805_driver_info;
+extern SR_PRIV struct sr_dev_driver radioshack_22_812_driver_info;
+extern SR_PRIV struct sr_dev_driver tecpel_dmm_8060_ser_driver_info;
+extern SR_PRIV struct sr_dev_driver tecpel_dmm_8061_ser_driver_info;
+extern SR_PRIV struct sr_dev_driver voltcraft_vc820_ser_driver_info;
+extern SR_PRIV struct sr_dev_driver voltcraft_vc840_ser_driver_info;
+extern SR_PRIV struct sr_dev_driver uni_t_ut61d_ser_driver_info;
+extern SR_PRIV struct sr_dev_driver uni_t_ut61e_ser_driver_info;
+#endif
+#ifdef HAVE_HW_UNI_T_DMM
+extern SR_PRIV struct sr_dev_driver tecpel_dmm_8060_driver_info;
+extern SR_PRIV struct sr_dev_driver tecpel_dmm_8061_driver_info;
+extern SR_PRIV struct sr_dev_driver uni_t_ut61d_driver_info;
+extern SR_PRIV struct sr_dev_driver uni_t_ut61e_driver_info;
+extern SR_PRIV struct sr_dev_driver voltcraft_vc820_driver_info;
+extern SR_PRIV struct sr_dev_driver voltcraft_vc840_driver_info;
+#endif
+/** @endcond */
 
 static struct sr_dev_driver *drivers_list[] = {
+#ifdef HAVE_HW_BRYMEN_DMM
+	&brymen_bm857_driver_info,
+#endif
+#ifdef HAVE_HW_COLEAD_SLM
+	&colead_slm_driver_info,
+#endif
 #ifdef HAVE_LA_DEMO
 	&demo_driver_info,
 #endif
+#ifdef HAVE_HW_LASCAR_EL_USB
+	&lascar_el_usb_driver_info,
+#endif
+#ifdef HAVE_HW_MIC_985XX
+	&mic_98581_driver_info,
+	&mic_98583_driver_info,
+#endif
 #ifdef HAVE_LA_OLS
 	&ols_driver_info,
+#endif
+#ifdef HAVE_HW_RIGOL_DS1XX2
+	&rigol_ds1xx2_driver_info,
+#endif
+#ifdef HAVE_HW_TONDAJ_SL_814
+	&tondaj_sl_814_driver_info,
+#endif
+#ifdef HAVE_HW_VICTOR_DMM
+	&victor_dmm_driver_info,
 #endif
 #ifdef HAVE_LA_ZEROPLUS_LOGIC_CUBE
 	&zeroplus_logic_cube_driver_info,
@@ -80,14 +207,48 @@ static struct sr_dev_driver *drivers_list[] = {
 #ifdef HAVE_LA_CHRONOVU_LA8
 	&chronovu_la8_driver_info,
 #endif
-#ifdef HAVE_LA_LINK_MSO19
-	&link_mso19_driver_info,
-#endif
-#ifdef HAVE_LA_ALSA
+#ifdef HAVE_HW_ALSA
 	&alsa_driver_info,
 #endif
 #ifdef HAVE_LA_FX2LAFW
 	&fx2lafw_driver_info,
+#endif
+#ifdef HAVE_HW_HANTEK_DSO
+	&hantek_dso_driver_info,
+#endif
+#ifdef HAVE_HW_AGILENT_DMM
+	&agdmm_driver_info,
+#endif
+#ifdef HAVE_HW_FLUKE_DMM
+	&flukedmm_driver_info,
+#endif
+#ifdef HAVE_HW_SERIAL_DMM
+	&digitek_dt4000zc_driver_info,
+	&tekpower_tp4000zc_driver_info,
+	&metex_me31_driver_info,
+	&peaktech_3410_driver_info,
+	&mastech_mas345_driver_info,
+	&va_va18b_driver_info,
+	&metex_m3640d_driver_info,
+	&peaktech_4370_driver_info,
+	&pce_pce_dm32_driver_info,
+	&radioshack_22_168_driver_info,
+	&radioshack_22_805_driver_info,
+	&radioshack_22_812_driver_info,
+	&tecpel_dmm_8060_ser_driver_info,
+	&tecpel_dmm_8061_ser_driver_info,
+	&voltcraft_vc820_ser_driver_info,
+	&voltcraft_vc840_ser_driver_info,
+	&uni_t_ut61d_ser_driver_info,
+	&uni_t_ut61e_ser_driver_info,
+#endif
+#ifdef HAVE_HW_UNI_T_DMM
+	&tecpel_dmm_8060_driver_info,
+	&tecpel_dmm_8061_driver_info,
+	&uni_t_ut61d_driver_info,
+	&uni_t_ut61e_driver_info,
+	&voltcraft_vc820_driver_info,
+	&voltcraft_vc840_driver_info,
 #endif
 	NULL,
 };
@@ -99,49 +260,93 @@ static struct sr_dev_driver *drivers_list[] = {
  */
 SR_API struct sr_dev_driver **sr_driver_list(void)
 {
+
 	return drivers_list;
 }
 
 /**
  * Initialize a hardware driver.
  *
- * The specified driver is initialized, and all devices discovered by the
- * driver are instantiated.
+ * This usually involves memory allocations and variable initializations
+ * within the driver, but _not_ scanning for attached devices.
+ * The API call sr_driver_scan() is used for that.
  *
- * @param driver The driver to initialize.
+ * @param ctx A libsigrok context object allocated by a previous call to
+ *            sr_init(). Must not be NULL.
+ * @param driver The driver to initialize. This must be a pointer to one of
+ *               the entries returned by sr_driver_list(). Must not be NULL.
  *
- * @return The number of devices found and instantiated by the driver.
+ * @return SR_OK upon success, SR_ERR_ARG upon invalid parameters,
+ *         SR_ERR_BUG upon internal errors, or another negative error code
+ *         upon other errors.
  */
-SR_API int sr_driver_init(struct sr_dev_driver *driver)
+SR_API int sr_driver_init(struct sr_context *ctx, struct sr_dev_driver *driver)
 {
-	int num_devs, num_probes, i, j;
-	int num_initialized_devs = 0;
-	struct sr_dev *dev;
-	char **probe_names;
+	int ret;
 
-	sr_dbg("initializing %s driver", driver->name);
-	num_devs = driver->init(NULL);
-	for (i = 0; i < num_devs; i++) {
-		num_probes = GPOINTER_TO_INT(
-				driver->dev_info_get(i, SR_DI_NUM_PROBES));
-		probe_names = (char **)driver->dev_info_get(i,
-							SR_DI_PROBE_NAMES);
-
-		if (!probe_names) {
-			sr_warn("hwdriver: %s: driver %s does not return a "
-				"list of probe names", __func__, driver->name);
-			continue;
-		}
-
-		dev = sr_dev_new(driver, i);
-		for (j = 0; j < num_probes; j++)
-			sr_dev_probe_add(dev, probe_names[j]);
-		num_initialized_devs++;
+	if (!ctx) {
+		sr_err("Invalid libsigrok context, can't initialize.");
+		return SR_ERR_ARG;
 	}
 
-	return num_initialized_devs;
+	if (!driver) {
+		sr_err("Invalid driver, can't initialize.");
+		return SR_ERR_ARG;
+	}
+
+	sr_spew("Initializing driver '%s'.", driver->name);
+	if ((ret = driver->init(ctx)) < 0)
+		sr_err("Failed to initialize the driver: %d.", ret);
+
+	return ret;
 }
 
+/**
+ * Tell a hardware driver to scan for devices.
+ *
+ * In addition to the detection, the devices that are found are also
+ * initialized automatically. On some devices, this involves a firmware upload,
+ * or other such measures.
+ *
+ * The order in which the system is scanned for devices is not specified. The
+ * caller should not assume or rely on any specific order.
+ *
+ * Before calling sr_driver_scan(), the user must have previously initialized
+ * the driver by calling sr_driver_init().
+ *
+ * @param driver The driver that should scan. This must be a pointer to one of
+ *               the entries returned by sr_driver_list(). Must not be NULL.
+ * @param options A list of 'struct sr_hwopt' options to pass to the driver's
+ *                scanner. Can be NULL/empty.
+ *
+ * @return A GSList * of 'struct sr_dev_inst', or NULL if no devices were
+ *         found (or errors were encountered). This list must be freed by the
+ *         caller using g_slist_free(), but without freeing the data pointed
+ *         to in the list.
+ */
+SR_API GSList *sr_driver_scan(struct sr_dev_driver *driver, GSList *options)
+{
+	GSList *l;
+
+	if (!driver) {
+		sr_err("Invalid driver, can't scan for devices.");
+		return NULL;
+	}
+
+	if (!driver->priv) {
+		sr_err("Driver not initialized, can't scan for devices.");
+		return NULL;
+	}
+
+	l = driver->scan(options);
+
+	sr_spew("Scan of '%s' found %d devices.", driver->name,
+		g_slist_length(l));
+
+	return l;
+}
+
+/** @private */
 SR_PRIV void sr_hw_cleanup_all(void)
 {
 	int i;
@@ -154,148 +359,171 @@ SR_PRIV void sr_hw_cleanup_all(void)
 	}
 }
 
-SR_PRIV struct sr_dev_inst *sr_dev_inst_new(int index, int status,
-		const char *vendor, const char *model, const char *version)
+/** A floating reference can be passed in for data. */
+SR_PRIV struct sr_config *sr_config_new(int key, GVariant *data)
 {
-	struct sr_dev_inst *sdi;
+	struct sr_config *src;
 
-	if (!(sdi = g_try_malloc(sizeof(struct sr_dev_inst)))) {
-		sr_err("hwdriver: %s: sdi malloc failed", __func__);
+	if (!(src = g_try_malloc(sizeof(struct sr_config))))
 		return NULL;
-	}
+	src->key = key;
+	src->data = g_variant_ref_sink(data);
 
-	sdi->index = index;
-	sdi->status = status;
-	sdi->inst_type = -1;
-	sdi->vendor = vendor ? g_strdup(vendor) : NULL;
-	sdi->model = model ? g_strdup(model) : NULL;
-	sdi->version = version ? g_strdup(version) : NULL;
-	sdi->priv = NULL;
-
-	return sdi;
+	return src;
 }
 
-SR_PRIV struct sr_dev_inst *sr_dev_inst_get(GSList *dev_insts, int dev_index)
+SR_PRIV void sr_config_free(struct sr_config *src)
 {
-	struct sr_dev_inst *sdi;
-	GSList *l;
 
-	for (l = dev_insts; l; l = l->next) {
-		sdi = (struct sr_dev_inst *)(l->data);
-		if (sdi->index == dev_index)
-			return sdi;
+	if (!src || !src->data) {
+		sr_err("%s: invalid data!", __func__);
+		return;
 	}
-	sr_warn("could not find device index %d instance", dev_index);
+
+	g_variant_unref(src->data);
+	g_free(src);
+
+}
+
+/**
+ * Returns information about the given driver or device instance.
+ *
+ * @param driver The sr_dev_driver struct to query.
+ * @param key The configuration key (SR_CONF_*).
+ * @param data Pointer to a GVariant where the value will be stored. Must
+ *             not be NULL. The caller is given ownership of the GVariant
+ *             and must thus decrease the refcount after use. However if
+ *             this function returns an error code, the field should be
+ *             considered unused, and should not be unreferenced.
+ * @param sdi (optional) If the key is specific to a device, this must
+ *            contain a pointer to the struct sr_dev_inst to be checked.
+ *            Otherwise it must be NULL.
+ *
+ * @return SR_OK upon success or SR_ERR in case of error. Note SR_ERR_ARG
+ *         may be returned by the driver indicating it doesn't know that key,
+ *         but this is not to be flagged as an error by the caller; merely
+ *         as an indication that it's not applicable.
+ */
+SR_API int sr_config_get(const struct sr_dev_driver *driver, int key,
+		GVariant **data, const struct sr_dev_inst *sdi)
+{
+	int ret;
+
+	if (!driver || !data)
+		return SR_ERR;
+
+	if (!driver->config_get)
+		return SR_ERR_ARG;
+
+	if ((ret = driver->config_get(key, data, sdi)) == SR_OK) {
+		/* Got a floating reference from the driver. Sink it here,
+		 * caller will need to unref when done with it. */
+		g_variant_ref_sink(*data);
+	}
+
+	return ret;
+}
+
+/**
+ * Set a configuration key in a device instance.
+ *
+ * @param sdi The device instance.
+ * @param key The configuration key (SR_CONF_*).
+ * @param data The new value for the key, as a GVariant with GVariantType
+ *        appropriate to that key. A floating reference can be passed
+ *        in; its refcount will be sunk and unreferenced after use.
+ *
+ * @return SR_OK upon success or SR_ERR in case of error. Note SR_ERR_ARG
+ *         may be returned by the driver indicating it doesn't know that key,
+ *         but this is not to be flagged as an error by the caller; merely
+ *         as an indication that it's not applicable.
+ */
+SR_API int sr_config_set(const struct sr_dev_inst *sdi, int key, GVariant *data)
+{
+	int ret;
+
+	g_variant_ref_sink(data);
+
+	if (!sdi || !sdi->driver || !data)
+		ret = SR_ERR;
+	else if (!sdi->driver->config_set)
+		ret = SR_ERR_ARG;
+	else
+		ret = sdi->driver->config_set(key, data, sdi);
+
+	g_variant_unref(data);
+
+	return ret;
+}
+
+/**
+ * List all possible values for a configuration key.
+ *
+ * @param driver The sr_dev_driver struct to query.
+ * @param key The configuration key (SR_CONF_*).
+ * @param data A pointer to a GVariant where the list will be stored. The
+ *             caller is given ownership of the GVariant and must thus
+ *             unref the GVariant after use. However if this function
+ *             returns an error code, the field should be considered
+ *             unused, and should not be unreferenced.
+ * @param sdi (optional) If the key is specific to a device, this must
+ *            contain a pointer to the struct sr_dev_inst to be checked.
+ *
+ * @return SR_OK upon success or SR_ERR in case of error. Note SR_ERR_ARG
+ *         may be returned by the driver indicating it doesn't know that key,
+ *         but this is not to be flagged as an error by the caller; merely
+ *         as an indication that it's not applicable.
+ */
+SR_API int sr_config_list(const struct sr_dev_driver *driver, int key,
+		GVariant **data, const struct sr_dev_inst *sdi)
+{
+	int ret;
+
+	if (!driver || !data)
+		ret = SR_ERR;
+	else if (!driver->config_list)
+		ret = SR_ERR_ARG;
+	else if ((ret = driver->config_list(key, data, sdi)) == SR_OK)
+		g_variant_ref_sink(*data);
+
+	return ret;
+}
+
+/**
+ * Get information about a configuration key.
+ *
+ * @param key The configuration key.
+ *
+ * @return A pointer to a struct sr_config_info, or NULL if the key
+ *         was not found.
+ */
+SR_API const struct sr_config_info *sr_config_info_get(int key)
+{
+	int i;
+
+	for (i = 0; sr_config_info_data[i].key; i++) {
+		if (sr_config_info_data[i].key == key)
+			return &sr_config_info_data[i];
+	}
 
 	return NULL;
 }
 
-SR_PRIV void sr_dev_inst_free(struct sr_dev_inst *sdi)
-{
-	g_free(sdi->priv);
-	g_free(sdi->vendor);
-	g_free(sdi->model);
-	g_free(sdi->version);
-	g_free(sdi);
-}
-
-#ifdef HAVE_LIBUSB_1_0
-
-SR_PRIV struct sr_usb_dev_inst *sr_usb_dev_inst_new(uint8_t bus,
-			uint8_t address, struct libusb_device_handle *hdl)
-{
-	struct sr_usb_dev_inst *udi;
-
-	if (!(udi = g_try_malloc(sizeof(struct sr_usb_dev_inst)))) {
-		sr_err("hwdriver: %s: udi malloc failed", __func__);
-		return NULL;
-	}
-
-	udi->bus = bus;
-	udi->address = address;
-	udi->devhdl = hdl; /* TODO: Check if this is NULL? */
-
-	return udi;
-}
-
-SR_PRIV void sr_usb_dev_inst_free(struct sr_usb_dev_inst *usb)
-{
-	/* Avoid compiler warnings. */
-	(void)usb;
-
-	/* Nothing to do for this device instance type. */
-}
-
-#endif
-
-SR_PRIV struct sr_serial_dev_inst *sr_serial_dev_inst_new(const char *port,
-							  int fd)
-{
-	struct sr_serial_dev_inst *serial;
-
-	if (!(serial = g_try_malloc(sizeof(struct sr_serial_dev_inst)))) {
-		sr_err("hwdriver: %s: serial malloc failed", __func__);
-		return NULL;
-	}
-
-	serial->port = g_strdup(port);
-	serial->fd = fd;
-
-	return serial;
-}
-
-SR_PRIV void sr_serial_dev_inst_free(struct sr_serial_dev_inst *serial)
-{
-	g_free(serial->port);
-}
-
 /**
- * Find out if a hardware driver has a specific capability.
+ * Get information about an configuration key, by name.
  *
- * @param driver The hardware driver in which to search for the capability.
- * @param hwcap The capability to find in the list.
+ * @param optname The configuration key.
  *
- * @return TRUE if the specified capability exists in the specified driver,
- *         FALSE otherwise. Also, if 'driver' is NULL or the respective driver
- *         returns an invalid capability list, FALSE is returned.
+ * @return A pointer to a struct sr_config_info, or NULL if the key
+ *         was not found.
  */
-SR_API gboolean sr_driver_hwcap_exists(struct sr_dev_driver *driver, int hwcap)
-{
-	int *hwcaps, i;
-
-	if (!driver) {
-		sr_err("hwdriver: %s: driver was NULL", __func__);
-		return FALSE;
-	}
-
-	if (!(hwcaps = driver->hwcap_get_all())) {
-		sr_err("hwdriver: %s: hwcap_get_all() returned NULL", __func__);
-		return FALSE;
-	}
-
-	for (i = 0; hwcaps[i]; i++) {
-		if (hwcaps[i] == hwcap)
-			return TRUE;
-	}
-
-	return FALSE;
-}
-
-/**
- * Get a hardware driver capability option.
- *
- * @param hwcap The capability to get.
- *
- * @return A pointer to a struct with information about the parameter, or NULL
- *         if the capability was not found.
- */
-SR_API struct sr_hwcap_option *sr_hw_hwcap_get(int hwcap)
+SR_API const struct sr_config_info *sr_config_info_name_get(const char *optname)
 {
 	int i;
 
-	for (i = 0; sr_hwcap_options[i].hwcap; i++) {
-		if (sr_hwcap_options[i].hwcap == hwcap)
-			return &sr_hwcap_options[i];
+	for (i = 0; sr_config_info_data[i].key; i++) {
+		if (!strcmp(sr_config_info_data[i].id, optname))
+			return &sr_config_info_data[i];
 	}
 
 	return NULL;
@@ -303,13 +531,17 @@ SR_API struct sr_hwcap_option *sr_hw_hwcap_get(int hwcap)
 
 /* Unnecessary level of indirection follows. */
 
+/** @private */
 SR_PRIV int sr_source_remove(int fd)
 {
 	return sr_session_source_remove(fd);
 }
 
+/** @private */
 SR_PRIV int sr_source_add(int fd, int events, int timeout,
 			  sr_receive_data_callback_t cb, void *cb_data)
 {
 	return sr_session_source_add(fd, events, timeout, cb, cb_data);
 }
+
+/** @} */

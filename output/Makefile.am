@@ -1,5 +1,5 @@
 ##
-## This file is part of the sigrok project.
+## This file is part of the libsigrok project.
 ##
 ## Copyright (C) 2011 Uwe Hermann <uwe@hermann-uwe.de>
 ##
@@ -29,9 +29,8 @@ libsigrokoutput_la_SOURCES = \
 	gnuplot.c \
 	chronovu_la8.c \
 	csv.c \
+	analog.c \
 	output.c
-
-# Temporarily disabled: output_analog.c
 
 libsigrokoutput_la_CFLAGS = \
 	-I$(top_srcdir)

@@ -1,5 +1,5 @@
 /*
- * This file is part of the sigrok project.
+ * This file is part of the libsigrok project.
  *
  * Copyright (C) 2010 Sven Peter <sven@fail0verflow.com>
  * Copyright (C) 2010 Haxx Enterprises <bushing@gmail.com>
@@ -29,11 +29,12 @@
  *  THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <libusb.h>
 #include <stdio.h>
-#include "sigrok.h"
-#include "sigrok-internal.h"
+#include <libusb.h>
+#include "libsigrok.h"
+#include "libsigrok-internal.h"
 #include "gl_usb.h"
+#include "protocol.h"
 
 #define CTRL_IN		(LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN | \
 			 LIBUSB_RECIPIENT_INTERFACE)
@@ -58,8 +59,7 @@ static int gl_write_address(libusb_device_handle *devh, unsigned int address)
 	ret = libusb_control_transfer(devh, CTRL_OUT, 0xc, REQ_WRITEADDR,
 					 0, packet, 1, TIMEOUT);
 	if (ret != 1)
-		sr_err("zp: %s: libusb_control_transfer returned %d.",
-		       __func__, ret);
+		sr_err("%s: %s.", __func__, libusb_error_name(ret));
 	return ret;
 }
 
@@ -71,8 +71,7 @@ static int gl_write_data(libusb_device_handle *devh, unsigned int val)
 	ret = libusb_control_transfer(devh, CTRL_OUT, 0xc, REQ_WRITEDATA,
 				      0, packet, 1, TIMEOUT);
 	if (ret != 1)
-		sr_err("zp: %s: libusb_control_transfer returned %d.",
-		       __func__, ret);
+		sr_err("%s: %s.", __func__, libusb_error_name(ret));
 	return ret;
 }
 
@@ -84,8 +83,8 @@ static int gl_read_data(libusb_device_handle *devh)
 	ret = libusb_control_transfer(devh, CTRL_IN, 0xc, REQ_READDATA,
 				      0, packet, 1, TIMEOUT);
 	if (ret != 1)
-		sr_err("zp: %s: libusb_control_transfer returned %d, "
-		       "val=%hhx.", __func__, ret, packet[0]);
+		sr_err("%s: %s, val=%hhx.", __func__,
+		       libusb_error_name(ret), packet[0]);
 	return (ret == 1) ? packet[0] : ret;
 }
 
@@ -100,13 +99,14 @@ SR_PRIV int gl_read_bulk(libusb_device_handle *devh, void *buffer,
 	ret = libusb_control_transfer(devh, CTRL_OUT, 0x4, REQ_READBULK,
 				      0, packet, 8, TIMEOUT);
 	if (ret != 8)
-		sr_err("zp: %s: libusb_control_transfer returned %d.",
-		       __func__, ret);
+		sr_err("%s: libusb_control_transfer: %s.", __func__,
+		       libusb_error_name(ret));
 
 	ret = libusb_bulk_transfer(devh, EP1_BULK_IN, buffer, size,
 				   &transferred, TIMEOUT);
 	if (ret < 0)
-		sr_err("zp: Bulk read error %d.", ret);
+		sr_err("%s: libusb_bulk_transfer: %s.", __func__,
+		       libusb_error_name(ret));
 	return transferred;
 }
 

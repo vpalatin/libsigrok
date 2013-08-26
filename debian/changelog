@@ -1,3 +1,26 @@
+libsigrok (0.2.0-2) unstable; urgency=low
+
+  * Fixed upload for 0.2.0-1 (which never left the NEW queue).
+  * The upstream SONAME bumped to 1, so change the lib package name to
+    libsigrok1. However, only use one libsigrok-dev always, i.e. don't encode
+    the SONAME in the -dev package name (as per FTP Master recommendation).
+    Since the old name was libsigrok0-dev, add a transitional package to
+    nicely handle the transition.
+
+ -- Uwe Hermann <uwe@debian.org>  Mon, 26 Aug 2013 08:54:15 +0200
+
+libsigrok (0.2.0-1) unstable; urgency=low
+
+  * New upstream release.
+    + Bump version of libglib2.0-dev build-dep to >= 2.32.0.
+    + Bump version of libusb-1.0-0-dev build-dep to >= 1.0.9.
+    + API and ABI changed, so change package name to libsigrok1*.
+  * Standards-Version: 3.9.4 (no changes required).
+  * debian/watch: Update to new download URLs.
+  * debian/libsigrok1.docs: Add file (installs README.devices).
+
+ -- Uwe Hermann <uwe@debian.org>  Tue, 28 May 2013 12:10:07 +0200
+
 libsigrok (0.1.1-1) unstable; urgency=low
 
   * New upstream release.

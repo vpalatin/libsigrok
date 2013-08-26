@@ -1,5 +1,5 @@
 /*
- * This file is part of the sigrok project.
+ * This file is part of the libsigrok project.
  *
  * Copyright (C) 2010 Håvard Espeland <gus@ping.uio.no>,
  * Copyright (C) 2010 Martin Stensgård <mastensg@ping.uio.no>
@@ -21,6 +21,15 @@
 
 #ifndef LIBSIGROK_HARDWARE_ASIX_SIGMA_ASIX_SIGMA_H
 #define LIBSIGROK_HARDWARE_ASIX_SIGMA_ASIX_SIGMA_H
+
+/* Message logging helpers with subsystem-specific prefix string. */
+#define LOG_PREFIX "asix-sigma: "
+#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
+#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
+#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
+#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
+#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
+#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
 
 enum sigma_write_register {
 	WRITE_CLOCK_SELECT	= 0,
@@ -174,7 +183,7 @@ struct sigma_state {
 };
 
 /* Private, per-device-instance driver context. */
-struct context {
+struct dev_context {
 	struct ftdi_context ftdic;
 	uint64_t cur_samplerate;
 	uint64_t period_ps;
@@ -187,7 +196,7 @@ struct context {
 	struct sigma_trigger trigger;
 	int use_triggers;
 	struct sigma_state state;
-	void *session_dev_id;
+	void *cb_data;
 };
 
 #endif

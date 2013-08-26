@@ -1,7 +1,7 @@
 /*
- * This file is part of the sigrok project.
+ * This file is part of the libsigrok project.
  *
- * Copyright (C) 2010-2012 Bert Vermeulen <bert@biot.com>
+ * Copyright (C) 2013 Bert Vermeulen <bert@biot.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,13 +23,25 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <zip.h>
-#include "sigrok.h"
-#include "sigrok-internal.h"
+#include "libsigrok.h"
+#include "libsigrok-internal.h"
+
+/* Message logging helpers with subsystem-specific prefix string. */
+#define LOG_PREFIX "virtual-session: "
+#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
+#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
+#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
+#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
+#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
+#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
 
 /* size of payloads sent across the session bus */
+/** @cond PRIVATE */
 #define CHUNKSIZE (512 * 1024)
+/** @endcond */
 
 struct session_vdev {
+	char *sessionfile;
 	char *capturefile;
 	struct zip *archive;
 	struct zip_file *capfile;
@@ -39,48 +51,13 @@ struct session_vdev {
 	int num_probes;
 };
 
-static char *sessionfile = NULL;
 static GSList *dev_insts = NULL;
-static int hwcaps[] = {
-	SR_HWCAP_CAPTUREFILE,
-	SR_HWCAP_CAPTURE_UNITSIZE,
+static const int hwcaps[] = {
+	SR_CONF_CAPTUREFILE,
+	SR_CONF_CAPTURE_UNITSIZE,
 	0,
 };
 
-/**
- * TODO.
- *
- * @param dev_index TODO.
- */
-static struct session_vdev *get_vdev_by_index(int dev_index)
-{
-	struct sr_dev_inst *sdi;
-	struct session_vdev *vdev;
-
-	/* TODO: Sanity checks on dev_index. */
-
-	if (!(sdi = sr_dev_inst_get(dev_insts, dev_index))) {
-		sr_err("session driver: %s: device instance with device "
-		       "index %d was not found", __func__, dev_index);
-		return NULL;
-	}
-
-	/* TODO: Is sdi->priv == NULL valid? */
-
-	vdev = sdi->priv;
-
-	return vdev;
-}
-
-/**
- * TODO.
- *
- * @param fd TODO.
- * @param revents TODO.
- * @param cb_data TODO.
- *
- * @return TODO.
- */
 static int receive_data(int fd, int revents, void *cb_data)
 {
 	struct sr_dev_inst *sdi;
@@ -91,11 +68,10 @@ static int receive_data(int fd, int revents, void *cb_data)
 	void *buf;
 	int ret, got_data;
 
-	/* Avoid compiler warnings. */
 	(void)fd;
 	(void)revents;
 
-	sr_dbg("session_driver: feed chunk");
+	sr_dbg("Feed chunk.");
 
 	got_data = FALSE;
 	for (l = dev_insts; l; l = l->next) {
@@ -106,9 +82,8 @@ static int receive_data(int fd, int revents, void *cb_data)
 			continue;
 
 		if (!(buf = g_try_malloc(CHUNKSIZE))) {
-			sr_err("session driver: %s: buf malloc failed",
-			       __func__);
-			return FALSE; /* TODO: SR_ERR_MALLOC */
+			sr_err("%s: buf malloc failed", __func__);
+			return FALSE;
 		}
 
 		ret = zip_fread(vdev->capfile, buf, CHUNKSIZE);
@@ -133,6 +108,7 @@ static int receive_data(int fd, int revents, void *cb_data)
 	if (!got_data) {
 		packet.type = SR_DF_END;
 		sr_session_send(cb_data, &packet);
+		sr_session_source_remove(-1);
 	}
 
 	return TRUE;
@@ -141,23 +117,13 @@ static int receive_data(int fd, int revents, void *cb_data)
 /* driver callbacks */
 static int hw_cleanup(void);
 
-/**
- * TODO.
- *
- * @param devinfo TODO.
- *
- * @return TODO.
- */
-static int hw_init(const char *devinfo)
+static int hw_init(struct sr_context *sr_ctx)
 {
-	sessionfile = g_strdup(devinfo);
+	(void)sr_ctx;
 
-	return 0;
+	return SR_OK;
 }
 
-/**
- * TODO.
- */
 static int hw_cleanup(void)
 {
 	GSList *l;
@@ -167,24 +133,13 @@ static int hw_cleanup(void)
 	g_slist_free(dev_insts);
 	dev_insts = NULL;
 
-	sr_session_source_remove(-1);
-
-	g_free(sessionfile);
-
 	return SR_OK;
 }
 
-static int hw_dev_open(int dev_index)
+static int hw_dev_open(struct sr_dev_inst *sdi)
 {
-	struct sr_dev_inst *sdi;
-
-	sdi = sr_dev_inst_new(dev_index, SR_ST_INITIALIZING,
-			      NULL, NULL, NULL);
-	if (!sdi)
-		return SR_ERR;
-
 	if (!(sdi->priv = g_try_malloc0(sizeof(struct session_vdev)))) {
-		sr_err("session driver: %s: sdi->priv malloc failed", __func__);
+		sr_err("%s: sdi->priv malloc failed", __func__);
 		return SR_ERR_MALLOC;
 	}
 
@@ -193,152 +148,126 @@ static int hw_dev_open(int dev_index)
 	return SR_OK;
 }
 
-static void *hw_dev_info_get(int dev_index, int dev_info_id)
+static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi)
 {
 	struct session_vdev *vdev;
-	void *info;
 
-	if (dev_info_id != SR_DI_CUR_SAMPLERATE)
-		return NULL;
-
-	if (!(vdev = get_vdev_by_index(dev_index)))
-		return NULL;
-
-	info = &vdev->samplerate;
-
-	return info;
-}
-
-static int hw_dev_status_get(int dev_index)
-{
-	/* Avoid compiler warnings. */
-	(void)dev_index;
-
-	if (sr_dev_list() != NULL)
-		return SR_OK;
-	else
-		return SR_ERR;
-}
-
-/**
- * Get the list of hardware capabilities.
- *
- * @return A pointer to the (hardware) capabilities of this virtual session
- *         driver. This could be NULL, if no such capabilities exist.
- */
-static int *hw_hwcap_get_all(void)
-{
-	return hwcaps;
-}
-
-static int hw_dev_config_set(int dev_index, int hwcap, void *value)
-{
-	struct session_vdev *vdev;
-	uint64_t *tmp_u64;
-
-	if (!(vdev = get_vdev_by_index(dev_index)))
-		return SR_ERR;
-
-	switch (hwcap) {
-	case SR_HWCAP_SAMPLERATE:
-		tmp_u64 = value;
-		vdev->samplerate = *tmp_u64;
-		sr_info("session driver: setting samplerate to %" PRIu64,
-		        vdev->samplerate);
-		break;
-	case SR_HWCAP_CAPTUREFILE:
-		vdev->capturefile = g_strdup(value);
-		sr_info("session driver: setting capturefile to %s",
-		        vdev->capturefile);
-		break;
-	case SR_HWCAP_CAPTURE_UNITSIZE:
-		tmp_u64 = value;
-		vdev->unitsize = *tmp_u64;
-		break;
-	case SR_HWCAP_CAPTURE_NUM_PROBES:
-		tmp_u64 = value;
-		vdev->num_probes = *tmp_u64;
+	switch (id) {
+	case SR_CONF_SAMPLERATE:
+		if (sdi) {
+			vdev = sdi->priv;
+			*data = g_variant_new_uint64(vdev->samplerate);
+		} else
+			return SR_ERR;
 		break;
 	default:
-		sr_err("session driver: %s: unknown capability %d requested",
-		       __func__, hwcap);
+		return SR_ERR_ARG;
+	}
+
+	return SR_OK;
+}
+
+static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
+{
+	struct session_vdev *vdev;
+
+	vdev = sdi->priv;
+
+	switch (id) {
+	case SR_CONF_SAMPLERATE:
+		vdev->samplerate = g_variant_get_uint64(data);
+		sr_info("Setting samplerate to %" PRIu64 ".", vdev->samplerate);
+		break;
+	case SR_CONF_SESSIONFILE:
+		vdev->sessionfile = g_strdup(g_variant_get_string(data, NULL));
+		sr_info("Setting sessionfile to '%s'.", vdev->sessionfile);
+		break;
+	case SR_CONF_CAPTUREFILE:
+		vdev->capturefile = g_strdup(g_variant_get_string(data, NULL));
+		sr_info("Setting capturefile to '%s'.", vdev->capturefile);
+		break;
+	case SR_CONF_CAPTURE_UNITSIZE:
+		vdev->unitsize = g_variant_get_uint64(data);
+		break;
+	case SR_CONF_CAPTURE_NUM_PROBES:
+		vdev->num_probes = g_variant_get_uint64(data);
+		break;
+	default:
+		sr_err("Unknown capability: %d.", id);
 		return SR_ERR;
 	}
 
 	return SR_OK;
 }
 
-static int hw_dev_acquisition_start(int dev_index, void *cb_data)
+static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
+{
+
+	(void)sdi;
+
+	switch (key) {
+	case SR_CONF_DEVICE_OPTIONS:
+		*data = g_variant_new_fixed_array(G_VARIANT_TYPE_INT32,
+				hwcaps, ARRAY_SIZE(hwcaps), sizeof(int32_t));
+		break;
+	default:
+		return SR_ERR_ARG;
+	}
+
+	return SR_OK;
+}
+
+static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
+		void *cb_data)
 {
 	struct zip_stat zs;
 	struct session_vdev *vdev;
-	struct sr_datafeed_header *header;
-	struct sr_datafeed_packet *packet;
 	int ret;
 
-	if (!(vdev = get_vdev_by_index(dev_index)))
-		return SR_ERR;
+	vdev = sdi->priv;
 
-	sr_info("session_driver: opening archive %s file %s", sessionfile,
+	sr_info("Opening archive %s file %s", vdev->sessionfile,
 		vdev->capturefile);
 
-	if (!(vdev->archive = zip_open(sessionfile, 0, &ret))) {
-		sr_err("session driver: Failed to open session file '%s': "
-		       "zip error %d\n", sessionfile, ret);
+	if (!(vdev->archive = zip_open(vdev->sessionfile, 0, &ret))) {
+		sr_err("Failed to open session file '%s': "
+		       "zip error %d\n", vdev->sessionfile, ret);
 		return SR_ERR;
 	}
 
 	if (zip_stat(vdev->archive, vdev->capturefile, 0, &zs) == -1) {
-		sr_err("session driver: Failed to check capture file '%s' in "
-		       "session file '%s'.", vdev->capturefile, sessionfile);
+		sr_err("Failed to check capture file '%s' in "
+		       "session file '%s'.", vdev->capturefile, vdev->sessionfile);
 		return SR_ERR;
 	}
 
 	if (!(vdev->capfile = zip_fopen(vdev->archive, vdev->capturefile, 0))) {
-		sr_err("session driver: Failed to open capture file '%s' in "
-		       "session file '%s'.", vdev->capturefile, sessionfile);
+		sr_err("Failed to open capture file '%s' in "
+		       "session file '%s'.", vdev->capturefile, vdev->sessionfile);
 		return SR_ERR;
 	}
+
+	/* Send header packet to the session bus. */
+	std_session_send_df_header(cb_data, LOG_PREFIX);
 
 	/* freewheeling source */
 	sr_session_source_add(-1, 0, 0, receive_data, cb_data);
 
-	if (!(packet = g_try_malloc(sizeof(struct sr_datafeed_packet)))) {
-		sr_err("session driver: %s: packet malloc failed", __func__);
-		return SR_ERR_MALLOC;
-	}
-
-	if (!(header = g_try_malloc(sizeof(struct sr_datafeed_header)))) {
-		sr_err("session driver: %s: header malloc failed", __func__);
-		return SR_ERR_MALLOC;
-	}
-
-	/* Send header packet to the session bus. */
-	packet->type = SR_DF_HEADER;
-	packet->payload = (unsigned char *)header;
-	header->feed_version = 1;
-	gettimeofday(&header->starttime, NULL);
-	header->samplerate = vdev->samplerate;
-	header->num_logic_probes = vdev->num_probes;
-	sr_session_send(cb_data, packet);
-	g_free(header);
-	g_free(packet);
-
 	return SR_OK;
 }
 
+/** @private */
 SR_PRIV struct sr_dev_driver session_driver = {
-	.name = "session",
+	.name = "virtual-session",
 	.longname = "Session-emulating driver",
 	.api_version = 1,
 	.init = hw_init,
 	.cleanup = hw_cleanup,
+	.config_get = config_get,
+	.config_set = config_set,
+	.config_list = config_list,
 	.dev_open = hw_dev_open,
 	.dev_close = NULL,
-	.dev_info_get = hw_dev_info_get,
-	.dev_status_get = hw_dev_status_get,
-	.hwcap_get_all = hw_hwcap_get_all,
-	.dev_config_set = hw_dev_config_set,
 	.dev_acquisition_start = hw_dev_acquisition_start,
 	.dev_acquisition_stop = NULL,
 };

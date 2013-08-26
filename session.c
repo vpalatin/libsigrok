@@ -1,5 +1,5 @@
 /*
- * This file is part of the sigrok project.
+ * This file is part of the libsigrok project.
  *
  * Copyright (C) 2010-2012 Bert Vermeulen <bert@biot.com>
  *
@@ -22,32 +22,56 @@
 #include <unistd.h>
 #include <string.h>
 #include <glib.h>
-#include "sigrok.h"
-#include "sigrok-internal.h"
+#include "libsigrok.h"
+#include "libsigrok-internal.h"
 
-/* demo.c. TODO: Should not be global! */
-extern SR_PRIV GIOChannel channels[2];
+/* Message logging helpers with subsystem-specific prefix string. */
+#define LOG_PREFIX "session: "
+#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
+#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
+#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
+#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
+#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
+#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+
+/**
+ * @file
+ *
+ * Creating, using, or destroying libsigrok sessions.
+ */
+
+/**
+ * @defgroup grp_session Session handling
+ *
+ * Creating, using, or destroying libsigrok sessions.
+ *
+ * @{
+ */
 
 struct source {
-	int fd;
-	int events;
 	int timeout;
 	sr_receive_data_callback_t cb;
+	void *cb_data;
+
+	/* This is used to keep track of the object (fd, pollfd or channel) which is
+	 * being polled and will be used to match the source when removing it again.
+	 */
+	gintptr poll_object;
+};
+
+struct datafeed_callback {
+	sr_datafeed_callback_t cb;
 	void *cb_data;
 };
 
 /* There can only be one session at a time. */
 /* 'session' is not static, it's used elsewhere (via 'extern'). */
 struct sr_session *session;
-static int num_sources = 0;
-
-static struct source *sources = NULL;
-static int source_timeout = -1;
 
 /**
  * Create a new session.
  *
- * TODO: Should it use the file-global "session" variable or take an argument?
+ * @todo Should it use the file-global "session" variable or take an argument?
  *       The same question applies to all the other session functions.
  *
  * @return A pointer to the newly allocated session, or NULL upon errors.
@@ -55,9 +79,13 @@ static int source_timeout = -1;
 SR_API struct sr_session *sr_session_new(void)
 {
 	if (!(session = g_try_malloc0(sizeof(struct sr_session)))) {
-		sr_err("session: %s: session malloc failed", __func__);
-		return NULL; /* TODO: SR_ERR_MALLOC? */
+		sr_err("Session malloc failed.");
+		return NULL;
 	}
+
+	session->source_timeout = -1;
+	session->abort_session = FALSE;
+	g_mutex_init(&session->stop_mutex);
 
 	return session;
 }
@@ -72,16 +100,15 @@ SR_API struct sr_session *sr_session_new(void)
 SR_API int sr_session_destroy(void)
 {
 	if (!session) {
-		sr_err("session: %s: session was NULL", __func__);
+		sr_err("%s: session was NULL", __func__);
 		return SR_ERR_BUG;
 	}
 
-	g_slist_free(session->devs);
-	session->devs = NULL;
+	sr_session_dev_remove_all();
 
 	/* TODO: Error checks needed? */
 
-	/* TODO: Loop over protocol decoders and free them. */
+	g_mutex_clear(&session->stop_mutex);
 
 	g_free(session);
 	session = NULL;
@@ -90,7 +117,7 @@ SR_API int sr_session_destroy(void)
 }
 
 /**
- * Remove all the devices from the current session. TODO?
+ * Remove all the devices from the current session.
  *
  * The session itself (i.e., the struct sr_session) is not free'd and still
  * exists after this function returns.
@@ -100,7 +127,7 @@ SR_API int sr_session_destroy(void)
 SR_API int sr_session_dev_remove_all(void)
 {
 	if (!session) {
-		sr_err("session: %s: session was NULL", __func__);
+		sr_err("%s: session was NULL", __func__);
 		return SR_ERR_BUG;
 	}
 
@@ -111,49 +138,43 @@ SR_API int sr_session_dev_remove_all(void)
 }
 
 /**
- * Add a device to the current session.
+ * Add a device instance to the current session.
  *
- * @param dev The device to add to the current session. Must not be NULL.
- *            Also, dev->driver and dev->driver->dev_open must not be NULL.
+ * @param sdi The device instance to add to the current session. Must not
+ *            be NULL. Also, sdi->driver and sdi->driver->dev_open must
+ *            not be NULL.
  *
  * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments.
  */
-SR_API int sr_session_dev_add(struct sr_dev *dev)
+SR_API int sr_session_dev_add(const struct sr_dev_inst *sdi)
 {
-	int ret;
 
-	if (!dev) {
-		sr_err("session: %s: dev was NULL", __func__);
+	if (!sdi) {
+		sr_err("%s: sdi was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
 	if (!session) {
-		sr_err("session: %s: session was NULL", __func__);
+		sr_err("%s: session was NULL", __func__);
 		return SR_ERR_BUG;
 	}
 
-	/* If dev->driver is NULL, this is a virtual device. */
-	if (!dev->driver) {
-		sr_dbg("session: %s: dev->driver was NULL, this seems to be "
+	/* If sdi->driver is NULL, this is a virtual device. */
+	if (!sdi->driver) {
+		sr_dbg("%s: sdi->driver was NULL, this seems to be "
 		       "a virtual device; continuing", __func__);
 		/* Just add the device, don't run dev_open(). */
-		session->devs = g_slist_append(session->devs, dev);
+		session->devs = g_slist_append(session->devs, (gpointer)sdi);
 		return SR_OK;
 	}
 
-	/* dev->driver is non-NULL (i.e. we have a real device). */
-	if (!dev->driver->dev_open) {
-		sr_err("session: %s: dev->driver->dev_open was NULL",
-		       __func__);
+	/* sdi->driver is non-NULL (i.e. we have a real device). */
+	if (!sdi->driver->dev_open) {
+		sr_err("%s: sdi->driver->dev_open was NULL", __func__);
 		return SR_ERR_BUG;
 	}
 
-	if ((ret = dev->driver->dev_open(dev->driver_index)) != SR_OK) {
-		sr_err("session: %s: dev_open failed (%d)", __func__, ret);
-		return ret;
-	}
-
-	session->devs = g_slist_append(session->devs, dev);
+	session->devs = g_slist_append(session->devs, (gpointer)sdi);
 
 	return SR_OK;
 }
@@ -166,11 +187,11 @@ SR_API int sr_session_dev_add(struct sr_dev *dev)
 SR_API int sr_session_datafeed_callback_remove_all(void)
 {
 	if (!session) {
-		sr_err("session: %s: session was NULL", __func__);
+		sr_err("%s: session was NULL", __func__);
 		return SR_ERR_BUG;
 	}
 
-	g_slist_free(session->datafeed_callbacks);
+	g_slist_free_full(session->datafeed_callbacks, g_free);
 	session->datafeed_callbacks = NULL;
 
 	return SR_OK;
@@ -181,73 +202,72 @@ SR_API int sr_session_datafeed_callback_remove_all(void)
  *
  * @param cb Function to call when a chunk of data is received.
  *           Must not be NULL.
+ * @param cb_data Opaque pointer passed in by the caller.
  *
  * @return SR_OK upon success, SR_ERR_BUG if no session exists.
  */
-SR_API int sr_session_datafeed_callback_add(sr_datafeed_callback_t cb)
+SR_API int sr_session_datafeed_callback_add(sr_datafeed_callback_t cb, void *cb_data)
 {
+	struct datafeed_callback *cb_struct;
+
 	if (!session) {
-		sr_err("session: %s: session was NULL", __func__);
+		sr_err("%s: session was NULL", __func__);
 		return SR_ERR_BUG;
 	}
 
 	if (!cb) {
-		sr_err("session: %s: cb was NULL", __func__);
+		sr_err("%s: cb was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
+	if (!(cb_struct = g_try_malloc0(sizeof(struct datafeed_callback))))
+		return SR_ERR_MALLOC;
+
+	cb_struct->cb = cb;
+	cb_struct->cb_data = cb_data;
+
 	session->datafeed_callbacks =
-	    g_slist_append(session->datafeed_callbacks, cb);
+	    g_slist_append(session->datafeed_callbacks, cb_struct);
 
 	return SR_OK;
 }
 
-/**
- * TODO.
- */
 static int sr_session_run_poll(void)
 {
-	GPollFD *fds, my_gpollfd;
-	int ret, i;
+	unsigned int i;
+	int ret;
 
-	fds = NULL;
-	while (session->running) {
-		/* TODO: Add comment. */
-		g_free(fds);
-
-		/* Construct g_poll()'s array. */
-		if (!(fds = g_try_malloc(sizeof(GPollFD) * num_sources))) {
-			sr_err("session: %s: fds malloc failed", __func__);
-			return SR_ERR_MALLOC;
-		}
-		for (i = 0; i < num_sources; i++) {
-#ifdef _WIN32
-			g_io_channel_win32_make_pollfd(&channels[0],
-					sources[i].events, &my_gpollfd);
-#else
-			my_gpollfd.fd = sources[i].fd;
-			my_gpollfd.events = sources[i].events;
-			fds[i] = my_gpollfd;
-#endif
-		}
-
-		ret = g_poll(fds, num_sources, source_timeout);
-
-		for (i = 0; i < num_sources; i++) {
-			if (fds[i].revents > 0 || (ret == 0
-				&& source_timeout == sources[i].timeout)) {
+	while (session->num_sources > 0) {
+		ret = g_poll(session->pollfds, session->num_sources,
+				session->source_timeout);
+		for (i = 0; i < session->num_sources; i++) {
+			if (session->pollfds[i].revents > 0 || (ret == 0
+				&& session->source_timeout == session->sources[i].timeout)) {
 				/*
 				 * Invoke the source's callback on an event,
-				 * or if the poll timeout out and this source
+				 * or if the poll timed out and this source
 				 * asked for that timeout.
 				 */
-				if (!sources[i].cb(fds[i].fd, fds[i].revents,
-						  sources[i].cb_data))
-					sr_session_source_remove(sources[i].fd);
+				if (!session->sources[i].cb(session->pollfds[i].fd,
+						session->pollfds[i].revents,
+						session->sources[i].cb_data))
+					sr_session_source_remove(session->sources[i].poll_object);
 			}
+			/*
+			 * We want to take as little time as possible to stop
+			 * the session if we have been told to do so. Therefore,
+			 * we check the flag after processing every source, not
+			 * just once per main event loop.
+			 */
+			g_mutex_lock(&session->stop_mutex);
+			if (session->abort_session) {
+				sr_session_stop_sync();
+				/* But once is enough. */
+				session->abort_session = FALSE;
+			}
+			g_mutex_unlock(&session->stop_mutex);
 		}
 	}
-	g_free(fds);
 
 	return SR_OK;
 }
@@ -261,33 +281,29 @@ static int sr_session_run_poll(void)
  */
 SR_API int sr_session_start(void)
 {
-	struct sr_dev *dev;
+	struct sr_dev_inst *sdi;
 	GSList *l;
 	int ret;
 
 	if (!session) {
-		sr_err("session: %s: session was NULL; a session must be "
-		       "created first, before starting it.", __func__);
+		sr_err("%s: session was NULL; a session must be "
+		       "created before starting it.", __func__);
 		return SR_ERR_BUG;
 	}
 
 	if (!session->devs) {
-		/* TODO: Actually the case? */
-		sr_err("session: %s: session->devs was NULL; a session "
+		sr_err("%s: session->devs was NULL; a session "
 		       "cannot be started without devices.", __func__);
 		return SR_ERR_BUG;
 	}
 
-	/* TODO: Check driver_index validity? */
+	sr_info("Starting.");
 
-	sr_info("session: starting");
-
+	ret = SR_OK;
 	for (l = session->devs; l; l = l->next) {
-		dev = l->data;
-		/* TODO: Check for dev != NULL. */
-		if ((ret = dev->driver->dev_acquisition_start(
-				dev->driver_index, dev)) != SR_OK) {
-			sr_err("session: %s: could not start an acquisition "
+		sdi = l->data;
+		if ((ret = sdi->driver->dev_acquisition_start(sdi, sdi)) != SR_OK) {
+			sr_err("%s: could not start an acquisition "
 			       "(%d)", __func__, ret);
 			break;
 		}
@@ -301,58 +317,34 @@ SR_API int sr_session_start(void)
 /**
  * Run the session.
  *
- * TODO: Various error checks etc.
- *
  * @return SR_OK upon success, SR_ERR_BUG upon errors.
  */
 SR_API int sr_session_run(void)
 {
 	if (!session) {
-		sr_err("session: %s: session was NULL; a session must be "
+		sr_err("%s: session was NULL; a session must be "
 		       "created first, before running it.", __func__);
 		return SR_ERR_BUG;
 	}
 
 	if (!session->devs) {
 		/* TODO: Actually the case? */
-		sr_err("session: %s: session->devs was NULL; a session "
+		sr_err("%s: session->devs was NULL; a session "
 		       "cannot be run without devices.", __func__);
 		return SR_ERR_BUG;
 	}
 
-	sr_info("session: running");
-	session->running = TRUE;
+	sr_info("Running.");
 
 	/* Do we have real sources? */
-	if (num_sources == 1 && sources[0].fd == -1) {
+	if (session->num_sources == 1 && session->pollfds[0].fd == -1) {
 		/* Dummy source, freewheel over it. */
-		while (session->running)
-			sources[0].cb(-1, 0, sources[0].cb_data);
+		while (session->num_sources)
+			session->sources[0].cb(-1, 0, session->sources[0].cb_data);
 	} else {
 		/* Real sources, use g_poll() main loop. */
 		sr_session_run_poll();
 	}
-
-	return SR_OK;
-}
-
-/**
- * Halt the current session.
- *
- * This requests the current session be stopped as soon as possible, for
- * example on receiving an SR_DF_END packet.
- *
- * @return SR_OK upon success, SR_ERR_BUG if no session exists.
- */
-SR_API int sr_session_halt(void)
-{
-	if (!session) {
-		sr_err("session: %s: session was NULL", __func__);
-		return SR_ERR_BUG;
-	}
-
-	sr_info("session: halting");
-	session->running = FALSE;
 
 	return SR_OK;
 }
@@ -363,31 +355,57 @@ SR_API int sr_session_halt(void)
  * The current session is stopped immediately, with all acquisition sessions
  * being stopped and hardware drivers cleaned up.
  *
+ * This must be called from within the session thread, to prevent freeing
+ * resources that the session thread will try to use.
+ *
+ * @return SR_OK upon success, SR_ERR_BUG if no session exists.
+ */
+SR_PRIV int sr_session_stop_sync(void)
+{
+	struct sr_dev_inst *sdi;
+	GSList *l;
+
+	if (!session) {
+		sr_err("%s: session was NULL", __func__);
+		return SR_ERR_BUG;
+	}
+
+	sr_info("Stopping.");
+
+	for (l = session->devs; l; l = l->next) {
+		sdi = l->data;
+		if (sdi->driver) {
+			if (sdi->driver->dev_acquisition_stop)
+				sdi->driver->dev_acquisition_stop(sdi, sdi);
+		}
+	}
+
+	return SR_OK;
+}
+
+/**
+ * Stop the current session.
+ *
+ * The current session is stopped immediately, with all acquisition sessions
+ * being stopped and hardware drivers cleaned up.
+ *
+ * If the session is run in a separate thread, this function will not block
+ * until the session is finished executing. It is the caller's responsibility
+ * to wait for the session thread to return before assuming that the session is
+ * completely decommissioned.
+ *
  * @return SR_OK upon success, SR_ERR_BUG if no session exists.
  */
 SR_API int sr_session_stop(void)
 {
-	struct sr_dev *dev;
-	GSList *l;
-
 	if (!session) {
-		sr_err("session: %s: session was NULL", __func__);
+		sr_err("%s: session was NULL", __func__);
 		return SR_ERR_BUG;
 	}
 
-	sr_info("session: stopping");
-	session->running = FALSE;
-
-	for (l = session->devs; l; l = l->next) {
-		dev = l->data;
-		/* Check for dev != NULL. */
-		if (dev->driver) {
-			if (dev->driver->dev_acquisition_stop)
-				dev->driver->dev_acquisition_stop(dev->driver_index, dev);
-			if (dev->driver->cleanup)
-				dev->driver->cleanup();
-		}
-	}
+	g_mutex_lock(&session->stop_mutex);
+	session->abort_session = TRUE;
+	g_mutex_unlock(&session->stop_mutex);
 
 	return SR_OK;
 }
@@ -397,27 +415,42 @@ SR_API int sr_session_stop(void)
  *
  * @param packet The packet to show debugging information for.
  */
-static void datafeed_dump(struct sr_datafeed_packet *packet)
+static void datafeed_dump(const struct sr_datafeed_packet *packet)
 {
-	struct sr_datafeed_logic *logic;
+	const struct sr_datafeed_logic *logic;
+	const struct sr_datafeed_analog *analog;
 
 	switch (packet->type) {
 	case SR_DF_HEADER:
-		sr_dbg("bus: received SR_DF_HEADER");
+		sr_dbg("bus: Received SR_DF_HEADER packet.");
 		break;
 	case SR_DF_TRIGGER:
-		sr_dbg("bus: received SR_DF_TRIGGER");
+		sr_dbg("bus: Received SR_DF_TRIGGER packet.");
+		break;
+	case SR_DF_META:
+		sr_dbg("bus: Received SR_DF_META packet.");
 		break;
 	case SR_DF_LOGIC:
 		logic = packet->payload;
-		/* TODO: Check for logic != NULL. */
-		sr_dbg("bus: received SR_DF_LOGIC %" PRIu64 " bytes", logic->length);
+		sr_dbg("bus: Received SR_DF_LOGIC packet (%" PRIu64 " bytes).",
+		       logic->length);
+		break;
+	case SR_DF_ANALOG:
+		analog = packet->payload;
+		sr_dbg("bus: Received SR_DF_ANALOG packet (%d samples).",
+		       analog->num_samples);
 		break;
 	case SR_DF_END:
-		sr_dbg("bus: received SR_DF_END");
+		sr_dbg("bus: Received SR_DF_END packet.");
+		break;
+	case SR_DF_FRAME_BEGIN:
+		sr_dbg("bus: Received SR_DF_FRAME_BEGIN packet.");
+		break;
+	case SR_DF_FRAME_END:
+		sr_dbg("bus: Received SR_DF_FRAME_END packet.");
 		break;
 	default:
-		sr_dbg("bus: received unknown packet type %d", packet->type);
+		sr_dbg("bus: Received unknown packet type: %d.", packet->type);
 		break;
 	}
 }
@@ -427,46 +460,100 @@ static void datafeed_dump(struct sr_datafeed_packet *packet)
  *
  * Hardware drivers use this to send a data packet to the frontend.
  *
- * @param dev TODO.
+ * @param sdi TODO.
  * @param packet The datafeed packet to send to the session bus.
  *
  * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments.
+ *
+ * @private
  */
-SR_PRIV int sr_session_send(struct sr_dev *dev,
-			    struct sr_datafeed_packet *packet)
+SR_PRIV int sr_session_send(const struct sr_dev_inst *sdi,
+			    const struct sr_datafeed_packet *packet)
 {
 	GSList *l;
-	sr_datafeed_callback_t cb;
+	struct datafeed_callback *cb_struct;
 
-	if (!dev) {
-		sr_err("session: %s: dev was NULL", __func__);
+	if (!sdi) {
+		sr_err("%s: sdi was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
 	if (!packet) {
-		sr_err("session: %s: packet was NULL", __func__);
+		sr_err("%s: packet was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
 	for (l = session->datafeed_callbacks; l; l = l->next) {
 		if (sr_log_loglevel_get() >= SR_LOG_DBG)
 			datafeed_dump(packet);
-		cb = l->data;
-		/* TODO: Check for cb != NULL. */
-		cb(dev, packet);
+		cb_struct = l->data;
+		cb_struct->cb(sdi, packet, cb_struct->cb_data);
 	}
 
 	return SR_OK;
 }
 
 /**
- * TODO.
+ * Add an event source for a file descriptor.
  *
- * TODO: More error checks etc.
+ * @param pollfd The GPollFD.
+ * @param timeout Max time to wait before the callback is called, ignored if 0.
+ * @param cb Callback function to add. Must not be NULL.
+ * @param cb_data Data for the callback function. Can be NULL.
+ * @param poll_object TODO.
  *
- * @param fd TODO.
- * @param events TODO.
- * @param timeout TODO.
+ * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
+ *         SR_ERR_MALLOC upon memory allocation errors.
+ */
+static int _sr_session_source_add(GPollFD *pollfd, int timeout,
+	sr_receive_data_callback_t cb, void *cb_data, gintptr poll_object)
+{
+	struct source *new_sources, *s;
+	GPollFD *new_pollfds;
+
+	if (!cb) {
+		sr_err("%s: cb was NULL", __func__);
+		return SR_ERR_ARG;
+	}
+
+	/* Note: cb_data can be NULL, that's not a bug. */
+
+	new_pollfds = g_try_realloc(session->pollfds,
+			sizeof(GPollFD) * (session->num_sources + 1));
+	if (!new_pollfds) {
+		sr_err("%s: new_pollfds malloc failed", __func__);
+		return SR_ERR_MALLOC;
+	}
+
+	new_sources = g_try_realloc(session->sources, sizeof(struct source) *
+			(session->num_sources + 1));
+	if (!new_sources) {
+		sr_err("%s: new_sources malloc failed", __func__);
+		return SR_ERR_MALLOC;
+	}
+
+	new_pollfds[session->num_sources] = *pollfd;
+	s = &new_sources[session->num_sources++];
+	s->timeout = timeout;
+	s->cb = cb;
+	s->cb_data = cb_data;
+	s->poll_object = poll_object;
+	session->pollfds = new_pollfds;
+	session->sources = new_sources;
+
+	if (timeout != session->source_timeout && timeout > 0
+	    && (session->source_timeout == -1 || timeout < session->source_timeout))
+		session->source_timeout = timeout;
+
+	return SR_OK;
+}
+
+/**
+ * Add an event source for a file descriptor.
+ *
+ * @param fd The file descriptor.
+ * @param events Events to check for.
+ * @param timeout Max time to wait before the callback is called, ignored if 0.
  * @param cb Callback function to add. Must not be NULL.
  * @param cb_data Data for the callback function. Can be NULL.
  *
@@ -476,38 +563,113 @@ SR_PRIV int sr_session_send(struct sr_dev *dev,
 SR_API int sr_session_source_add(int fd, int events, int timeout,
 		sr_receive_data_callback_t cb, void *cb_data)
 {
-	struct source *new_sources, *s;
+	GPollFD p;
 
-	if (!cb) {
-		sr_err("session: %s: cb was NULL", __func__);
-		return SR_ERR_ARG;
+	p.fd = fd;
+	p.events = events;
+
+	return _sr_session_source_add(&p, timeout, cb, cb_data, (gintptr)fd);
+}
+
+/**
+ * Add an event source for a GPollFD.
+ *
+ * @param pollfd The GPollFD.
+ * @param timeout Max time to wait before the callback is called, ignored if 0.
+ * @param cb Callback function to add. Must not be NULL.
+ * @param cb_data Data for the callback function. Can be NULL.
+ *
+ * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
+ *         SR_ERR_MALLOC upon memory allocation errors.
+ */
+SR_API int sr_session_source_add_pollfd(GPollFD *pollfd, int timeout,
+		sr_receive_data_callback_t cb, void *cb_data)
+{
+	return _sr_session_source_add(pollfd, timeout, cb,
+				      cb_data, (gintptr)pollfd);
+}
+
+/**
+ * Add an event source for a GIOChannel.
+ *
+ * @param channel The GIOChannel.
+ * @param events Events to poll on.
+ * @param timeout Max time to wait before the callback is called, ignored if 0.
+ * @param cb Callback function to add. Must not be NULL.
+ * @param cb_data Data for the callback function. Can be NULL.
+ *
+ * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
+ *         SR_ERR_MALLOC upon memory allocation errors.
+ */
+SR_API int sr_session_source_add_channel(GIOChannel *channel, int events,
+		int timeout, sr_receive_data_callback_t cb, void *cb_data)
+{
+	GPollFD p;
+
+#ifdef _WIN32
+	g_io_channel_win32_make_pollfd(channel, events, &p);
+#else
+	p.fd = g_io_channel_unix_get_fd(channel);
+	p.events = events;
+#endif
+
+	return _sr_session_source_add(&p, timeout, cb, cb_data, (gintptr)channel);
+}
+
+/**
+ * Remove the source belonging to the specified channel.
+ *
+ * @todo Add more error checks and logging.
+ *
+ * @param channel The channel for which the source should be removed.
+ *
+ * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
+ *         SR_ERR_MALLOC upon memory allocation errors, SR_ERR_BUG upon
+ *         internal errors.
+ */
+static int _sr_session_source_remove(gintptr poll_object)
+{
+	struct source *new_sources;
+	GPollFD *new_pollfds;
+	unsigned int old;
+
+	if (!session->sources || !session->num_sources) {
+		sr_err("%s: sources was NULL", __func__);
+		return SR_ERR_BUG;
 	}
 
-	/* Note: cb_data can be NULL, that's not a bug. */
+	for (old = 0; old < session->num_sources; old++) {
+		if (session->sources[old].poll_object == poll_object)
+			break;
+	}
 
-	new_sources = g_try_malloc0(sizeof(struct source) * (num_sources + 1));
-	if (!new_sources) {
-		sr_err("session: %s: new_sources malloc failed", __func__);
+	/* fd not found, nothing to do */
+	if (old == session->num_sources)
+		return SR_OK;
+
+	session->num_sources -= 1;
+
+	if (old != session->num_sources) {
+		memmove(&session->pollfds[old], &session->pollfds[old+1],
+			(session->num_sources - old) * sizeof(GPollFD));
+		memmove(&session->sources[old], &session->sources[old+1],
+			(session->num_sources - old) * sizeof(struct source));
+	}
+
+	new_pollfds = g_try_realloc(session->pollfds, sizeof(GPollFD) * session->num_sources);
+	if (!new_pollfds && session->num_sources > 0) {
+		sr_err("%s: new_pollfds malloc failed", __func__);
 		return SR_ERR_MALLOC;
 	}
 
-	if (sources) {
-		memcpy(new_sources, sources,
-		       sizeof(struct source) * num_sources);
-		g_free(sources);
+	new_sources = g_try_realloc(session->sources, sizeof(struct source) * session->num_sources);
+	if (!new_sources && session->num_sources > 0) {
+		sr_err("%s: new_sources malloc failed", __func__);
+		return SR_ERR_MALLOC;
 	}
 
-	s = &new_sources[num_sources++];
-	s->fd = fd;
-	s->events = events;
-	s->timeout = timeout;
-	s->cb = cb;
-	s->cb_data = cb_data;
-	sources = new_sources;
-
-	if (timeout != source_timeout && timeout > 0
-	    && (source_timeout == -1 || timeout < source_timeout))
-		source_timeout = timeout;
+	session->pollfds = new_pollfds;
+	session->sources = new_sources;
 
 	return SR_OK;
 }
@@ -515,9 +677,7 @@ SR_API int sr_session_source_add(int fd, int events, int timeout,
 /**
  * Remove the source belonging to the specified file descriptor.
  *
- * TODO: More error checks.
- *
- * @param fd TODO.
+ * @param fd The file descriptor for which the source should be removed.
  *
  * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
  *         SR_ERR_MALLOC upon memory allocation errors, SR_ERR_BUG upon
@@ -525,36 +685,35 @@ SR_API int sr_session_source_add(int fd, int events, int timeout,
  */
 SR_API int sr_session_source_remove(int fd)
 {
-	struct source *new_sources;
-	int old, new;
-
-	if (!sources) {
-		sr_err("session: %s: sources was NULL", __func__);
-		return SR_ERR_BUG;
-	}
-
-	/* TODO: Check if 'fd' valid. */
-
-	new_sources = g_try_malloc0(sizeof(struct source) * num_sources);
-	if (!new_sources) {
-		sr_err("session: %s: new_sources malloc failed", __func__);
-		return SR_ERR_MALLOC;
-	}
-
-	for (old = 0, new = 0; old < num_sources; old++) {
-		if (sources[old].fd != fd)
-			memcpy(&new_sources[new++], &sources[old],
-			       sizeof(struct source));
-	}
-
-	if (old != new) {
-		g_free(sources);
-		sources = new_sources;
-		num_sources--;
-	} else {
-		/* Target fd was not found. */
-		g_free(new_sources);
-	}
-
-	return SR_OK;
+	return _sr_session_source_remove((gintptr)fd);
 }
+
+/**
+ * Remove the source belonging to the specified poll descriptor.
+ *
+ * @param pollfd The poll descriptor for which the source should be removed.
+ *
+ * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
+ *         SR_ERR_MALLOC upon memory allocation errors, SR_ERR_BUG upon
+ *         internal errors.
+ */
+SR_API int sr_session_source_remove_pollfd(GPollFD *pollfd)
+{
+	return _sr_session_source_remove((gintptr)pollfd);
+}
+
+/**
+ * Remove the source belonging to the specified channel.
+ *
+ * @param channel The channel for which the source should be removed.
+ *
+ * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
+ *         SR_ERR_MALLOC upon memory allocation errors, SR_ERR_BUG upon
+ *         internal errors.
+ */
+SR_API int sr_session_source_remove_channel(GIOChannel *channel)
+{
+	return _sr_session_source_remove((gintptr)channel);
+}
+
+/** @} */

@@ -1,5 +1,5 @@
 ##
-## This file is part of the sigrok project.
+## This file is part of the libsigrok project.
 ##
 ## Copyright (C) 2010-2012 Uwe Hermann <uwe@hermann-uwe.de>
 ##
@@ -64,6 +64,14 @@ ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", MODE="664", GROUP="plugdev"
 # lsusb: "08a9:0014" (no string for the vendor name available)
 ATTRS{idVendor}=="08a9", ATTRS{idProduct}=="0014", MODE="664", GROUP="plugdev"
 
+# CWAV USBee DX
+# http://www.usbee.com/dx.html
+# lsusb: "08a9:0015" (no string for the vendor name available)
+#
+# XZL Studio DX (clone of the CWAV USBee DX)
+# lsusb: "08a9:0015" (no string for the vendor name available)
+ATTRS{idVendor}=="08a9", ATTRS{idProduct}=="0015", MODE="664", GROUP="plugdev"
+
 # CWAV USBee SX
 # http://www.usbee.com/sx.html
 # lsusb: "08a9:0009" (no string for the vendor name available)
@@ -85,6 +93,35 @@ ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="8613", MODE="664", GROUP="plugdev"
 # lsusb: "04b4:2090 Cypress Semiconductor Corp."
 # lsusb after FW upload: "04b5:2090 ROHM LSI Systems USA, LLC"
 ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="2090", MODE="664", GROUP="plugdev"
+ATTRS{idVendor}=="04b5", ATTRS{idProduct}=="2090", MODE="664", GROUP="plugdev"
+
+# Hantek DSO-2150
+# http://www.hantek.com.cn/english/produce_list.asp?unid=63
+# lsusb: "04b4:2150 Cypress Semiconductor Corp."
+# lsusb after FW upload: "04b5:2150 ROHM LSI Systems USA, LLC"
+ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="2150", MODE="664", GROUP="plugdev"
+ATTRS{idVendor}=="04b5", ATTRS{idProduct}=="2150", MODE="664", GROUP="plugdev"
+
+# Hantek DSO-2250
+# http://www.hantek.com.cn/english/produce_list.asp?unid=64
+# lsusb: "04b4:2250 Cypress Semiconductor Corp."
+# lsusb after FW upload: "04b5:2250 ROHM LSI Systems USA, LLC"
+ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="2250", MODE="664", GROUP="plugdev"
+ATTRS{idVendor}=="04b5", ATTRS{idProduct}=="2250", MODE="664", GROUP="plugdev"
+
+# Hantek DSO-5200
+# http://www.hantek.com.cn/english/produce_list.asp?unid=27
+# lsusb: "04b4:5200 Cypress Semiconductor Corp."
+# lsusb after FW upload: "04b5:5200 ROHM LSI Systems USA, LLC"
+ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="5200", MODE="664", GROUP="plugdev"
+ATTRS{idVendor}=="04b5", ATTRS{idProduct}=="5200", MODE="664", GROUP="plugdev"
+
+# Hantek DSO-5200A
+# http://www.hantek.com.cn/english/produce_list.asp?unid=66
+# lsusb: "04b4:520a Cypress Semiconductor Corp."
+# lsusb after FW upload: "04b5:520a ROHM LSI Systems USA, LLC"
+ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="520a", MODE="664", GROUP="plugdev"
+ATTRS{idVendor}=="04b5", ATTRS{idProduct}=="520a", MODE="664", GROUP="plugdev"
 
 # Ideofy LA-08
 # http://www.ideofy.com/la-08_en
@@ -100,6 +137,10 @@ ATTRS{idVendor}=="20a0", ATTRS{idProduct}=="4123", MODE="664", GROUP="plugdev"
 # http://www.pctestinstruments.com/
 # lsusb: "0403:dc48 Future Technology Devices International, Ltd"
 ATTRS{idVendor}=="0403", ATTRS{idProduct}=="dc48", MODE="664", GROUP="plugdev"
+
+# Lascar Electronics EL-USB series
+# This is actually the generic SILabs (Cygnal) F32x USBXpress VID:PID
+ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="0002", MODE="664", GROUP="plugdev"
 
 # Link Instruments MSO-19
 # http://www.linkinstruments.com/mso19.htm
@@ -121,6 +162,13 @@ ATTRS{idVendor}=="04d8", ATTRS{idProduct}=="0033", MODE="664", GROUP="plugdev"
 # lsusb: "0403:6010 Future Technology Devices International, Ltd FT2232C Dual USB-UART/FIFO IC"
 ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", MODE="664", GROUP="plugdev"
 
+# Nexus-Computing OsciPrime
+# http://www.osciprime.com/
+# The device comes up with the default Cypress FX2 VID:PID (04b4:8613), but
+# after firmware upload enumerates as this:
+# lsusb: "04b4:1004 Cypress Semiconductor Corp."
+ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="1004", MODE="664", GROUP="plugdev"
+
 # Openbench Logic Sniffer
 # http://www.gadgetfactory.net/gf/project/butterflylogic/
 # http://dangerousprototypes.com/open-logic-sniffer/
@@ -141,6 +189,10 @@ ATTRS{idVendor}=="16c0", ATTRS{idProduct}=="4e21", MODE="664", GROUP="plugdev"
 # http://int.rigol.com/prodserv/Discontinued%20products/
 # lsusb: "0400:03e8 National Semiconductor Corp."
 ATTRS{idVendor}=="0400", ATTRS{idProduct}=="03e8", MODE="664", GROUP="plugdev"
+
+# Rigol DS1052E/1102E
+# lsusb: 1ab1:0588
+ATTRS{idVendor}=="1ab1", ATTRS{idProduct}=="0588", MODE="664", GROUP="plugdev"
 
 # RockyLogic Ant8
 # http://www.rockylogic.com/products/ant8.html
@@ -175,15 +227,25 @@ ATTRS{idVendor}=="0925", ATTRS{idProduct}=="3881", MODE="664", GROUP="plugdev"
 # lsusb: "21a9:1001" (no string for the vendor name available)
 ATTRS{idVendor}=="21a9", ATTRS{idProduct}=="1001", MODE="664", GROUP="plugdev"
 
+# UNI-T UT-D04 multimeter cable (for various DMMs)
+# http://sigrok.org/wiki/Device_cables#UNI-T_UT-D04
+# lsusb: "1a86:e008 QinHeng Electronics HID-based serial adapater"
+ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="e008", MODE="664", GROUP="plugdev"
+
 # Velleman PCSU1000
 # http://www.velleman.eu/products/view/?id=362986
 # lsusb: "10cf:1000 Velleman Components, Inc."
 ATTRS{idVendor}=="10cf", ATTRS{idProduct}=="1000", MODE="664", GROUP="plugdev"
 
+# Victor 70C
+# http://www.china-victor.com/english/en/product_data.aspx?ClassID=168&ID=121
+ATTRS{idVendor}=="1244", ATTRS{idProduct}=="d237", MODE="664", GROUP="plugdev"
+
 # ZEROPLUS Logic Cube LAP-C series
 # http://www.zeroplus.com.tw/logic-analyzer_en/products.php#top_c
 # lsusb: "0c12:700e Zeroplus"
-# There are various devices in the ZEROPLUS Logic Cube LAP-C series:
+# There are various devices in the ZEROPLUS Logic Cube series:
+# 0x7002: LAP-16128U
 # 0x7009: LAP-C(16064)
 # 0x700a: LAP-C(16128)
 # 0x700b: LAP-C(32128)
@@ -191,6 +253,7 @@ ATTRS{idVendor}=="10cf", ATTRS{idProduct}=="1000", MODE="664", GROUP="plugdev"
 # 0x700d: LAP-C(322000)
 # 0x700e: LAP-C(16032)
 # 0x7016: LAP-C(162000)
+ATTRS{idVendor}=="0c12", ATTRS{idProduct}=="7002", MODE="664", GROUP="plugdev"
 ATTRS{idVendor}=="0c12", ATTRS{idProduct}=="7009", MODE="664", GROUP="plugdev"
 ATTRS{idVendor}=="0c12", ATTRS{idProduct}=="700a", MODE="664", GROUP="plugdev"
 ATTRS{idVendor}=="0c12", ATTRS{idProduct}=="700b", MODE="664", GROUP="plugdev"

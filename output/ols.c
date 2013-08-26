@@ -1,8 +1,8 @@
 /*
- * This file is part of the sigrok project.
+ * This file is part of the libsigrok project.
  *
  * Copyright (C) 2011 Uwe Hermann <uwe@hermann-uwe.de>
- * Copyright (C) 2010-2012 Bert Vermeulen <bert@biot.com>
+ * Copyright (C) 2013 Bert Vermeulen <bert@biot.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,98 +28,126 @@
 #include <stdlib.h>
 #include <string.h>
 #include <glib.h>
-#include "sigrok.h"
-#include "sigrok-internal.h"
+#include "libsigrok.h"
+#include "libsigrok-internal.h"
+
+/* Message logging helpers with subsystem-specific prefix string. */
+#define LOG_PREFIX "output/ols: "
+#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
+#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
+#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
+#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
+#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
+#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
 
 struct context {
-	GString *header;
+	uint64_t samplerate;
 	uint64_t num_samples;
-	unsigned int unitsize;
 };
 
 static int init(struct sr_output *o)
 {
 	struct context *ctx;
-	struct sr_probe *probe;
-	GSList *l;
-	uint64_t samplerate;
-	int num_enabled_probes;
 
 	if (!(ctx = g_try_malloc(sizeof(struct context)))) {
-		sr_err("ols out: %s: ctx malloc failed", __func__);
+		sr_err("%s: ctx malloc failed", __func__);
 		return SR_ERR_MALLOC;
 	}
 	o->internal = ctx;
 
+	ctx->samplerate = 0;
 	ctx->num_samples = 0;
+
+	return SR_OK;
+}
+
+static GString *gen_header(const struct sr_dev_inst *sdi, struct context *ctx)
+{
+	struct sr_probe *probe;
+	GSList *l;
+	GString *s;
+	GVariant *gvar;
+	int num_enabled_probes;
+
+	if (!ctx->samplerate && sr_config_get(sdi->driver, SR_CONF_SAMPLERATE,
+			&gvar, sdi) == SR_OK) {
+		ctx->samplerate = g_variant_get_uint64(gvar);
+		g_variant_unref(gvar);
+	}
+
 	num_enabled_probes = 0;
-	for (l = o->dev->probes; l; l = l->next) {
+	for (l = sdi->probes; l; l = l->next) {
 		probe = l->data;
 		if (probe->enabled)
 			num_enabled_probes++;
 	}
-	ctx->unitsize = (num_enabled_probes + 7) / 8;
 
-	if (o->dev->driver && sr_dev_has_hwcap(o->dev, SR_HWCAP_SAMPLERATE))
-		samplerate = *((uint64_t *) o->dev->driver->dev_info_get(
-				o->dev->driver_index, SR_DI_CUR_SAMPLERATE));
-	else
-		samplerate = 0;
+	s = g_string_sized_new(512);
+	g_string_append_printf(s, ";Rate: %"PRIu64"\n", ctx->samplerate);
+	g_string_append_printf(s, ";Channels: %d\n", num_enabled_probes);
+	g_string_append_printf(s, ";EnabledChannels: -1\n");
+	g_string_append_printf(s, ";Compressed: true\n");
+	g_string_append_printf(s, ";CursorEnabled: false\n");
 
-	ctx->header = g_string_sized_new(512);
-	g_string_append_printf(ctx->header, ";Rate: %"PRIu64"\n", samplerate);
-	g_string_append_printf(ctx->header, ";Channels: %d\n", num_enabled_probes);
-	g_string_append_printf(ctx->header, ";EnabledChannels: -1\n");
-	g_string_append_printf(ctx->header, ";Compressed: true\n");
-	g_string_append_printf(ctx->header, ";CursorEnabled: false\n");
+	return s;
+}
+
+static int receive(struct sr_output *o, const struct sr_dev_inst *sdi,
+		const struct sr_datafeed_packet *packet, GString **out)
+{
+	struct context *ctx;
+	const struct sr_datafeed_meta *meta;
+	const struct sr_datafeed_logic *logic;
+	const struct sr_config *src;
+	GSList *l;
+	unsigned int i, j;
+	uint8_t c;
+
+	*out = NULL;
+	if (!o || !o->sdi)
+		return SR_ERR_ARG;
+	ctx = o->internal;
+
+	switch (packet->type) {
+	case SR_DF_META:
+		meta = packet->payload;
+		for (l = meta->config; l; l = l->next) {
+			src = l->data;
+			if (src->key == SR_CONF_SAMPLERATE)
+				ctx->samplerate = g_variant_get_uint64(src->data);
+		}
+		break;
+	case SR_DF_LOGIC:
+		logic = packet->payload;
+		if (ctx->num_samples == 0) {
+			/* First logic packet in the feed. */
+			*out = gen_header(sdi, ctx);
+		} else
+			*out = g_string_sized_new(512);
+		for (i = 0; i <= logic->length - logic->unitsize; i += logic->unitsize) {
+			for (j = 0; j < logic->unitsize; j++) {
+				/* The OLS format wants the samples presented MSB first. */
+				c = *((uint8_t *)logic->data + i + logic->unitsize - 1 - j);
+				g_string_append_printf(*out, "%02x", c);
+			}
+			g_string_append_printf(*out, "@%"PRIu64"\n", ctx->num_samples++);
+		}
+		break;
+	}
 
 	return SR_OK;
 }
 
-static int event(struct sr_output *o, int event_type, uint8_t **data_out,
-		 uint64_t *length_out)
+static int cleanup(struct sr_output *o)
 {
 	struct context *ctx;
 
-	ctx = o->internal;
-
-	if (ctx && event_type == SR_DF_END) {
-		g_string_free(ctx->header, TRUE);
-		g_free(o->internal);
-		o->internal = NULL;
-	}
-
-	*data_out = NULL;
-	*length_out = 0;
-
-	return SR_OK;
-}
-
-static int data(struct sr_output *o, const uint8_t *data_in,
-		uint64_t length_in, uint8_t **data_out, uint64_t *length_out)
-{
-	GString *out;
-	struct context *ctx;
-	uint64_t sample;
-	unsigned int i;
+	if (!o || !o->sdi)
+		return SR_ERR_ARG;
 
 	ctx = o->internal;
-	if (ctx->header) {
-		/* first data packet */
-		out = ctx->header;
-		ctx->header = NULL;
-	} else
-		out = g_string_sized_new(512);
-
-	for (i = 0; i <= length_in - ctx->unitsize; i += ctx->unitsize) {
-		sample = 0;
-		memcpy(&sample, data_in + i, ctx->unitsize);
-		g_string_append_printf(out, "%08x@%"PRIu64"\n",
-				(uint32_t) sample, ctx->num_samples++);
-	}
-	*data_out = (uint8_t *)out->str;
-	*length_out = out->len;
-	g_string_free(out, FALSE);
+	g_free(ctx);
+	o->internal = NULL;
 
 	return SR_OK;
 }
@@ -129,6 +157,6 @@ SR_PRIV struct sr_output_format output_ols = {
 	.description = "OpenBench Logic Sniffer",
 	.df_type = SR_DF_LOGIC,
 	.init = init,
-	.data = data,
-	.event = event,
+	.receive = receive,
+	.cleanup = cleanup
 };

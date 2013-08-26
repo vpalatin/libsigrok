@@ -1,5 +1,5 @@
 ##
-## This file is part of the sigrok project.
+## This file is part of the libsigrok project.
 ##
 ## Copyright (C) 2011 Uwe Hermann <uwe@hermann-uwe.de>
 ##
@@ -23,8 +23,9 @@ if LA_OLS
 noinst_LTLIBRARIES = libsigrokhwols.la
 
 libsigrokhwols_la_SOURCES = \
-	ols.c \
-	ols.h
+	api.c \
+	protocol.c \
+	protocol.h
 
 libsigrokhwols_la_CFLAGS = \
 	-I$(top_srcdir)

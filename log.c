@@ -1,5 +1,5 @@
 /*
- * This file is part of the sigrok project.
+ * This file is part of the libsigrok project.
  *
  * Copyright (C) 2011-2012 Uwe Hermann <uwe@hermann-uwe.de>
  *
@@ -20,8 +20,22 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-#include "sigrok.h"
-#include "sigrok-internal.h"
+#include "libsigrok.h"
+#include "libsigrok-internal.h"
+
+/**
+ * @file
+ *
+ * Controlling the libsigrok message logging functionality.
+ */
+
+/**
+ * @defgroup grp_logging Logging
+ *
+ * Controlling the libsigrok message logging functionality.
+ *
+ * @{
+ */
 
 /* Currently selected libsigrok loglevel. Default: SR_LOG_WARN. */
 static int sr_loglevel = SR_LOG_WARN; /* Show errors+warnings per default. */
@@ -40,8 +54,10 @@ static sr_log_callback_t sr_log_callback = sr_logv;
 static void *sr_log_callback_data = NULL;
 
 /* Log domain (a short string that is used as prefix for all messages). */
+/** @cond PRIVATE */
 #define LOGDOMAIN_MAXLEN 30
 #define LOGDOMAIN_DEFAULT "sr: "
+/** @endcond */
 static char sr_log_domain[LOGDOMAIN_MAXLEN + 1] = LOGDOMAIN_DEFAULT;
 
 /**
@@ -58,6 +74,8 @@ static char sr_log_domain[LOGDOMAIN_MAXLEN + 1] = LOGDOMAIN_DEFAULT;
  *                 SR_LOG_INFO, SR_LOG_DBG, or SR_LOG_SPEW).
  *
  * @return SR_OK upon success, SR_ERR_ARG upon invalid loglevel.
+ *
+ * @since 0.1.0
  */
 SR_API int sr_log_loglevel_set(int loglevel)
 {
@@ -77,6 +95,8 @@ SR_API int sr_log_loglevel_set(int loglevel)
  * Get the libsigrok loglevel.
  *
  * @return The currently configured libsigrok loglevel.
+ *
+ * @since 0.1.0
  */
 SR_API int sr_log_loglevel_get(void)
 {
@@ -96,6 +116,8 @@ SR_API int sr_log_loglevel_get(void)
  *                  the caller does not need to keep it around.
  *
  * @return SR_OK upon success, SR_ERR_ARG upon invalid logdomain.
+ *
+ * @since 0.1.0
  */
 SR_API int sr_log_logdomain_set(const char *logdomain)
 {
@@ -118,6 +140,8 @@ SR_API int sr_log_logdomain_set(const char *logdomain)
  * @return A copy of the currently configured libsigrok logdomain
  *         string. The caller is responsible for g_free()ing the string when
  *         it is no longer needed.
+ *
+ * @since 0.1.0
  */
 SR_API char *sr_log_logdomain_get(void)
 {
@@ -136,6 +160,8 @@ SR_API char *sr_log_logdomain_get(void)
  *                to be NULL if the caller doesn't need/want to pass any data.
  *
  * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments.
+ *
+ * @since 0.1.0
  */
 SR_API int sr_log_callback_set(sr_log_callback_t cb, void *cb_data)
 {
@@ -158,6 +184,8 @@ SR_API int sr_log_callback_set(sr_log_callback_t cb, void *cb_data)
  * Additionally, the internal 'sr_log_callback_data' pointer is set to NULL.
  *
  * @return SR_OK upon success, a negative error code otherwise.
+ *
+ * @since 0.1.0
  */
 SR_API int sr_log_callback_set_default(void)
 {
@@ -190,6 +218,7 @@ static int sr_logv(void *cb_data, int loglevel, const char *format, va_list args
 	return ret;
 }
 
+/** @private */
 SR_PRIV int sr_log(int loglevel, const char *format, ...)
 {
 	int ret;
@@ -202,6 +231,7 @@ SR_PRIV int sr_log(int loglevel, const char *format, ...)
 	return ret;
 }
 
+/** @private */
 SR_PRIV int sr_spew(const char *format, ...)
 {
 	int ret;
@@ -214,6 +244,7 @@ SR_PRIV int sr_spew(const char *format, ...)
 	return ret;
 }
 
+/** @private */
 SR_PRIV int sr_dbg(const char *format, ...)
 {
 	int ret;
@@ -226,6 +257,7 @@ SR_PRIV int sr_dbg(const char *format, ...)
 	return ret;
 }
 
+/** @private */
 SR_PRIV int sr_info(const char *format, ...)
 {
 	int ret;
@@ -238,6 +270,7 @@ SR_PRIV int sr_info(const char *format, ...)
 	return ret;
 }
 
+/** @private */
 SR_PRIV int sr_warn(const char *format, ...)
 {
 	int ret;
@@ -250,6 +283,7 @@ SR_PRIV int sr_warn(const char *format, ...)
 	return ret;
 }
 
+/** @private */
 SR_PRIV int sr_err(const char *format, ...)
 {
 	int ret;
@@ -261,3 +295,5 @@ SR_PRIV int sr_err(const char *format, ...)
 
 	return ret;
 }
+
+/** @} */
