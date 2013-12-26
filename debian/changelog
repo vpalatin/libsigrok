@@ -1,3 +1,11 @@
+libsigrok (0.2.0-2.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Add libasound2-dev as a build-dependency, and as a dependency to
+    libsigrok-dev. Closes: #724126
+
+ -- David Prévot <taffit@debian.org>  Thu, 26 Dec 2013 17:22:48 -0400
+
 libsigrok (0.2.0-2) unstable; urgency=low
 
   * Fixed upload for 0.2.0-1 (which never left the NEW queue).
