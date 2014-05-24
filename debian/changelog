@@ -1,3 +1,27 @@
+libsigrok (0.3.0-1) unstable; urgency=medium
+
+  * Acknowledge NMU, thanks David Prévot (Closes: #724126).
+  * New upstream release.
+    + Bump version of libusb-1.0-0-dev build-dep to >= 1.0.16.
+    + Bump version of libzip-dev build-dep to >= 0.10.
+    + Add build-dep on libserialport >= 0.1.0.
+    + Drop build-deps on no longer used libudev and libasound.
+    + The libsigrok1 package now becomes libsigrok2 (upstream SO name change).
+  * Switch from cdbs to debhelper.
+  * Add multiarch support:
+    + Bump build-depend on debhelper (>= 9).
+    + Add "Pre-Depends: ${misc:Pre-Depends}" to the lib package.
+    + debian/compat: Bump version to 9.
+    + Adapt the paths in *.install files.
+    + Add "Multi-Arch: same" to the lib and -dev package.
+  * Standards-Version: 3.9.5 (no changes required).
+  * Use dh-autoreconf instead of autotools-dev in order to fix FTBFS on
+    (e.g.) ppc64el (Closes: #744061). Thanks Logan Rosen <logan@ubuntu.com>!
+  * Bring back accidentally missing udev rules file (Closes: #737766).
+    Thanks Roland Hieber <rohieb@rohieb.name> for the report!
+
+ -- Uwe Hermann <uwe@debian.org>  Sat, 24 May 2014 16:03:18 +0200
+
 libsigrok (0.2.0-2.1) unstable; urgency=medium
 
   * Non-maintainer upload.

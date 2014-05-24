@@ -1,18 +1,18 @@
 #!/usr/bin/make -f
 
-include /usr/share/cdbs/1/rules/debhelper.mk
-include /usr/share/cdbs/1/class/autotools.mk
-include /usr/share/cdbs/1/rules/utils.mk
+# export DH_VERBOSE=1
 
 # Reduce the number of unneeded dependencies with --as-needed.
-LDFLAGS += "-Wl,--as-needed"
+export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
-post-patches::
-	@# Copy udev rules file into debian/ so that dh_installudev finds it.
-	cp contrib/z60_libsigrok.rules debian/libsigrok.udev
+%:
+	dh $@ --with autoreconf --parallel
 
-clean::
-	rm -f debian/libsigrok.udev
+override_dh_auto_install:
+	cp contrib/z60_libsigrok.rules debian/libsigrok2.udev
+	dh_auto_install
 
-common-binary-post-install-arch:: list-missing
+override_dh_auto_clean:
+	dh_auto_clean
+	rm -f debian/libsigrok2.udev
 

@@ -1,7 +1,7 @@
-Format: http://dep.debian.net/deps/dep5
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: libsigrok
 Upstream-Contact: <sigrok-devel@lists.sourceforge.net>
-Source: https://sourceforge.net/projects/sigrok/files/source/libsigrok/
+Source: http://sigrok.org/download/source/libsigrok
 
 Files: *
 Copyright: 2010-2012 Bert Vermeulen <bert@biot.com>
@@ -55,7 +55,7 @@ Copyright: 2011 Uwe Hermann <uwe@hermann-uwe.de>
 License: GPL-3.0+
 
 Files: debian/*
-Copyright: 2012 Uwe Hermann <uwe@debian.org>
+Copyright: 2012-2014 Uwe Hermann <uwe@debian.org>
 License: GPL-2.0+
 
 License: GPL-2.0+
