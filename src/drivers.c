@@ -53,6 +53,9 @@ extern SR_PRIV struct sr_dev_driver cem_dt_885x_driver_info;
 extern SR_PRIV struct sr_dev_driver center_309_driver_info;
 extern SR_PRIV struct sr_dev_driver voltcraft_k204_driver_info;
 #endif
+#ifdef HAVE_HW_CHROMIUM_TWINKIE
+extern SR_PRIV struct sr_dev_driver chromium_twinkie_driver_info;
+#endif
 #ifdef HAVE_HW_CHRONOVU_LA
 extern SR_PRIV struct sr_dev_driver chronovu_la_driver_info;
 #endif
@@ -213,6 +216,9 @@ SR_PRIV struct sr_dev_driver **drivers_lists[] = {
 		&voltcraft_k204_driver_info,
 		NULL
 	},
+#endif
+#ifdef HAVE_HW_CHROMIUM_TWINKIE
+	(DRVS) {&chromium_twinkie_driver_info, NULL},
 #endif
 #ifdef HAVE_HW_CHRONOVU_LA
 	(DRVS) {&chronovu_la_driver_info, NULL},
