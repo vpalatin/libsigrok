@@ -55,6 +55,9 @@ ATTRS{idVendor}=="16d0", ATTRS{idProduct}=="0498", ENV{ID_SIGROK}="1"
 # Brymen BU-86X adapter (e.g. for Brymen BM867/BM869 and possibly others).
 ATTRS{idVendor}=="0820", ATTRS{idProduct}=="0001", ENV{ID_SIGROK}="1"
 
+# Chromium Twinkie dongle
+ATTRS{idVendor}=="18d1", ATTRS{idProduct}=="500a", ENV{ID_SIGROK}="1"
+
 # ChronoVu LA8 (new VID/PID)
 # ChronoVu LA16 (new VID/PID)
 ATTRS{idVendor}=="0403", ATTRS{idProduct}=="8867", ENV{ID_SIGROK}="1"
