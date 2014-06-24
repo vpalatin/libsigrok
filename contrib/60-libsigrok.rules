@@ -50,6 +50,9 @@ ATTRS{idVendor}=="0820", ATTRS{idProduct}=="0001", ENV{ID_SIGROK}="1"
 # CEM DT-8852
 ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", ENV{ID_SIGROK}="1"
 
+# Chromium Twinkie USB PD analyzer dongle
+ATTRS{idVendor}=="18d1", ATTRS{idProduct}=="500a", ENV{ID_SIGROK}="1"
+
 # ChronoVu LA8 (new VID/PID)
 # ChronoVu LA16 (new VID/PID)
 ATTRS{idVendor}=="0403", ATTRS{idProduct}=="8867", ENV{ID_SIGROK}="1"
