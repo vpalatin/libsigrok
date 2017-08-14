@@ -1,5 +1,5 @@
 /*
- * This file is part of the sigrok project.
+ * This file is part of the libsigrok project.
  *
  * Copyright (C) 2012 Joel Holdsworth <joel@airwebreathe.org.uk>
  *
@@ -18,11 +18,10 @@
  */
 
 #include <libusb.h>
-
+#include "libsigrok.h"
+#include "libsigrok-internal.h"
 #include "fx2lafw.h"
 #include "command.h"
-#include "sigrok.h"
-#include "sigrok-internal.h"
 
 SR_PRIV int command_get_fw_version(libusb_device_handle *devhdl,
 				   struct version_info *vi)
@@ -34,7 +33,8 @@ SR_PRIV int command_get_fw_version(libusb_device_handle *devhdl,
 		(unsigned char *)vi, sizeof(struct version_info), 100);
 
 	if (ret < 0) {
-		sr_err("fx2lafw: Unable to get version info: %d.", ret);
+		sr_err("Unable to get version info: %s.",
+		       libusb_error_name(ret));
 		return SR_ERR;
 	}
 
@@ -51,7 +51,7 @@ SR_PRIV int command_get_revid_version(libusb_device_handle *devhdl,
 		revid, 1, 100);
 
 	if (ret < 0) {
-		sr_err("fx2lafw: Unable to get REVID: %d.", ret);
+		sr_err("Unable to get REVID: %s.", libusb_error_name(ret));
 		return SR_ERR;
 	}
 
@@ -59,12 +59,18 @@ SR_PRIV int command_get_revid_version(libusb_device_handle *devhdl,
 }
 
 SR_PRIV int command_start_acquisition(libusb_device_handle *devhdl,
-				      uint64_t samplerate)
+				      uint64_t samplerate, gboolean samplewide)
 {
 	struct cmd_start_acquisition cmd;
 	int delay = 0, ret;
 
 	/* Compute the sample rate. */
+	if (samplewide && samplerate > MAX_16BIT_SAMPLE_RATE) {
+		sr_err("Unable to sample at %" PRIu64 "Hz "
+		       "when collecting 16-bit samples.", samplerate);
+		return SR_ERR;
+	}
+
 	if ((SR_MHZ(48) % samplerate) == 0) {
 		cmd.flags = CMD_START_FLAGS_CLK_48MHZ;
 		delay = SR_MHZ(48) / samplerate - 1;
@@ -77,24 +83,28 @@ SR_PRIV int command_start_acquisition(libusb_device_handle *devhdl,
 		delay = SR_MHZ(30) / samplerate - 1;
 	}
 
-	sr_info("fx2lafw: GPIF delay = %d, clocksource = %sMHz", delay,
+	sr_info("GPIF delay = %d, clocksource = %sMHz.", delay,
 		(cmd.flags & CMD_START_FLAGS_CLK_48MHZ) ? "48" : "30");
 
 	if (delay <= 0 || delay > MAX_SAMPLE_DELAY) {
-		sr_err("fx2lafw: Unable to sample at %" PRIu64 "Hz.",
-		       samplerate);
+		sr_err("Unable to sample at %" PRIu64 "Hz.", samplerate);
 		return SR_ERR;
 	}
 
 	cmd.sample_delay_h = (delay >> 8) & 0xff;
 	cmd.sample_delay_l = delay & 0xff;
 
+	/* Select the sampling width. */
+	cmd.flags |= samplewide ? CMD_START_FLAGS_SAMPLE_16BIT :
+		CMD_START_FLAGS_SAMPLE_8BIT;
+
 	/* Send the control message. */
 	ret = libusb_control_transfer(devhdl, LIBUSB_REQUEST_TYPE_VENDOR |
 			LIBUSB_ENDPOINT_OUT, CMD_START, 0x0000, 0x0000,
 			(unsigned char *)&cmd, sizeof(cmd), 100);
 	if (ret < 0) {
-		sr_err("fx2lafw: Unable to send start command: %d.", ret);
+		sr_err("Unable to send start command: %s.",
+		       libusb_error_name(ret));
 		return SR_ERR;
 	}
 

@@ -1,5 +1,5 @@
 /*
- * This file is part of the sigrok project.
+ * This file is part of the libsigrok project.
  *
  * Copyright (C) 2011 Uwe Hermann <uwe@hermann-uwe.de>
  *
@@ -22,8 +22,17 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
-#include "sigrok.h"
-#include "sigrok-internal.h"
+#include "libsigrok.h"
+#include "libsigrok-internal.h"
+
+/* Message logging helpers with subsystem-specific prefix string. */
+#define LOG_PREFIX "input/chronovu-la8: "
+#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
+#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
+#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
+#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
+#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
+#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
 
 #define NUM_PACKETS		2048
 #define PACKET_SIZE		4096
@@ -54,20 +63,20 @@ static int format_match(const char *filename)
 	int ret;
 
 	if (!filename) {
-		sr_err("la8 in: %s: filename was NULL", __func__);
+		sr_err("%s: filename was NULL", __func__);
 		// return SR_ERR; /* FIXME */
 		return FALSE;
 	}
 
 	if (!g_file_test(filename, G_FILE_TEST_EXISTS)) {
-		sr_err("la8 in: %s: input file '%s' does not exist",
+		sr_err("%s: input file '%s' does not exist",
 		       __func__, filename);
 		// return SR_ERR; /* FIXME */
 		return FALSE;
 	}
 
 	if (!g_file_test(filename, G_FILE_TEST_IS_REGULAR)) {
-		sr_err("la8 in: %s: input file '%s' not a regular file",
+		sr_err("%s: input file '%s' not a regular file",
 		       __func__, filename);
 		// return SR_ERR; /* FIXME */
 		return FALSE;
@@ -76,12 +85,12 @@ static int format_match(const char *filename)
 	/* Only accept files of length 8MB + 5 bytes. */
 	ret = stat(filename, &stat_buf);
 	if (ret != 0) {
-		sr_err("la8 in: %s: Error getting file size of '%s'",
+		sr_err("%s: Error getting file size of '%s'",
 		       __func__, filename);
 		return FALSE;
 	}
 	if (stat_buf.st_size != (8 * 1024 * 1024 + 5)) {
-		sr_dbg("la8 in: %s: File size must be exactly 8388613 bytes ("
+		sr_dbg("%s: File size must be exactly 8388613 bytes ("
 		       "it actually is %d bytes in size), so this is not a "
 		       "ChronoVu LA8 file.", __func__, stat_buf.st_size);
 		return FALSE;
@@ -92,28 +101,37 @@ static int format_match(const char *filename)
 	return TRUE;
 }
 
-static int init(struct sr_input *in)
+static int init(struct sr_input *in, const char *filename)
 {
+	struct sr_probe *probe;
 	int num_probes, i;
 	char name[SR_MAX_PROBENAME_LEN + 1];
+	char *param;
 
-	if (in->param && in->param[0]) {
-		num_probes = strtoul(in->param, NULL, 10);
-		if (num_probes < 1) {
-			sr_err("la8 in: %s: strtoul failed", __func__);
-			return SR_ERR;
+	(void)filename;
+
+	num_probes = DEFAULT_NUM_PROBES;
+
+	if (in->param) {
+		param = g_hash_table_lookup(in->param, "numprobes");
+		if (param) {
+			num_probes = strtoul(param, NULL, 10);
+			if (num_probes < 1) {
+				sr_err("%s: strtoul failed", __func__);
+				return SR_ERR;
+			}
 		}
-	} else {
-		num_probes = DEFAULT_NUM_PROBES;
 	}
 
 	/* Create a virtual device. */
-	in->vdev = sr_dev_new(NULL, 0);
+	in->sdi = sr_dev_inst_new(0, SR_ST_ACTIVE, NULL, NULL, NULL);
 
 	for (i = 0; i < num_probes; i++) {
 		snprintf(name, SR_MAX_PROBENAME_LEN, "%d", i);
 		/* TODO: Check return value. */
-		sr_dev_probe_add(in->vdev, name);
+		if (!(probe = sr_probe_new(i, SR_PROBE_LOGIC, TRUE, name)))
+			return SR_ERR;
+		in->sdi->probes = g_slist_append(in->sdi->probes, probe);
 	}
 
 	return SR_OK;
@@ -121,20 +139,21 @@ static int init(struct sr_input *in)
 
 static int loadfile(struct sr_input *in, const char *filename)
 {
-	struct sr_datafeed_header header;
 	struct sr_datafeed_packet packet;
+	struct sr_datafeed_meta meta;
 	struct sr_datafeed_logic logic;
+	struct sr_config *src;
 	uint8_t buf[PACKET_SIZE], divcount;
 	int i, fd, size, num_probes;
 	uint64_t samplerate;
 
 	/* TODO: Use glib functions! GIOChannel, g_fopen, etc. */
 	if ((fd = open(filename, O_RDONLY)) == -1) {
-		sr_err("la8 in: %s: file open failed", __func__);
+		sr_err("%s: file open failed", __func__);
 		return SR_ERR;
 	}
 
-	num_probes = g_slist_length(in->vdev->probes);
+	num_probes = g_slist_length(in->sdi->probes);
 
 	/* Seek to the end of the file, and read the divcount byte. */
 	divcount = 0x00; /* TODO: Don't hardcode! */
@@ -145,22 +164,23 @@ static int loadfile(struct sr_input *in, const char *filename)
 		close(fd); /* FIXME */
 		return SR_ERR;
 	}
-	sr_dbg("la8 in: %s: samplerate is %" PRIu64, __func__, samplerate);
+	sr_dbg("%s: samplerate is %" PRIu64, __func__, samplerate);
 
 	/* Send header packet to the session bus. */
-	sr_dbg("la8 in: %s: sending SR_DF_HEADER packet", __func__);
-	packet.type = SR_DF_HEADER;
-	packet.payload = &header;
-	header.feed_version = 1;
-	gettimeofday(&header.starttime, NULL);
-	header.num_logic_probes = num_probes;
-	header.samplerate = samplerate;
-	sr_session_send(in->vdev, &packet);
+	std_session_send_df_header(in->sdi, LOG_PREFIX);
+
+	/* Send metadata about the SR_DF_LOGIC packets to come. */
+	packet.type = SR_DF_META;
+	packet.payload = &meta;
+	src = sr_config_new(SR_CONF_SAMPLERATE, g_variant_new_uint64(samplerate));
+	meta.config = g_slist_append(NULL, src);
+	sr_session_send(in->sdi, &packet);
+	sr_config_free(src);
 
 	/* TODO: Handle trigger point. */
 
 	/* Send data packets to the session bus. */
-	sr_dbg("la8 in: %s: sending SR_DF_LOGIC data packets", __func__);
+	sr_dbg("%s: sending SR_DF_LOGIC data packets", __func__);
 	packet.type = SR_DF_LOGIC;
 	packet.payload = &logic;
 	logic.unitsize = (num_probes + 7) / 8;
@@ -171,15 +191,15 @@ static int loadfile(struct sr_input *in, const char *filename)
 		/* TODO: Handle errors, handle incomplete reads. */
 		size = read(fd, buf, PACKET_SIZE);
 		logic.length = size;
-		sr_session_send(in->vdev, &packet);
+		sr_session_send(in->sdi, &packet);
 	}
 	close(fd); /* FIXME */
 
 	/* Send end packet to the session bus. */
-	sr_dbg("la8 in: %s: sending SR_DF_END", __func__);
+	sr_dbg("%s: sending SR_DF_END", __func__);
 	packet.type = SR_DF_END;
 	packet.payload = NULL;
-	sr_session_send(in->vdev, &packet);
+	sr_session_send(in->sdi, &packet);
 
 	return SR_OK;
 }

@@ -1,5 +1,5 @@
 /*
- * This file is part of the sigrok project.
+ * This file is part of the libsigrok project.
  *
  * Copyright (C) 2010-2012 Bert Vermeulen <bert@biot.com>
  * Copyright (C) 2011 Håvard Espeland <gus@ping.uio.no>
@@ -21,9 +21,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <glib.h>
-#include "sigrok.h"
-#include "sigrok-internal.h"
+#include "libsigrok.h"
+#include "libsigrok-internal.h"
 #include "text.h"
+
+/* Message logging helpers with subsystem-specific prefix string. */
+#define LOG_PREFIX "output/hex: "
+#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
+#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
+#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
+#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
+#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
+#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
 
 SR_PRIV int init_hex(struct sr_output *o)
 {
@@ -37,7 +46,7 @@ SR_PRIV int data_hex(struct sr_output *o, const uint8_t *data_in,
 	struct context *ctx;
 	unsigned int outsize, offset, p;
 	int max_linelen;
-	uint64_t sample;
+	const uint8_t *sample;
 	uint8_t *outbuf;
 
 	ctx = o->internal;
@@ -47,7 +56,7 @@ SR_PRIV int data_hex(struct sr_output *o, const uint8_t *data_in,
 			/ ctx->samples_per_line * max_linelen + 512;
 
 	if (!(outbuf = g_try_malloc0(outsize + 1))) {
-		sr_err("hex out: %s: outbuf malloc failed", __func__);
+		sr_err("%s: outbuf malloc failed", __func__);
 		return SR_ERR_MALLOC;
 	}
 
@@ -62,10 +71,10 @@ SR_PRIV int data_hex(struct sr_output *o, const uint8_t *data_in,
 	ctx->line_offset = 0;
 	for (offset = 0; offset <= length_in - ctx->unitsize;
 	     offset += ctx->unitsize) {
-		memcpy(&sample, data_in + offset, ctx->unitsize);
+		sample = data_in + offset;
 		for (p = 0; p < ctx->num_enabled_probes; p++) {
 			ctx->linevalues[p] <<= 1;
-			if (sample & ((uint64_t) 1 << p))
+			if (sample[p / 8] & ((uint8_t) 1 << (p % 8)))
 				ctx->linevalues[p] |= 1;
 			sprintf((char *)ctx->linebuf + (p * ctx->linebuf_len) +
 				ctx->line_offset, "%.2x", ctx->linevalues[p]);

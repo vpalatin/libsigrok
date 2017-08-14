@@ -1,5 +1,5 @@
 ##
-## This file is part of the sigrok project.
+## This file is part of the libsigrok project.
 ##
 ## Copyright (C) 2011 Uwe Hermann <uwe@hermann-uwe.de>
 ##
@@ -17,13 +17,15 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
-if LA_ALSA
+if HW_ALSA
 
 # Local lib, this is NOT meant to be installed!
 noinst_LTLIBRARIES = libsigrokhwalsa.la
 
 libsigrokhwalsa_la_SOURCES = \
-	alsa.c
+	protocol.h \
+	protocol.c \
+	api.c
 
 libsigrokhwalsa_la_CFLAGS = \
 	-I$(top_srcdir)

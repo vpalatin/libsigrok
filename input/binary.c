@@ -1,7 +1,7 @@
 /*
- * This file is part of the sigrok project.
+ * This file is part of the libsigrok project.
  *
- * Copyright (C) 2010-2012 Bert Vermeulen <bert@biot.com>
+ * Copyright (C) 2013 Bert Vermeulen <bert@biot.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,41 +23,76 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include "sigrok.h"
-#include "sigrok-internal.h"
+#include "libsigrok.h"
+#include "libsigrok-internal.h"
+
+/* Message logging helpers with subsystem-specific prefix string. */
+#define LOG_PREFIX "input/binary: "
+#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
+#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
+#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
+#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
+#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
+#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
 
 #define CHUNKSIZE             (512 * 1024)
 #define DEFAULT_NUM_PROBES    8
 
+struct context {
+	uint64_t samplerate;
+};
+
 static int format_match(const char *filename)
 {
-	/* suppress compiler warning */
 	(void)filename;
 
-	/* this module will handle anything you throw at it */
+	/* This module will handle anything you throw at it. */
 	return TRUE;
 }
 
-static int init(struct sr_input *in)
+static int init(struct sr_input *in, const char *filename)
 {
+	struct sr_probe *probe;
 	int num_probes, i;
 	char name[SR_MAX_PROBENAME_LEN + 1];
+	char *param;
+	struct context *ctx;
 
-	if (in->param && in->param[0]) {
-		num_probes = strtoul(in->param, NULL, 10);
-		if (num_probes < 1)
-			return SR_ERR;
-	} else {
-		num_probes = DEFAULT_NUM_PROBES;
+	(void)filename;
+
+	if (!(ctx = g_try_malloc0(sizeof(*ctx)))) {
+		sr_err("Input format context malloc failed.");
+		return SR_ERR_MALLOC;
+	}
+
+	num_probes = DEFAULT_NUM_PROBES;
+	ctx->samplerate = 0;
+
+	if (in->param) {
+		param = g_hash_table_lookup(in->param, "numprobes");
+		if (param) {
+			num_probes = strtoul(param, NULL, 10);
+			if (num_probes < 1)
+				return SR_ERR;
+		}
+
+		param = g_hash_table_lookup(in->param, "samplerate");
+		if (param) {
+			if (sr_parse_sizestring(param, &ctx->samplerate) != SR_OK)
+				return SR_ERR;
+		}
 	}
 
 	/* Create a virtual device. */
-	in->vdev = sr_dev_new(NULL, 0);
+	in->sdi = sr_dev_inst_new(0, SR_ST_ACTIVE, NULL, NULL, NULL);
+	in->internal = ctx;
 
 	for (i = 0; i < num_probes; i++) {
 		snprintf(name, SR_MAX_PROBENAME_LEN, "%d", i);
 		/* TODO: Check return value. */
-		sr_dev_probe_add(in->vdev, name);
+		if (!(probe = sr_probe_new(i, SR_PROBE_LOGIC, TRUE, name)))
+			return SR_ERR;
+		in->sdi->probes = g_slist_append(in->sdi->probes, probe);
 	}
 
 	return SR_OK;
@@ -65,40 +100,51 @@ static int init(struct sr_input *in)
 
 static int loadfile(struct sr_input *in, const char *filename)
 {
-	struct sr_datafeed_header header;
 	struct sr_datafeed_packet packet;
+	struct sr_datafeed_meta meta;
 	struct sr_datafeed_logic logic;
+	struct sr_config *src;
 	unsigned char buffer[CHUNKSIZE];
 	int fd, size, num_probes;
+	struct context *ctx;
+
+	ctx = in->internal;
 
 	if ((fd = open(filename, O_RDONLY)) == -1)
 		return SR_ERR;
 
-	num_probes = g_slist_length(in->vdev->probes);
+	num_probes = g_slist_length(in->sdi->probes);
 
-	/* send header */
-	header.feed_version = 1;
-	header.num_logic_probes = num_probes;
-	header.samplerate = 0;
-	gettimeofday(&header.starttime, NULL);
-	packet.type = SR_DF_HEADER;
-	packet.payload = &header;
-	sr_session_send(in->vdev, &packet);
+	/* Send header packet to the session bus. */
+	std_session_send_df_header(in->sdi, LOG_PREFIX);
 
-	/* chop up the input file into chunks and feed it into the session bus */
+	if (ctx->samplerate) {
+		packet.type = SR_DF_META;
+		packet.payload = &meta;
+		src = sr_config_new(SR_CONF_SAMPLERATE,
+				g_variant_new_uint64(ctx->samplerate));
+		meta.config = g_slist_append(NULL, src);
+		sr_session_send(in->sdi, &packet);
+		sr_config_free(src);
+	}
+
+	/* Chop up the input file into chunks & send it to the session bus. */
 	packet.type = SR_DF_LOGIC;
 	packet.payload = &logic;
 	logic.unitsize = (num_probes + 7) / 8;
 	logic.data = buffer;
 	while ((size = read(fd, buffer, CHUNKSIZE)) > 0) {
 		logic.length = size;
-		sr_session_send(in->vdev, &packet);
+		sr_session_send(in->sdi, &packet);
 	}
 	close(fd);
 
-	/* end of stream */
+	/* Send end packet to the session bus. */
 	packet.type = SR_DF_END;
-	sr_session_send(in->vdev, &packet);
+	sr_session_send(in->sdi, &packet);
+
+	g_free(ctx);
+	in->internal = NULL;
 
 	return SR_OK;
 }

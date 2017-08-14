@@ -1,5 +1,5 @@
 ##
-## This file is part of the sigrok project.
+## This file is part of the libsigrok project.
 ##
 ## Copyright (C) 2011 Uwe Hermann <uwe@hermann-uwe.de>
 ##
@@ -17,18 +17,18 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
+SUBDIRS = dmm
+
 # Local lib, this is NOT meant to be installed!
 noinst_LTLIBRARIES = libsigrokhwcommon.la
 
-libsigrokhwcommon_la_SOURCES =
+libsigrokhwcommon_la_SOURCES = serial.c
 
-if LA_FX2LAFW
-libsigrokhwcommon_la_SOURCES += ezusb.c
+if NEED_USB
+libsigrokhwcommon_la_SOURCES += ezusb.c usb.c
 endif
 
-if LA_OLS
-libsigrokhwcommon_la_SOURCES += serial.c
-endif
+libsigrokhwcommon_la_LIBADD = dmm/libsigrok_hw_common_dmm.la
 
 libsigrokhwcommon_la_CFLAGS = \
 	-I$(top_srcdir)

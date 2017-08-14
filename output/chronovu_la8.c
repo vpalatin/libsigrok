@@ -1,5 +1,5 @@
 /*
- * This file is part of the sigrok project.
+ * This file is part of the libsigrok project.
  *
  * Copyright (C) 2011 Uwe Hermann <uwe@hermann-uwe.de>
  *
@@ -21,13 +21,21 @@
 #include <stdlib.h>
 #include <string.h>
 #include <glib.h>
-#include "sigrok.h"
-#include "sigrok-internal.h"
+#include "libsigrok.h"
+#include "libsigrok-internal.h"
+
+/* Message logging helpers with subsystem-specific prefix string. */
+#define LOG_PREFIX "output/chronovu-la8: "
+#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
+#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
+#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
+#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
+#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
+#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
 
 struct context {
 	unsigned int num_enabled_probes;
 	unsigned int unitsize;
-	char *probelist[SR_MAX_NUM_PROBES + 1];
 	uint64_t trigger_point;
 	uint64_t samplerate;
 };
@@ -48,7 +56,7 @@ static int is_valid_samplerate(uint64_t samplerate)
 			return 1;
 	}
 
-	sr_warn("la8 out: %s: invalid samplerate (%" PRIu64 "Hz)",
+	sr_warn("%s: invalid samplerate (%" PRIu64 "Hz)",
 		__func__, samplerate);
 
 	return 0;
@@ -68,13 +76,12 @@ static int is_valid_samplerate(uint64_t samplerate)
 static uint8_t samplerate_to_divcount(uint64_t samplerate)
 {
 	if (samplerate == 0) {
-		sr_warn("la8 out: %s: samplerate was 0", __func__);
+		sr_warn("%s: samplerate was 0", __func__);
 		return 0xff;
 	}
 
 	if (!is_valid_samplerate(samplerate)) {
-		sr_warn("la8 out: %s: can't get divcount, samplerate invalid",
-			__func__);
+		sr_warn("%s: can't get divcount, samplerate invalid", __func__);
 		return 0xff;
 	}
 
@@ -86,51 +93,42 @@ static int init(struct sr_output *o)
 	struct context *ctx;
 	struct sr_probe *probe;
 	GSList *l;
-	uint64_t samplerate;
+	GVariant *gvar;
 
 	if (!o) {
-		sr_warn("la8 out: %s: o was NULL", __func__);
+		sr_warn("%s: o was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
-	if (!o->dev) {
-		sr_warn("la8 out: %s: o->dev was NULL", __func__);
-		return SR_ERR_ARG;
-	}
-
-	if (!o->dev->driver) {
-		sr_warn("la8 out: %s: o->dev->driver was NULL", __func__);
+	if (!o->sdi) {
+		sr_warn("%s: o->sdi was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
 	if (!(ctx = g_try_malloc0(sizeof(struct context)))) {
-		sr_warn("la8 out: %s: ctx malloc failed", __func__);
+		sr_warn("%s: ctx malloc failed", __func__);
 		return SR_ERR_MALLOC;
 	}
 
 	o->internal = ctx;
 
-	/* Get the probe names and the unitsize. */
-	/* TODO: Error handling. */
-	for (l = o->dev->probes; l; l = l->next) {
+	/* Get the unitsize. */
+	for (l = o->sdi->probes; l; l = l->next) {
 		probe = l->data;
 		if (!probe->enabled)
 			continue;
-		ctx->probelist[ctx->num_enabled_probes++] = probe->name;
+		ctx->num_enabled_probes++;
 	}
-	ctx->probelist[ctx->num_enabled_probes] = 0;
 	ctx->unitsize = (ctx->num_enabled_probes + 7) / 8;
 
-	if (sr_dev_has_hwcap(o->dev, SR_HWCAP_SAMPLERATE)) {
-		samplerate = *((uint64_t *) o->dev->driver->dev_info_get(
-				o->dev->driver_index, SR_DI_CUR_SAMPLERATE));
-		/* TODO: Error checks. */
-	} else {
-		samplerate = 0; /* TODO: Error or set some value? */
-	}
-	ctx->samplerate = samplerate;
+	if (sr_config_get(o->sdi->driver, SR_CONF_SAMPLERATE, &gvar,
+			o->sdi) == SR_OK) {
+		ctx->samplerate = g_variant_get_uint64(gvar);
+		g_variant_unref(gvar);
+	} else
+		ctx->samplerate = 0;
 
-	return 0; /* TODO: SR_OK? */
+	return SR_OK;
 }
 
 static int event(struct sr_output *o, int event_type, uint8_t **data_out,
@@ -140,28 +138,28 @@ static int event(struct sr_output *o, int event_type, uint8_t **data_out,
 	uint8_t *outbuf;
 
 	if (!o) {
-		sr_warn("la8 out: %s: o was NULL", __func__);
+		sr_warn("%s: o was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
 	if (!(ctx = o->internal)) {
-		sr_warn("la8 out: %s: o->internal was NULL", __func__);
+		sr_warn("%s: o->internal was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
 	if (!data_out) {
-		sr_warn("la8 out: %s: data_out was NULL", __func__);
+		sr_warn("%s: data_out was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
 	switch (event_type) {
 	case SR_DF_TRIGGER:
-		sr_dbg("la8 out: %s: SR_DF_TRIGGER event", __func__);
+		sr_dbg("%s: SR_DF_TRIGGER event", __func__);
 		/* Save the trigger point for later (SR_DF_END). */
 		ctx->trigger_point = 0; /* TODO: Store _actual_ value. */
 		break;
 	case SR_DF_END:
-		sr_dbg("la8 out: %s: SR_DF_END event", __func__);
+		sr_dbg("%s: SR_DF_END event", __func__);
 		if (!(outbuf = g_try_malloc(4 + 1))) {
 			sr_warn("la8 out: %s: outbuf malloc failed", __func__);
 			return SR_ERR_MALLOC;
@@ -170,7 +168,7 @@ static int event(struct sr_output *o, int event_type, uint8_t **data_out,
 		/* One byte for the 'divcount' value. */
 		outbuf[0] = samplerate_to_divcount(ctx->samplerate);
 		// if (outbuf[0] == 0xff) {
-		// 	sr_warn("la8 out: %s: invalid divcount", __func__);
+		// 	sr_warn("%s: invalid divcount", __func__);
 		// 	return SR_ERR;
 		// }
 
@@ -186,7 +184,7 @@ static int event(struct sr_output *o, int event_type, uint8_t **data_out,
 		o->internal = NULL;
 		break;
 	default:
-		sr_warn("la8 out: %s: unsupported event type: %d", __func__,
+		sr_warn("%s: unsupported event type: %d", __func__,
 			event_type);
 		*data_out = NULL;
 		*length_out = 0;
@@ -203,22 +201,22 @@ static int data(struct sr_output *o, const uint8_t *data_in,
 	uint8_t *outbuf;
 
 	if (!o) {
-		sr_warn("la8 out: %s: o was NULL", __func__);
+		sr_warn("%s: o was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
 	if (!(ctx = o->internal)) {
-		sr_warn("la8 out: %s: o->internal was NULL", __func__);
+		sr_warn("%s: o->internal was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
 	if (!data_in) {
-		sr_warn("la8 out: %s: data_in was NULL", __func__);
+		sr_warn("%s: data_in was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
 	if (!(outbuf = g_try_malloc0(length_in))) {
-		sr_warn("la8 out: %s: outbuf malloc failed", __func__);
+		sr_warn("%s: outbuf malloc failed", __func__);
 		return SR_ERR_MALLOC;
 	}
 

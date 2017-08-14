@@ -1,5 +1,5 @@
 ##
-## This file is part of the sigrok project.
+## This file is part of the libsigrok project.
 ##
 ## Copyright (C) 2010 Uwe Hermann <uwe@hermann-uwe.de>
 ##
@@ -18,7 +18,11 @@
 ## Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 ##
 
-EXTRA_DIST = gnuplot_usbeesx.gpi \
-	     gnuplot_chronovu_la8.gpi \
+EXTRA_DIST = gnuplot_chronovu_la8.gpi \
+	     gnuplot_rigol_ds1xx2.gpi \
+	     gnuplot_usbeesx.gpi \
+	     gnuplot_usbeedx8.gpi \
+	     gnuplot_usbeedx16.gpi \
+	     sigrok-logo-notext.png \
 	     z60_libsigrok.rules
 

@@ -1,5 +1,5 @@
 ##
-## This file is part of the sigrok project.
+## This file is part of the libsigrok project.
 ##
 ## Copyright (C) 2011 Uwe Hermann <uwe@hermann-uwe.de>
 ##
@@ -24,7 +24,9 @@ if LA_CHRONOVU_LA8
 noinst_LTLIBRARIES = libsigrokhwchronovula8.la
 
 libsigrokhwchronovula8_la_SOURCES = \
-	chronovu-la8.c
+	api.c \
+	protocol.c \
+	protocol.h
 
 libsigrokhwchronovula8_la_CFLAGS = \
 	-I$(top_srcdir)

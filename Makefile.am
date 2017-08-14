@@ -1,7 +1,8 @@
 ##
-## This file is part of the sigrok project.
+## This file is part of the libsigrok project.
 ##
 ## Copyright (C) 2010-2012 Bert Vermeulen <bert@biot.com>
+## Copyright (C) 2012 Alexandru Gagniuc <mr.nuke.me@gmail.com>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -21,13 +22,12 @@ ACLOCAL_AMFLAGS = -I autostuff
 
 AM_CPPFLAGS = -I$(top_srcdir)
 
-SUBDIRS = contrib hardware input output
+SUBDIRS = contrib hardware input output tests
 
 lib_LTLIBRARIES = libsigrok.la
 
 libsigrok_la_SOURCES = \
 	backend.c \
-	datastore.c \
 	device.c \
 	session.c \
 	session_file.c \
@@ -36,7 +36,9 @@ libsigrok_la_SOURCES = \
 	filter.c \
 	strutil.c \
 	log.c \
-	version.c
+	version.c \
+	error.c \
+	std.c
 
 libsigrok_la_LIBADD = \
 	$(LIBOBJS) \
@@ -46,19 +48,20 @@ libsigrok_la_LIBADD = \
 
 libsigrok_la_LDFLAGS = $(SR_LIB_LDFLAGS)
 
-include_HEADERS = sigrok.h sigrok-proto.h
-noinst_HEADERS = sigrok-internal.h
+library_includedir = $(includedir)/libsigrok
+library_include_HEADERS = libsigrok.h proto.h version.h
+noinst_HEADERS = libsigrok-internal.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libsigrok.pc
 
-EXTRA_DIST = Doxyfile
+EXTRA_DIST = Doxyfile README.devices
 
 MAINTAINERCLEANFILES = ChangeLog
 
 .PHONY: ChangeLog
 ChangeLog:
-	git --git-dir $(top_srcdir)/../.git log > ChangeLog || touch ChangeLog
+	git --git-dir $(top_srcdir)/.git log > ChangeLog || touch ChangeLog
 
 dist-hook: ChangeLog
 

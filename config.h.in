@@ -12,11 +12,47 @@
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
 
-/* Define to 1 if you have the <inttypes.h> header file. */
-#undef HAVE_INTTYPES_H
+/* Agilent DMM support */
+#undef HAVE_HW_AGILENT_DMM
 
 /* ALSA driver support */
-#undef HAVE_LA_ALSA
+#undef HAVE_HW_ALSA
+
+/* Brymen DMM support */
+#undef HAVE_HW_BRYMEN_DMM
+
+/* Colead SLM support */
+#undef HAVE_HW_COLEAD_SLM
+
+/* Fluke DMM support */
+#undef HAVE_HW_FLUKE_DMM
+
+/* Hantek DSO support */
+#undef HAVE_HW_HANTEK_DSO
+
+/* Lascar EL-USB support */
+#undef HAVE_HW_LASCAR_EL_USB
+
+/* MIC 985xx support */
+#undef HAVE_HW_MIC_985XX
+
+/* Rigol DS1xx2 support */
+#undef HAVE_HW_RIGOL_DS1XX2
+
+/* Serial DMM support */
+#undef HAVE_HW_SERIAL_DMM
+
+/* Tondaj SL-814 support */
+#undef HAVE_HW_TONDAJ_SL_814
+
+/* UNI-T DMM support */
+#undef HAVE_HW_UNI_T_DMM
+
+/* Victor DMM support */
+#undef HAVE_HW_VICTOR_DMM
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
 
 /* ASIX SIGMA/SIGMA2 support */
 #undef HAVE_LA_ASIX_SIGMA
@@ -30,16 +66,13 @@
 /* fx2lafw support */
 #undef HAVE_LA_FX2LAFW
 
-/* Link Instruments MSO-19 support */
-#undef HAVE_LA_LINK_MSO19
-
 /* OpenBench Logic Sniffer (OLS) support */
 #undef HAVE_LA_OLS
 
 /* ZEROPLUS Logic Cube support */
 #undef HAVE_LA_ZEROPLUS_LOGIC_CUBE
 
-/* Define to 1 if you have the `usb-1.0' library (-lusb-1.0). */
+/* Specifies whether we have a libusb.h header. */
 #undef HAVE_LIBUSB_1_0
 
 /* Define to 1 if you have the <memory.h> header file. */
@@ -105,6 +138,9 @@
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
 #undef LT_OBJDIR
+
+/* Define to 1 if your C compiler doesn't accept -c and -o together. */
+#undef NO_MINUS_C_MINUS_O
 
 /* Name of package */
 #undef PACKAGE

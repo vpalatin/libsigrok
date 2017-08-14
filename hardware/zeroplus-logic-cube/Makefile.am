@@ -1,5 +1,5 @@
 ##
-## This file is part of the sigrok project.
+## This file is part of the libsigrok project.
 ##
 ## Copyright (C) 2011 Uwe Hermann <uwe@hermann-uwe.de>
 ##
@@ -23,11 +23,13 @@ if LA_ZEROPLUS_LOGIC_CUBE
 noinst_LTLIBRARIES = libsigrokhwzeroplus.la
 
 libsigrokhwzeroplus_la_SOURCES = \
+	api.c \
+	protocol.c \
+	protocol.h \
 	analyzer.c \
 	analyzer.h \
 	gl_usb.c \
-	gl_usb.h \
-	zeroplus.c
+	gl_usb.h
 
 libsigrokhwzeroplus_la_CFLAGS = \
 	-I$(top_srcdir)

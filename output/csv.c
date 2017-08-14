@@ -1,5 +1,5 @@
 /*
- * This file is part of the sigrok project.
+ * This file is part of the libsigrok project.
  *
  * Copyright (C) 2011 Uwe Hermann <uwe@hermann-uwe.de>
  *
@@ -21,14 +21,22 @@
 #include <stdlib.h>
 #include <string.h>
 #include <glib.h>
-#include "config.h"
-#include "sigrok.h"
-#include "sigrok-internal.h"
+#include "config.h" /* Needed for PACKAGE_STRING and others. */
+#include "libsigrok.h"
+#include "libsigrok-internal.h"
+
+/* Message logging helpers with subsystem-specific prefix string. */
+#define LOG_PREFIX "output/csv: "
+#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
+#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
+#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
+#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
+#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
+#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
 
 struct context {
 	unsigned int num_enabled_probes;
 	unsigned int unitsize;
-	char *probelist[SR_MAX_NUM_PROBES + 1];
 	uint64_t samplerate;
 	GString *header;
 	char separator;
@@ -51,57 +59,46 @@ static int init(struct sr_output *o)
 	struct context *ctx;
 	struct sr_probe *probe;
 	GSList *l;
+	GVariant *gvar;
 	int num_probes;
-	uint64_t samplerate;
 	time_t t;
-	unsigned int i;
 
 	if (!o) {
-		sr_err("csv out: %s: o was NULL", __func__);
+		sr_err("%s: o was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
-	if (!o->dev) {
-		sr_err("csv out: %s: o->dev was NULL", __func__);
-		return SR_ERR_ARG;
-	}
-
-	if (!o->dev->driver) {
-		sr_err("csv out: %s: o->dev->driver was NULL", __func__);
+	if (!o->sdi) {
+		sr_err("%s: o->sdi was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
 	if (!(ctx = g_try_malloc0(sizeof(struct context)))) {
-		sr_err("csv out: %s: ctx malloc failed", __func__);
+		sr_err("%s: ctx malloc failed", __func__);
 		return SR_ERR_MALLOC;
 	}
 
 	o->internal = ctx;
 
-	/* Get the number of probes, their names, and the unitsize. */
-	/* TODO: Error handling. */
-	for (l = o->dev->probes; l; l = l->next) {
+	/* Get the number of probes, and the unitsize. */
+	for (l = o->sdi->probes; l; l = l->next) {
 		probe = l->data;
-		if (!probe->enabled)
-			continue;
-		ctx->probelist[ctx->num_enabled_probes++] = probe->name;
+		if (probe->enabled)
+			ctx->num_enabled_probes++;
 	}
-	ctx->probelist[ctx->num_enabled_probes] = 0;
+
 	ctx->unitsize = (ctx->num_enabled_probes + 7) / 8;
 
-	num_probes = g_slist_length(o->dev->probes);
+	num_probes = g_slist_length(o->sdi->probes);
 
-	if (sr_dev_has_hwcap(o->dev, SR_HWCAP_SAMPLERATE)) {
-		samplerate = *((uint64_t *) o->dev->driver->dev_info_get(
-				o->dev->driver_index, SR_DI_CUR_SAMPLERATE));
-		/* TODO: Error checks. */
-	} else {
-		samplerate = 0; /* TODO: Error or set some value? */
-	}
-	ctx->samplerate = samplerate;
+	if (sr_config_get(o->sdi->driver, SR_CONF_SAMPLERATE, &gvar,
+			o->sdi) == SR_OK) {
+		ctx->samplerate = g_variant_get_uint64(gvar);
+		g_variant_unref(gvar);
+	} else
+		ctx->samplerate = 0;
 
 	ctx->separator = ',';
-
 	ctx->header = g_string_sized_new(512);
 
 	t = time(NULL);
@@ -115,11 +112,14 @@ static int init(struct sr_output *o)
 	/* Columns / channels */
 	g_string_append_printf(ctx->header, "; Channels (%d/%d): ",
 			       ctx->num_enabled_probes, num_probes);
-	for (i = 0; i < ctx->num_enabled_probes; i++)
-		g_string_append_printf(ctx->header, "%s, ", ctx->probelist[i]);
+	for (l = o->sdi->probes; l; l = l->next) {
+		probe = l->data;
+		if (probe->enabled)
+			g_string_append_printf(ctx->header, "%s, ", probe->name);
+	}
 	g_string_append_printf(ctx->header, "\n");
 
-	return 0; /* TODO: SR_OK? */
+	return SR_OK;
 }
 
 static int event(struct sr_output *o, int event_type, uint8_t **data_out,
@@ -128,29 +128,29 @@ static int event(struct sr_output *o, int event_type, uint8_t **data_out,
 	struct context *ctx;
 
 	if (!o) {
-		sr_err("csv out: %s: o was NULL", __func__);
+		sr_err("%s: o was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
 	if (!(ctx = o->internal)) {
-		sr_err("csv out: %s: o->internal was NULL", __func__);
+		sr_err("%s: o->internal was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
 	if (!data_out) {
-		sr_err("csv out: %s: data_out was NULL", __func__);
+		sr_err("%s: data_out was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
 	switch (event_type) {
 	case SR_DF_TRIGGER:
-		sr_dbg("csv out: %s: SR_DF_TRIGGER event", __func__);
+		sr_dbg("%s: SR_DF_TRIGGER event", __func__);
 		/* TODO */
 		*data_out = NULL;
 		*length_out = 0;
 		break;
 	case SR_DF_END:
-		sr_dbg("csv out: %s: SR_DF_END event", __func__);
+		sr_dbg("%s: SR_DF_END event", __func__);
 		/* TODO */
 		*data_out = NULL;
 		*length_out = 0;
@@ -158,8 +158,7 @@ static int event(struct sr_output *o, int event_type, uint8_t **data_out,
 		o->internal = NULL;
 		break;
 	default:
-		sr_err("csv out: %s: unsupported event type: %d", __func__,
-		       event_type);
+		sr_err("%s: unsupported event type: %d", __func__, event_type);
 		*data_out = NULL;
 		*length_out = 0;
 		break;
@@ -177,17 +176,17 @@ static int data(struct sr_output *o, const uint8_t *data_in,
 	int j;
 
 	if (!o) {
-		sr_err("csv out: %s: o was NULL", __func__);
+		sr_err("%s: o was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
 	if (!(ctx = o->internal)) {
-		sr_err("csv out: %s: o->internal was NULL", __func__);
+		sr_err("%s: o->internal was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
 	if (!data_in) {
-		sr_err("csv out: %s: data_in was NULL", __func__);
+		sr_err("%s: data_in was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 

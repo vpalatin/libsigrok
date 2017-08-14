@@ -1,5 +1,5 @@
 /*
- * This file is part of the sigrok project.
+ * This file is part of the libsigrok project.
  *
  * Copyright (C) 2010 Uwe Hermann <uwe@hermann-uwe.de>
  *
@@ -21,34 +21,42 @@
 #include <stdlib.h>
 #include <string.h>
 #include <glib.h>
-#include "sigrok.h"
-#include "sigrok-internal.h"
+#include "libsigrok.h"
+#include "libsigrok-internal.h"
+
+/* Message logging helpers with subsystem-specific prefix string. */
+#define LOG_PREFIX "output/binary: "
+#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
+#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
+#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
+#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
+#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
+#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
 
 static int data(struct sr_output *o, const uint8_t *data_in,
 		uint64_t length_in, uint8_t **data_out, uint64_t *length_out)
 {
 	uint8_t *outbuf;
 
-	/* Prevent compiler warnings. */
 	(void)o;
 
 	if (!data_in) {
-		sr_err("binary out: %s: data_in was NULL", __func__);
+		sr_err("%s: data_in was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
 	if (!length_out) {
-		sr_err("binary out: %s: length_out was NULL", __func__);
+		sr_err("%s: length_out was NULL", __func__);
 		return SR_ERR_ARG;
 	}
 
 	if (length_in == 0) {
-		sr_err("binary out: %s: length_in was 0", __func__);
+		sr_err("%s: length_in was 0", __func__);
 		return SR_ERR_ARG;
 	}
 
 	if (!(outbuf = g_try_malloc0(length_in))) {
-		sr_err("binary out: %s: outbuf malloc failed", __func__);
+		sr_err("%s: outbuf malloc failed", __func__);
 		return SR_ERR_MALLOC;
 	}
 

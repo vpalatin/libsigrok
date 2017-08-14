@@ -3,12 +3,25 @@ README
 -------------------------------------------------------------------------------
 
 The sigrok project aims at creating a portable, cross-platform,
-Free/Libre/Open-Source logic analyzer software that supports various
-logic analyzer hardware products.
+Free/Libre/Open-Source signal analysis software suite that supports various
+device types (such as logic analyzers, oscilloscopes, multimeters, and more).
 
 libsigrok is a shared library written in C which provides the basic API
-for talking to logic analyzer hardware and reading/writing the acquired data
-into various input/output file formats.
+for talking to hardware and reading/writing the acquired data into various
+input/output file formats.
+
+
+Status
+------
+
+libsigrok is in a usable state and has had official tarball releases.
+
+While the API can change from release to release, this will always be
+properly documented and reflected in the package version number and
+in the shared library / libtool / .so-file version numbers.
+
+However, there are _NO_ guarantees at all for stable APIs in git snapshots!
+Distro packagers should only use released tarballs (no git snapshots).
 
 
 Requirements
@@ -21,11 +34,12 @@ Requirements
  - automake >= 1.11
  - libtool
  - pkg-config >= 0.22
- - libglib >= 2.22.0
- - libusb >= 1.0.5 (for most logic analyzer hardware)
+ - libglib >= 2.32.0
  - libzip >= 0.8
- - libftdi >= 0.16 (for some logic analyzer hardware)
- - libudev >= 151 (for some logic analyzer hardware)
+ - libusb-1.0 >= 1.0.9 (optional, used by most drivers)
+ - libftdi >= 0.16 (optional, used by some drivers)
+ - libasound / alsa-lib >= 1.0 (optional, only used by the alsa driver)
+ - check >= 0.9.4 (optional, only needed to run unit tests)
 
 
 Building and installing
@@ -33,8 +47,8 @@ Building and installing
 
 In order to get the libsigrok source code and build it, run:
 
- $ git clone git://sigrok.git.sourceforge.net/gitroot/sigrok/sigrok
- $ cd sigrok/libsigrok
+ $ git clone git://sigrok.org/libsigrok
+ $ cd libsigrok
  $ ./autogen.sh
  $ ./configure
  $ make
@@ -43,29 +57,36 @@ For installing libsigrok:
 
  $ make install
 
-Please see the following wiki pages for more detailed instructions:
+See INSTALL or the following wiki page for more (OS-specific) instructions:
 
- http://sigrok.org/wiki/Linux
- http://sigrok.org/wiki/Mac_OS_X
- http://sigrok.org/wiki/Windows
- http://sigrok.org/wiki/FreeBSD
+ http://sigrok.org/wiki/Building
+
+
+Device-specific issues
+----------------------
+
+Please check README.devices for some notes and hints about device- or
+driver-specific issues to be aware of.
 
 
 Firmware
 --------
 
 Some devices supported by libsigrok need a firmware to be uploaded before the
-device can be used. 
+device can be used. See README.devices for details.
 
-The default location where libsigrok expects the firmware files is:
 
-  $prefix/share/sigrok-firmware
+Copyright and license
+---------------------
 
-($prefix is usually /usr/local or /usr, depending on your ./configure options)
+libsigrok is licensed under the terms of the GNU General Public License
+(GPL), version 3 or later.
 
-For further information see:
+While some individual source code files are licensed under the GPLv2+, and
+some files are licensed under the GPLv3+, this doesn't change the fact that
+the library as a whole is licensed under the terms of the GPLv3+.
 
-  http://sigrok.org/wiki/Firmware
+Please see the individual source files for the full list of copyright holders.
 
 
 Mailing lists
@@ -86,5 +107,5 @@ You can find the sigrok developers in the #sigrok IRC channel on Freenode.
 Website
 -------
 
-http://sigrok.org
+ http://sigrok.org/wiki/Libsigrok
 

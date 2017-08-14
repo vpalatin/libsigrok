@@ -1,7 +1,7 @@
 /*
- * This file is part of the sigrok project.
+ * This file is part of the libsigrok project.
  *
- * Copyright (C) 2010-2012 Bert Vermeulen <bert@biot.com>
+ * Copyright (C) 2013 Bert Vermeulen <bert@biot.com>
  * Copyright (C) 2012 Joel Holdsworth <joel@airwebreathe.org.uk>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,9 +23,8 @@
 #include <string.h>
 #include <inttypes.h>
 #include <libusb.h>
-#include "config.h"
-#include "sigrok.h"
-#include "sigrok-internal.h"
+#include "libsigrok.h"
+#include "libsigrok-internal.h"
 #include "fx2lafw.h"
 #include "command.h"
 
@@ -36,13 +35,22 @@ static const struct fx2lafw_profile supported_fx2[] = {
 	 * ARMFLY AX-Pro
 	 */
 	{ 0x08a9, 0x0014, "CWAV", "USBee AX", NULL,
-		FIRMWARE_DIR "/fx2lafw-cwav-usbeeax.fw", 8 },
+		FIRMWARE_DIR "/fx2lafw-cwav-usbeeax.fw",
+		0 },
+	/*
+	 * CWAV USBee DX
+	 * XZL-Studio DX
+	 */
+	{ 0x08a9, 0x0015, "CWAV", "USBee DX", NULL,
+		FIRMWARE_DIR "/fx2lafw-cwav-usbeedx.fw",
+		DEV_CAPS_16BIT },
 
 	/*
 	 * CWAV USBee SX
 	 */
 	{ 0x08a9, 0x0009, "CWAV", "USBee SX", NULL,
-		FIRMWARE_DIR "/fx2lafw-cwav-usbeesx.fw", 8 },
+		FIRMWARE_DIR "/fx2lafw-cwav-usbeesx.fw",
+		0 },
 
 	/*
 	 * Saleae Logic
@@ -51,7 +59,8 @@ static const struct fx2lafw_profile supported_fx2[] = {
 	 * Robomotic BugLogic 3
 	 */
 	{ 0x0925, 0x3881, "Saleae", "Logic", NULL,
-		FIRMWARE_DIR "/fx2lafw-saleae-logic.fw", 8 },
+		FIRMWARE_DIR "/fx2lafw-saleae-logic.fw",
+		0 },
 
 	/*
 	 * Default Cypress FX2 without EEPROM, e.g.:
@@ -59,43 +68,40 @@ static const struct fx2lafw_profile supported_fx2[] = {
 	 * Braintechnology USB Interface V2.x
 	 */
 	{ 0x04B4, 0x8613, "Cypress", "FX2", NULL,
-		FIRMWARE_DIR "/fx2lafw-cypress-fx2.fw", 8 },
+		FIRMWARE_DIR "/fx2lafw-cypress-fx2.fw",
+		DEV_CAPS_16BIT },
 
 	/*
 	 * Braintechnology USB-LPS
 	 */
 	{ 0x16d0, 0x0498, "Braintechnology", "USB-LPS", NULL,
-		FIRMWARE_DIR "/fx2lafw-braintechnology-usb-lps.fw", 8 },
+		FIRMWARE_DIR "/fx2lafw-braintechnology-usb-lps.fw",
+		DEV_CAPS_16BIT },
 
 	{ 0, 0, 0, 0, 0, 0, 0 }
 };
 
-static int hwcaps[] = {
-	SR_HWCAP_LOGIC_ANALYZER,
-	SR_HWCAP_SAMPLERATE,
-
-	/* These are really implemented in the driver, not the hardware. */
-	SR_HWCAP_LIMIT_SAMPLES,
-	SR_HWCAP_CONTINUOUS,
-	0,
+static const int32_t hwopts[] = {
+	SR_CONF_CONN,
 };
 
-/*
- * TODO: Different probe_names[] for each supported device.
- */
+static const int32_t hwcaps[] = {
+	SR_CONF_LOGIC_ANALYZER,
+	SR_CONF_TRIGGER_TYPE,
+	SR_CONF_SAMPLERATE,
+
+	/* These are really implemented in the driver, not the hardware. */
+	SR_CONF_LIMIT_SAMPLES,
+	SR_CONF_CONTINUOUS,
+};
+
 static const char *probe_names[] = {
-	"0",
-	"1",
-	"2",
-	"3",
-	"4",
-	"5",
-	"6",
-	"7",
+	"0",  "1",  "2",  "3",  "4",  "5",  "6",  "7",
+	"8",  "9", "10", "11", "12", "13", "14", "15",
 	NULL,
 };
 
-static uint64_t supported_samplerates[] = {
+static const uint64_t samplerates[] = {
 	SR_KHZ(20),
 	SR_KHZ(25),
 	SR_KHZ(50),
@@ -112,21 +118,10 @@ static uint64_t supported_samplerates[] = {
 	SR_MHZ(12),
 	SR_MHZ(16),
 	SR_MHZ(24),
-	0,
 };
 
-static struct sr_samplerates samplerates = {
-	0,
-	0,
-	0,
-	supported_samplerates,
-};
-
-static GSList *dev_insts = NULL;
-static libusb_context *usb_context = NULL;
-
-static int hw_dev_config_set(int dev_index, int hwcap, void *value);
-static int hw_dev_acquisition_stop(int dev_index, void *cb_data);
+SR_PRIV struct sr_dev_driver fx2lafw_driver_info;
+static struct sr_dev_driver *di = &fx2lafw_driver_info;
 
 /**
  * Check the USB configuration to determine if this is an fx2lafw device.
@@ -152,7 +147,7 @@ static gboolean check_conf_profile(libusb_device *dev)
 			break;
 
 		if (libusb_get_string_descriptor_ascii(hdl,
-				des.iManufacturer, strdesc, sizeof(strdesc)) < 0)
+		    des.iManufacturer, strdesc, sizeof(strdesc)) < 0)
 			break;
 		if (strncmp((const char *)strdesc, "sigrok", 6))
 			break;
@@ -172,45 +167,46 @@ static gboolean check_conf_profile(libusb_device *dev)
 	return ret;
 }
 
-static int fx2lafw_dev_open(int dev_index)
+static int fx2lafw_dev_open(struct sr_dev_inst *sdi)
 {
 	libusb_device **devlist;
+	struct sr_usb_dev_inst *usb;
 	struct libusb_device_descriptor des;
-	struct sr_dev_inst *sdi;
-	struct context *ctx;
+	struct dev_context *devc;
+	struct drv_context *drvc;
 	struct version_info vi;
-	int ret, skip, i;
+	int ret, skip, i, device_count;
 	uint8_t revid;
 
-	if (!(sdi = sr_dev_inst_get(dev_insts, dev_index)))
-		return SR_ERR;
-	ctx = sdi->priv;
+	drvc = di->priv;
+	devc = sdi->priv;
+	usb = sdi->conn;
 
 	if (sdi->status == SR_ST_ACTIVE)
-		/* already in use */
+		/* Device is already in use. */
 		return SR_ERR;
 
 	skip = 0;
-	const int device_count = libusb_get_device_list(usb_context, &devlist);
+	device_count = libusb_get_device_list(drvc->sr_ctx->libusb_ctx, &devlist);
 	if (device_count < 0) {
-		sr_err("fx2lafw: Failed to retrieve device list (%d)",
-			device_count);
+		sr_err("Failed to get device list: %s.",
+		       libusb_error_name(device_count));
 		return SR_ERR;
 	}
 
 	for (i = 0; i < device_count; i++) {
 		if ((ret = libusb_get_device_descriptor(devlist[i], &des))) {
-			sr_err("fx2lafw: Failed to get device descriptor: %d.",
-			       ret);
+			sr_err("Failed to get device descriptor: %s.",
+			       libusb_error_name(ret));
 			continue;
 		}
 
-		if (des.idVendor != ctx->profile->vid
-		    || des.idProduct != ctx->profile->pid)
+		if (des.idVendor != devc->profile->vid
+		    || des.idProduct != devc->profile->pid)
 			continue;
 
 		if (sdi->status == SR_ST_INITIALIZING) {
-			if (skip != dev_index) {
+			if (skip != sdi->index) {
 				/* Skip devices of this type that aren't the one we want. */
 				skip += 1;
 				continue;
@@ -220,34 +216,34 @@ static int fx2lafw_dev_open(int dev_index)
 			 * This device is fully enumerated, so we need to find
 			 * this device by vendor, product, bus and address.
 			 */
-			if (libusb_get_bus_number(devlist[i]) != ctx->usb->bus
-				|| libusb_get_device_address(devlist[i]) != ctx->usb->address)
-				/* this is not the one */
+			if (libusb_get_bus_number(devlist[i]) != usb->bus
+				|| libusb_get_device_address(devlist[i]) != usb->address)
+				/* This is not the one. */
 				continue;
 		}
 
-		if (!(ret = libusb_open(devlist[i], &ctx->usb->devhdl))) {
-			if (ctx->usb->address == 0xff)
+		if (!(ret = libusb_open(devlist[i], &usb->devhdl))) {
+			if (usb->address == 0xff)
 				/*
-				 * first time we touch this device after firmware upload,
-				 * so we don't know the address yet.
+				 * First time we touch this device after FW
+				 * upload, so we don't know the address yet.
 				 */
-				ctx->usb->address = libusb_get_device_address(devlist[i]);
+				usb->address = libusb_get_device_address(devlist[i]);
 		} else {
-			sr_err("fx2lafw: Failed to open device: %d.", ret);
+			sr_err("Failed to open device: %s.",
+			       libusb_error_name(ret));
 			break;
 		}
 
-		ret = command_get_fw_version(ctx->usb->devhdl, &vi);
+		ret = command_get_fw_version(usb->devhdl, &vi);
 		if (ret != SR_OK) {
-			sr_err("fx2lafw: Failed to retrieve "
-			       "firmware version information.");
+			sr_err("Failed to get firmware version.");
 			break;
 		}
 
-		ret = command_get_revid_version(ctx->usb->devhdl, &revid);
+		ret = command_get_revid_version(usb->devhdl, &revid);
 		if (ret != SR_OK) {
-			sr_err("fx2lafw: Failed to retrieve REVID.");
+			sr_err("Failed to get REVID.");
 			break;
 		}
 
@@ -257,17 +253,20 @@ static int fx2lafw_dev_open(int dev_index)
 		 * Different minor versions are OK, they should be compatible.
 		 */
 		if (vi.major != FX2LAFW_REQUIRED_VERSION_MAJOR) {
-			sr_err("fx2lafw: Expected firmware version %d.x, "
+			sr_err("Expected firmware version %d.x, "
 			       "got %d.%d.", FX2LAFW_REQUIRED_VERSION_MAJOR,
 			       vi.major, vi.minor);
 			break;
 		}
 
 		sdi->status = SR_ST_ACTIVE;
-		sr_info("fx2lafw: Opened device %d on %d.%d "
-			"interface %d, firmware %d.%d, REVID %d.",
-			sdi->index, ctx->usb->bus, ctx->usb->address,
-			USB_INTERFACE, vi.major, vi.minor, revid);
+		sr_info("Opened device %d on %d.%d, "
+			"interface %d, firmware %d.%d.",
+			sdi->index, usb->bus, usb->address,
+			USB_INTERFACE, vi.major, vi.minor);
+
+		sr_info("Detected REVID=%d, it's a Cypress CY7C68013%s.",
+			revid, (revid != 1) ? " (FX2)" : "A (FX2LP)");
 
 		break;
 	}
@@ -279,49 +278,38 @@ static int fx2lafw_dev_open(int dev_index)
 	return SR_OK;
 }
 
-static void close_dev(struct sr_dev_inst *sdi)
+static int configure_probes(const struct sr_dev_inst *sdi)
 {
-	struct context *ctx;
-
-	ctx = sdi->priv;
-
-	if (ctx->usb->devhdl == NULL)
-		return;
-
-	sr_info("fx2lafw: Closing device %d on %d.%d interface %d.",
-		sdi->index, ctx->usb->bus, ctx->usb->address, USB_INTERFACE);
-	libusb_release_interface(ctx->usb->devhdl, USB_INTERFACE);
-	libusb_close(ctx->usb->devhdl);
-	ctx->usb->devhdl = NULL;
-	sdi->status = SR_ST_INACTIVE;
-}
-
-static int configure_probes(struct context *ctx, GSList *probes)
-{
+	struct dev_context *devc;
 	struct sr_probe *probe;
 	GSList *l;
 	int probe_bit, stage, i;
 	char *tc;
 
+	devc = sdi->priv;
 	for (i = 0; i < NUM_TRIGGER_STAGES; i++) {
-		ctx->trigger_mask[i] = 0;
-		ctx->trigger_value[i] = 0;
+		devc->trigger_mask[i] = 0;
+		devc->trigger_value[i] = 0;
 	}
 
 	stage = -1;
-	for (l = probes; l; l = l->next) {
+	for (l = sdi->probes; l; l = l->next) {
 		probe = (struct sr_probe *)l->data;
 		if (probe->enabled == FALSE)
 			continue;
-		probe_bit = 1 << (probe->index - 1);
+
+		if (probe->index > 7)
+			devc->sample_wide = TRUE;
+
+		probe_bit = 1 << (probe->index);
 		if (!(probe->trigger))
 			continue;
 
 		stage = 0;
 		for (tc = probe->trigger; *tc; tc++) {
-			ctx->trigger_mask[stage] |= probe_bit;
+			devc->trigger_mask[stage] |= probe_bit;
 			if (*tc == '1')
-				ctx->trigger_value[stage] |= probe_bit;
+				devc->trigger_value[stage] |= probe_bit;
 			stage++;
 			if (stage > NUM_TRIGGER_STAGES)
 				return SR_ERR;
@@ -333,57 +321,94 @@ static int configure_probes(struct context *ctx, GSList *probes)
 		 * We didn't configure any triggers, make sure acquisition
 		 * doesn't wait for any.
 		 */
-		ctx->trigger_stage = TRIGGER_FIRED;
+		devc->trigger_stage = TRIGGER_FIRED;
 	else
-		ctx->trigger_stage = 0;
+		devc->trigger_stage = 0;
 
 	return SR_OK;
 }
 
-static struct context *fx2lafw_dev_new(void)
+static struct dev_context *fx2lafw_dev_new(void)
 {
-	struct context *ctx;
+	struct dev_context *devc;
 
-	if (!(ctx = g_try_malloc0(sizeof(struct context)))) {
-		sr_err("fx2lafw: %s: ctx malloc failed.", __func__);
+	if (!(devc = g_try_malloc(sizeof(struct dev_context)))) {
+		sr_err("Device context malloc failed.");
 		return NULL;
 	}
 
-	ctx->trigger_stage = TRIGGER_FIRED;
+	devc->profile = NULL;
+	devc->fw_updated = 0;
+	devc->cur_samplerate = 0;
+	devc->limit_samples = 0;
+	devc->sample_wide = 0;
 
-	return ctx;
+
+	return devc;
 }
 
-/*
- * API callbacks
- */
-
-static int hw_init(const char *devinfo)
+static int clear_instances(void)
 {
+	return std_dev_clear(di, NULL);
+}
+
+static int hw_init(struct sr_context *sr_ctx)
+{
+	return std_hw_init(sr_ctx, di, LOG_PREFIX);
+}
+
+static GSList *hw_scan(GSList *options)
+{
+	struct drv_context *drvc;
+	struct dev_context *devc;
 	struct sr_dev_inst *sdi;
-	struct libusb_device_descriptor des;
+	struct sr_usb_dev_inst *usb;
+	struct sr_probe *probe;
+	struct sr_config *src;
 	const struct fx2lafw_profile *prof;
-	struct context *ctx;
+	GSList *l, *devices, *conn_devices;
+	struct libusb_device_descriptor des;
 	libusb_device **devlist;
-	int ret;
-	int devcnt = 0;
-	int i, j;
+	int devcnt, num_logic_probes, ret, i, j;
+	const char *conn;
 
-	/* Avoid compiler warnings. */
-	(void)devinfo;
+	drvc = di->priv;
 
-	if (libusb_init(&usb_context) != 0) {
-		sr_warn("fx2lafw: Failed to initialize libusb.");
-		return 0;
+	conn = NULL;
+	for (l = options; l; l = l->next) {
+		src = l->data;
+		switch (src->key) {
+		case SR_CONF_CONN:
+			conn = g_variant_get_string(src->data, NULL);
+			break;
+		}
 	}
+	if (conn)
+		conn_devices = sr_usb_find(drvc->sr_ctx->libusb_ctx, conn);
+	else
+		conn_devices = NULL;
 
 	/* Find all fx2lafw compatible devices and upload firmware to them. */
-	libusb_get_device_list(usb_context, &devlist);
+	devices = NULL;
+	libusb_get_device_list(drvc->sr_ctx->libusb_ctx, &devlist);
 	for (i = 0; devlist[i]; i++) {
+		if (conn) {
+			usb = NULL;
+			for (l = conn_devices; l; l = l->next) {
+				usb = l->data;
+				if (usb->bus == libusb_get_bus_number(devlist[i])
+					&& usb->address == libusb_get_device_address(devlist[i]))
+					break;
+			}
+			if (!l)
+				/* This device matched none of the ones that
+				 * matched the conn specification. */
+				continue;
+		}
 
-		if ((ret = libusb_get_device_descriptor(
-		     devlist[i], &des)) != 0) {
-			sr_warn("fx2lafw: Failed to get device descriptor: %d.", ret);
+		if ((ret = libusb_get_device_descriptor( devlist[i], &des)) != 0) {
+			sr_warn("Failed to get device descriptor: %s.",
+				libusb_error_name(ret));
 			continue;
 		}
 
@@ -395,332 +420,412 @@ static int hw_init(const char *devinfo)
 			}
 		}
 
-		/* Skip if the device was not found */
+		/* Skip if the device was not found. */
 		if (!prof)
 			continue;
 
+		devcnt = g_slist_length(drvc->instances);
 		sdi = sr_dev_inst_new(devcnt, SR_ST_INITIALIZING,
 			prof->vendor, prof->model, prof->model_version);
 		if (!sdi)
-			return 0;
+			return NULL;
+		sdi->driver = di;
 
-		ctx = fx2lafw_dev_new();
-		ctx->profile = prof;
-		sdi->priv = ctx;
-		dev_insts = g_slist_append(dev_insts, sdi);
+		/* Fill in probelist according to this device's profile. */
+		num_logic_probes = prof->dev_caps & DEV_CAPS_16BIT ? 16 : 8;
+		for (j = 0; j < num_logic_probes; j++) {
+			if (!(probe = sr_probe_new(j, SR_PROBE_LOGIC, TRUE,
+					probe_names[j])))
+				return NULL;
+			sdi->probes = g_slist_append(sdi->probes, probe);
+		}
+
+		devc = fx2lafw_dev_new();
+		devc->profile = prof;
+		sdi->priv = devc;
+		drvc->instances = g_slist_append(drvc->instances, sdi);
+		devices = g_slist_append(devices, sdi);
 
 		if (check_conf_profile(devlist[i])) {
 			/* Already has the firmware, so fix the new address. */
-			sr_dbg("fx2lafw: Found an fx2lafw device.");
+			sr_dbg("Found an fx2lafw device.");
 			sdi->status = SR_ST_INACTIVE;
-			ctx->usb = sr_usb_dev_inst_new
-			    (libusb_get_bus_number(devlist[i]),
-			     libusb_get_device_address(devlist[i]), NULL);
+			sdi->inst_type = SR_INST_USB;
+			sdi->conn = sr_usb_dev_inst_new(libusb_get_bus_number(devlist[i]),
+					libusb_get_device_address(devlist[i]), NULL);
 		} else {
 			if (ezusb_upload_firmware(devlist[i], USB_CONFIGURATION,
 				prof->firmware) == SR_OK)
-				/* Remember when the firmware on this device was updated */
-				ctx->fw_updated = g_get_monotonic_time();
+				/* Store when this device's FW was updated. */
+				devc->fw_updated = g_get_monotonic_time();
 			else
-				sr_err("fx2lafw: Firmware upload failed for "
+				sr_err("Firmware upload failed for "
 				       "device %d.", devcnt);
-			ctx->usb = sr_usb_dev_inst_new
-				(libusb_get_bus_number(devlist[i]), 0xff, NULL);
+			sdi->inst_type = SR_INST_USB;
+			sdi->conn = sr_usb_dev_inst_new (libusb_get_bus_number(devlist[i]),
+					0xff, NULL);
 		}
-
-		devcnt++;
 	}
 	libusb_free_device_list(devlist, 1);
 
-	return devcnt;
+	return devices;
 }
 
-static int hw_dev_open(int dev_index)
+static GSList *hw_dev_list(void)
 {
-	struct sr_dev_inst *sdi;
-	struct context *ctx;
+	return ((struct drv_context *)(di->priv))->instances;
+}
+
+static int hw_dev_open(struct sr_dev_inst *sdi)
+{
+	struct sr_usb_dev_inst *usb;
+	struct dev_context *devc;
 	int ret;
 	int64_t timediff_us, timediff_ms;
 
-	if (!(sdi = sr_dev_inst_get(dev_insts, dev_index)))
-		return SR_ERR;
-	ctx = sdi->priv;
+	devc = sdi->priv;
+	usb = sdi->conn;
 
 	/*
 	 * If the firmware was recently uploaded, wait up to MAX_RENUM_DELAY_MS
 	 * milliseconds for the FX2 to renumerate.
 	 */
-	ret = 0;
-
-	if (ctx->fw_updated > 0) {
-		sr_info("fx2lafw: Waiting for device to reset.");
-		/* takes at least 300ms for the FX2 to be gone from the USB bus */
+	ret = SR_ERR;
+	if (devc->fw_updated > 0) {
+		sr_info("Waiting for device to reset.");
+		/* Takes >= 300ms for the FX2 to be gone from the USB bus. */
 		g_usleep(300 * 1000);
 		timediff_ms = 0;
 		while (timediff_ms < MAX_RENUM_DELAY_MS) {
-			if ((ret = fx2lafw_dev_open(dev_index)) == SR_OK)
+			if ((ret = fx2lafw_dev_open(sdi)) == SR_OK)
 				break;
 			g_usleep(100 * 1000);
 
-			timediff_us = g_get_monotonic_time() - ctx->fw_updated;
-			timediff_ms = timediff_us / G_USEC_PER_SEC;
-			sr_spew("fx2lafw: timediff: %" PRIi64 " us.",
-				timediff_us);
+			timediff_us = g_get_monotonic_time() - devc->fw_updated;
+			timediff_ms = timediff_us / 1000;
+			sr_spew("Waited %" PRIi64 "ms.", timediff_ms);
 		}
-		sr_info("fx2lafw: Device came back after %d ms.", timediff_ms);
+		if (ret != SR_OK) {
+			sr_err("Device failed to renumerate.");
+			return SR_ERR;
+		}
+		sr_info("Device came back after %" PRIi64 "ms.", timediff_ms);
 	} else {
-		ret = fx2lafw_dev_open(dev_index);
+		sr_info("Firmware upload was not needed.");
+		ret = fx2lafw_dev_open(sdi);
 	}
 
 	if (ret != SR_OK) {
-		sr_err("fx2lafw: Unable to open device.");
+		sr_err("Unable to open device.");
 		return SR_ERR;
 	}
-	ctx = sdi->priv;
 
-	ret = libusb_claim_interface(ctx->usb->devhdl, USB_INTERFACE);
+	ret = libusb_claim_interface(usb->devhdl, USB_INTERFACE);
 	if (ret != 0) {
-		sr_err("fx2lafw: Unable to claim interface: %d.", ret);
+		switch(ret) {
+		case LIBUSB_ERROR_BUSY:
+			sr_err("Unable to claim USB interface. Another "
+			       "program or driver has already claimed it.");
+			break;
+		case LIBUSB_ERROR_NO_DEVICE:
+			sr_err("Device has been disconnected.");
+			break;
+		default:
+			sr_err("Unable to claim interface: %s.",
+			       libusb_error_name(ret));
+			break;
+		}
+
 		return SR_ERR;
 	}
 
-	if (ctx->cur_samplerate == 0) {
+	if (devc->cur_samplerate == 0) {
 		/* Samplerate hasn't been set; default to the slowest one. */
-		if (hw_dev_config_set(dev_index, SR_HWCAP_SAMPLERATE,
-		    &supported_samplerates[0]) == SR_ERR)
-			return SR_ERR;
+		devc->cur_samplerate = samplerates[0];
 	}
 
 	return SR_OK;
 }
 
-static int hw_dev_close(int dev_index)
+static int hw_dev_close(struct sr_dev_inst *sdi)
 {
-	struct sr_dev_inst *sdi;
+	struct sr_usb_dev_inst *usb;
 
-	if (!(sdi = sr_dev_inst_get(dev_insts, dev_index))) {
-		sr_err("fx2lafw: %s: sdi was NULL.", __func__);
-		return SR_ERR_BUG;
-	}
+	usb = sdi->conn;
+	if (usb->devhdl == NULL)
+		return SR_ERR;
 
-	/* TODO */
-	close_dev(sdi);
+	sr_info("fx2lafw: Closing device %d on %d.%d interface %d.",
+		sdi->index, usb->bus, usb->address, USB_INTERFACE);
+	libusb_release_interface(usb->devhdl, USB_INTERFACE);
+	libusb_close(usb->devhdl);
+	usb->devhdl = NULL;
+	sdi->status = SR_ST_INACTIVE;
 
 	return SR_OK;
 }
 
 static int hw_cleanup(void)
 {
-	GSList *l;
-	struct sr_dev_inst *sdi;
-	struct context *ctx;
-	int ret = SR_OK;
-
-	for (l = dev_insts; l; l = l->next) {
-		if (!(sdi = l->data)) {
-			/* Log error, but continue cleaning up the rest. */
-			sr_err("fx2lafw: %s: sdi was NULL, continuing.",
-			       __func__);
-			ret = SR_ERR_BUG;
-			continue;
-		}
-		if (!(ctx = sdi->priv)) {
-			/* Log error, but continue cleaning up the rest. */
-			sr_err("fx2lafw: %s: sdi->priv was NULL, continuing",
-			       __func__);
-			ret = SR_ERR_BUG;
-			continue;
-		}
-		close_dev(sdi);
-		sdi = l->data;
-		sr_dev_inst_free(sdi);
-	}
-
-	g_slist_free(dev_insts);
-	dev_insts = NULL;
-
-	if (usb_context)
-		libusb_exit(usb_context);
-	usb_context = NULL;
-
-	return ret;
-}
-
-static void *hw_dev_info_get(int dev_index, int dev_info_id)
-{
-	struct sr_dev_inst *sdi;
-	struct context *ctx;
-
-	if (!(sdi = sr_dev_inst_get(dev_insts, dev_index)))
-		return NULL;
-	ctx = sdi->priv;
-
-	switch (dev_info_id) {
-	case SR_DI_INST:
-		return sdi;
-	case SR_DI_NUM_PROBES:
-		return GINT_TO_POINTER(ctx->profile->num_probes);
-	case SR_DI_PROBE_NAMES:
-		return probe_names;
-	case SR_DI_SAMPLERATES:
-		return &samplerates;
-	case SR_DI_TRIGGER_TYPES:
-		return TRIGGER_TYPES;
-	case SR_DI_CUR_SAMPLERATE:
-		return &ctx->cur_samplerate;
-	}
-
-	return NULL;
-}
-
-static int hw_dev_status_get(int dev_index)
-{
-	const struct sr_dev_inst *const sdi =
-		sr_dev_inst_get(dev_insts, dev_index);
-
-	if (!sdi)
-		return SR_ST_NOT_FOUND;
-
-	return sdi->status;
-}
-
-static int *hw_hwcap_get_all(void)
-{
-	return hwcaps;
-}
-
-static int hw_dev_config_set(int dev_index, int hwcap, void *value)
-{
-	struct sr_dev_inst *sdi;
-	struct context *ctx;
+	struct drv_context *drvc;
 	int ret;
 
-	if (!(sdi = sr_dev_inst_get(dev_insts, dev_index)))
-		return SR_ERR;
-	ctx = sdi->priv;
+	if (!(drvc = di->priv))
+		return SR_OK;
 
-	if (hwcap == SR_HWCAP_SAMPLERATE) {
-		ctx->cur_samplerate = *(uint64_t *)value;
+	ret = clear_instances();
+
+	g_free(drvc);
+	di->priv = NULL;
+
+	return ret;
+}
+
+static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi)
+{
+	struct dev_context *devc;
+	struct sr_usb_dev_inst *usb;
+	char str[128];
+
+	switch (id) {
+	case SR_CONF_CONN:
+		if (!sdi || !sdi->conn)
+			return SR_ERR_ARG;
+		usb = sdi->conn;
+		if (usb->address == 255)
+			/* Device still needs to re-enumerate after firmware
+			 * upload, so we don't know its (future) address. */
+			return SR_ERR;
+		snprintf(str, 128, "%d.%d", usb->bus, usb->address);
+		*data = g_variant_new_string(str);
+		break;
+	case SR_CONF_SAMPLERATE:
+		if (!sdi)
+			return SR_ERR;
+		devc = sdi->priv;
+		*data = g_variant_new_uint64(devc->cur_samplerate);
+		break;
+	default:
+		return SR_ERR_NA;
+	}
+
+	return SR_OK;
+}
+
+static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
+{
+	struct dev_context *devc;
+	int ret;
+
+	if (sdi->status != SR_ST_ACTIVE)
+		return SR_ERR;
+
+	devc = sdi->priv;
+
+	if (id == SR_CONF_SAMPLERATE) {
+		devc->cur_samplerate = g_variant_get_uint64(data);
 		ret = SR_OK;
-	} else if (hwcap == SR_HWCAP_PROBECONFIG) {
-		ret = configure_probes(ctx, (GSList *) value);
-	} else if (hwcap == SR_HWCAP_LIMIT_SAMPLES) {
-		ctx->limit_samples = *(uint64_t *)value;
+	} else if (id == SR_CONF_LIMIT_SAMPLES) {
+		devc->limit_samples = g_variant_get_uint64(data);
 		ret = SR_OK;
 	} else {
-		ret = SR_ERR;
+		ret = SR_ERR_NA;
 	}
 
 	return ret;
+}
+
+static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
+{
+	GVariant *gvar;
+	GVariantBuilder gvb;
+
+	(void)sdi;
+
+	switch (key) {
+	case SR_CONF_SCAN_OPTIONS:
+		*data = g_variant_new_fixed_array(G_VARIANT_TYPE_INT32,
+				hwopts, ARRAY_SIZE(hwopts), sizeof(int32_t));
+		break;
+	case SR_CONF_DEVICE_OPTIONS:
+		*data = g_variant_new_fixed_array(G_VARIANT_TYPE_INT32,
+				hwcaps, ARRAY_SIZE(hwcaps), sizeof(int32_t));
+		break;
+	case SR_CONF_SAMPLERATE:
+		g_variant_builder_init(&gvb, G_VARIANT_TYPE("a{sv}"));
+		gvar = g_variant_new_fixed_array(G_VARIANT_TYPE("t"), samplerates,
+				ARRAY_SIZE(samplerates), sizeof(uint64_t));
+		g_variant_builder_add(&gvb, "{sv}", "samplerates", gvar);
+		*data = g_variant_builder_end(&gvb);
+		break;
+	case SR_CONF_TRIGGER_TYPE:
+		*data = g_variant_new_string(TRIGGER_TYPE);
+		break;
+	default:
+		return SR_ERR_NA;
+	}
+
+	return SR_OK;
 }
 
 static int receive_data(int fd, int revents, void *cb_data)
 {
 	struct timeval tv;
+	struct drv_context *drvc;
 
-	/* Avoid compiler warnings. */
 	(void)fd;
 	(void)revents;
 	(void)cb_data;
 
+	drvc = di->priv;
+
 	tv.tv_sec = tv.tv_usec = 0;
-	libusb_handle_events_timeout(usb_context, &tv);
+	libusb_handle_events_timeout(drvc->sr_ctx->libusb_ctx, &tv);
 
 	return TRUE;
 }
 
-static void abort_acquisition(struct context *ctx)
+static void abort_acquisition(struct dev_context *devc)
 {
-	ctx->num_samples = -1;
+	int i;
+
+	devc->num_samples = -1;
+
+	for (i = devc->num_transfers - 1; i >= 0; i--) {
+		if (devc->transfers[i])
+			libusb_cancel_transfer(devc->transfers[i]);
+	}
 }
 
-static void finish_acquisition(struct context *ctx)
+static void finish_acquisition(struct dev_context *devc)
 {
 	struct sr_datafeed_packet packet;
 	int i;
 
-	/* Terminate session */
+	/* Terminate session. */
 	packet.type = SR_DF_END;
-	sr_session_send(ctx->session_dev_id, &packet);
+	sr_session_send(devc->cb_data, &packet);
 
-	/* Remove fds from polling */
-	const struct libusb_pollfd **const lupfd =
-		libusb_get_pollfds(usb_context);
-	for (i = 0; lupfd[i]; i++)
-		sr_source_remove(lupfd[i]->fd);
-	free(lupfd); /* NOT g_free()! */
+	/* Remove fds from polling. */
+	for (i = 0; devc->usbfd[i] != -1; i++)
+		sr_source_remove(devc->usbfd[i]);
+	g_free(devc->usbfd);
+
+	devc->num_transfers = 0;
+	g_free(devc->transfers);
+}
+
+static void free_transfer(struct libusb_transfer *transfer)
+{
+	struct dev_context *devc;
+	unsigned int i;
+
+	devc = transfer->user_data;
+
+	g_free(transfer->buffer);
+	transfer->buffer = NULL;
+	libusb_free_transfer(transfer);
+
+	for (i = 0; i < devc->num_transfers; i++) {
+		if (devc->transfers[i] == transfer) {
+			devc->transfers[i] = NULL;
+			break;
+		}
+	}
+
+	devc->submitted_transfers--;
+	if (devc->submitted_transfers == 0)
+		finish_acquisition(devc);
+}
+
+static void resubmit_transfer(struct libusb_transfer *transfer)
+{
+	int ret;
+
+	if ((ret = libusb_submit_transfer(transfer)) == LIBUSB_SUCCESS)
+		return;
+
+	free_transfer(transfer);
+	/* TODO: Stop session? */
+
+	sr_err("%s: %s", __func__, libusb_error_name(ret));
 }
 
 static void receive_transfer(struct libusb_transfer *transfer)
 {
-	/* TODO: These statics have to move to the ctx struct. */
-	static int empty_transfer_count = 0;
+	gboolean packet_has_error = FALSE;
 	struct sr_datafeed_packet packet;
 	struct sr_datafeed_logic logic;
-	struct context *ctx = transfer->user_data;
-	int cur_buflen, trigger_offset, i;
-	unsigned char *cur_buf, *new_buf;
+	struct dev_context *devc;
+	int trigger_offset, i, sample_width, cur_sample_count;
+	int trigger_offset_bytes;
+	uint8_t *cur_buf;
+
+	devc = transfer->user_data;
 
 	/*
 	 * If acquisition has already ended, just free any queued up
 	 * transfer that come in.
 	 */
-	if (ctx->num_samples == -1) {
-		if (transfer)
-			libusb_free_transfer(transfer);
-
-		ctx->submitted_transfers--;
-		if (ctx->submitted_transfers == 0)
-			finish_acquisition(ctx);
-
+	if (devc->num_samples == -1) {
+		free_transfer(transfer);
 		return;
 	}
 
-	sr_info("fx2lafw: receive_transfer(): status %d received %d bytes.",
+	sr_info("receive_transfer(): status %d received %d bytes.",
 		transfer->status, transfer->actual_length);
 
 	/* Save incoming transfer before reusing the transfer struct. */
 	cur_buf = transfer->buffer;
-	cur_buflen = transfer->actual_length;
+	sample_width = devc->sample_wide ? 2 : 1;
+	cur_sample_count = transfer->actual_length / sample_width;
 
-	/* Fire off a new request. */
-	if (!(new_buf = g_try_malloc(4096))) {
-		sr_err("fx2lafw: %s: new_buf malloc failed.", __func__);
-		return; /* TODO: SR_ERR_MALLOC */
+	switch (transfer->status) {
+	case LIBUSB_TRANSFER_NO_DEVICE:
+		abort_acquisition(devc);
+		free_transfer(transfer);
+		return;
+	case LIBUSB_TRANSFER_COMPLETED:
+	case LIBUSB_TRANSFER_TIMED_OUT: /* We may have received some data though. */
+		break;
+	default:
+		packet_has_error = TRUE;
+		break;
 	}
 
-	transfer->buffer = new_buf;
-	transfer->length = 4096;
-	if (libusb_submit_transfer(transfer) != 0) {
-		/* TODO: Stop session? */
-		/* TODO: Better error message. */
-		sr_err("fx2lafw: %s: libusb_submit_transfer error.", __func__);
-	}
-
-	if (cur_buflen == 0) {
-		empty_transfer_count++;
-		if (empty_transfer_count > MAX_EMPTY_TRANSFERS) {
+	if (transfer->actual_length == 0 || packet_has_error) {
+		devc->empty_transfer_count++;
+		if (devc->empty_transfer_count > MAX_EMPTY_TRANSFERS) {
 			/*
 			 * The FX2 gave up. End the acquisition, the frontend
 			 * will work out that the samplecount is short.
 			 */
-			abort_acquisition(ctx);
+			abort_acquisition(devc);
+			free_transfer(transfer);
+		} else {
+			resubmit_transfer(transfer);
 		}
 		return;
 	} else {
-		empty_transfer_count = 0;
+		devc->empty_transfer_count = 0;
 	}
 
 	trigger_offset = 0;
-	if (ctx->trigger_stage >= 0) {
-		for (i = 0; i < cur_buflen; i++) {
+	if (devc->trigger_stage >= 0) {
+		for (i = 0; i < cur_sample_count; i++) {
 
-			if ((cur_buf[i] & ctx->trigger_mask[ctx->trigger_stage]) == ctx->trigger_value[ctx->trigger_stage]) {
+			const uint16_t cur_sample = devc->sample_wide ?
+				*((const uint16_t*)cur_buf + i) :
+				*((const uint8_t*)cur_buf + i);
+
+			if ((cur_sample & devc->trigger_mask[devc->trigger_stage]) ==
+				devc->trigger_value[devc->trigger_stage]) {
 				/* Match on this trigger stage. */
-				ctx->trigger_buffer[ctx->trigger_stage] = cur_buf[i];
-				ctx->trigger_stage++;
+				devc->trigger_buffer[devc->trigger_stage] = cur_sample;
+				devc->trigger_stage++;
 
-				if (ctx->trigger_stage == NUM_TRIGGER_STAGES || ctx->trigger_mask[ctx->trigger_stage] == 0) {
+				if (devc->trigger_stage == NUM_TRIGGER_STAGES ||
+					devc->trigger_mask[devc->trigger_stage] == 0) {
 					/* Match on all trigger stages, we're done. */
 					trigger_offset = i + 1;
 
@@ -730,56 +835,55 @@ static void receive_transfer(struct libusb_transfer *transfer)
 					 */
 					packet.type = SR_DF_TRIGGER;
 					packet.payload = NULL;
-					sr_session_send(ctx->session_dev_id, &packet);
+					sr_session_send(devc->cb_data, &packet);
 
 					/*
-					 * Send the samples that triggered it, since we're
-					 * skipping past them.
+					 * Send the samples that triggered it,
+					 * since we're skipping past them.
 					 */
 					packet.type = SR_DF_LOGIC;
 					packet.payload = &logic;
-					logic.length = ctx->trigger_stage;
-					logic.unitsize = 1;
-					logic.data = ctx->trigger_buffer;
-					sr_session_send(ctx->session_dev_id, &packet);
+					logic.unitsize = sizeof(*devc->trigger_buffer);
+					logic.length = devc->trigger_stage * logic.unitsize;
+					logic.data = devc->trigger_buffer;
+					sr_session_send(devc->cb_data, &packet);
 
-					ctx->trigger_stage = TRIGGER_FIRED;
+					devc->trigger_stage = TRIGGER_FIRED;
 					break;
 				}
-				return;
-			}
-
-			/*
-			 * We had a match before, but not in the next sample. However, we may
-			 * have a match on this stage in the next bit -- trigger on 0001 will
-			 * fail on seeing 00001, so we need to go back to stage 0 -- but at
-			 * the next sample from the one that matched originally, which the
-			 * counter increment at the end of the loop takes care of.
-			 */
-			if (ctx->trigger_stage > 0) {
-				i -= ctx->trigger_stage;
+			} else if (devc->trigger_stage > 0) {
+				/*
+				 * We had a match before, but not in the next sample. However, we may
+				 * have a match on this stage in the next bit -- trigger on 0001 will
+				 * fail on seeing 00001, so we need to go back to stage 0 -- but at
+				 * the next sample from the one that matched originally, which the
+				 * counter increment at the end of the loop takes care of.
+				 */
+				i -= devc->trigger_stage;
 				if (i < -1)
 					i = -1; /* Oops, went back past this buffer. */
 				/* Reset trigger stage. */
-				ctx->trigger_stage = 0;
+				devc->trigger_stage = 0;
 			}
 		}
 	}
 
-	if (ctx->trigger_stage == TRIGGER_FIRED) {
+	if (devc->trigger_stage == TRIGGER_FIRED) {
 		/* Send the incoming transfer to the session bus. */
+		trigger_offset_bytes = trigger_offset * sample_width;
 		packet.type = SR_DF_LOGIC;
 		packet.payload = &logic;
-		logic.length = cur_buflen - trigger_offset;
-		logic.unitsize = 1;
-		logic.data = cur_buf + trigger_offset;
-		sr_session_send(ctx->session_dev_id, &packet);
-		g_free(cur_buf);
+		logic.length = transfer->actual_length - trigger_offset_bytes;
+		logic.unitsize = sample_width;
+		logic.data = cur_buf + trigger_offset_bytes;
+		sr_session_send(devc->cb_data, &packet);
 
-		ctx->num_samples += cur_buflen;
-		if (ctx->limit_samples &&
-			(unsigned int)ctx->num_samples > ctx->limit_samples) {
-			abort_acquisition(ctx);
+		devc->num_samples += cur_sample_count;
+		if (devc->limit_samples &&
+			(unsigned int)devc->num_samples > devc->limit_samples) {
+			abort_acquisition(devc);
+			free_transfer(transfer);
+			return;
 		}
 	} else {
 		/*
@@ -787,92 +891,141 @@ static void receive_transfer(struct libusb_transfer *transfer)
 		 * ratio-sized buffer.
 		 */
 	}
+
+	resubmit_transfer(transfer);
 }
 
-static int hw_dev_acquisition_start(int dev_index, void *cb_data)
+static unsigned int to_bytes_per_ms(unsigned int samplerate)
 {
-	struct sr_dev_inst *sdi;
-	struct sr_datafeed_packet *packet;
-	struct sr_datafeed_header *header;
-	struct context *ctx;
+	return samplerate / 1000;
+}
+
+static size_t get_buffer_size(struct dev_context *devc)
+{
+	size_t s;
+
+	/*
+	 * The buffer should be large enough to hold 10ms of data and
+	 * a multiple of 512.
+	 */
+	s = 10 * to_bytes_per_ms(devc->cur_samplerate);
+	return (s + 511) & ~511;
+}
+
+static unsigned int get_number_of_transfers(struct dev_context *devc)
+{
+	unsigned int n;
+
+	/* Total buffer size should be able to hold about 500ms of data. */
+	n = 500 * to_bytes_per_ms(devc->cur_samplerate) / get_buffer_size(devc);
+
+	if (n > NUM_SIMUL_TRANSFERS)
+		return NUM_SIMUL_TRANSFERS;
+
+	return n;
+}
+
+static unsigned int get_timeout(struct dev_context *devc)
+{
+	size_t total_size;
+	unsigned int timeout;
+
+	total_size = get_buffer_size(devc) * get_number_of_transfers(devc);
+	timeout = total_size / to_bytes_per_ms(devc->cur_samplerate);
+	return timeout + timeout / 4; /* Leave a headroom of 25% percent. */
+}
+
+static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
+		void *cb_data)
+{
+	struct dev_context *devc;
+	struct drv_context *drvc;
+	struct sr_usb_dev_inst *usb;
 	struct libusb_transfer *transfer;
 	const struct libusb_pollfd **lupfd;
-	int ret, size, i;
+	unsigned int i, timeout, num_transfers;
+	int ret;
 	unsigned char *buf;
+	size_t size;
 
-	if (!(sdi = sr_dev_inst_get(dev_insts, dev_index)))
+	if (sdi->status != SR_ST_ACTIVE)
+		return SR_ERR_DEV_CLOSED;
+
+	drvc = di->priv;
+	devc = sdi->priv;
+	usb = sdi->conn;
+
+	/* Configures devc->trigger_* and devc->sample_wide */
+	if (configure_probes(sdi) != SR_OK) {
+		sr_err("Failed to configure probes.");
 		return SR_ERR;
-	ctx = sdi->priv;
-	ctx->session_dev_id = cb_data;
-	ctx->num_samples = 0;
+	}
 
-	if (!(packet = g_try_malloc(sizeof(struct sr_datafeed_packet)))) {
-		sr_err("fx2lafw: %s: packet malloc failed.", __func__);
+	devc->cb_data = cb_data;
+	devc->num_samples = 0;
+	devc->empty_transfer_count = 0;
+
+	timeout = get_timeout(devc);
+	num_transfers = get_number_of_transfers(devc);
+	size = get_buffer_size(devc);
+	devc->submitted_transfers = 0;
+
+	devc->transfers = g_try_malloc0(sizeof(*devc->transfers) * num_transfers);
+	if (!devc->transfers) {
+		sr_err("USB transfers malloc failed.");
 		return SR_ERR_MALLOC;
 	}
 
-	if (!(header = g_try_malloc(sizeof(struct sr_datafeed_header)))) {
-		sr_err("fx2lafw: %s: header malloc failed.", __func__);
-		return SR_ERR_MALLOC;
-	}
-
-	/* Start with 2K transfer, subsequently increased to 4K. */
-	size = 2048;
-	for (i = 0; i < NUM_SIMUL_TRANSFERS; i++) {
+	devc->num_transfers = num_transfers;
+	for (i = 0; i < num_transfers; i++) {
 		if (!(buf = g_try_malloc(size))) {
-			sr_err("fx2lafw: %s: buf malloc failed.", __func__);
+			sr_err("USB transfer buffer malloc failed.");
 			return SR_ERR_MALLOC;
 		}
 		transfer = libusb_alloc_transfer(0);
-		libusb_fill_bulk_transfer(transfer, ctx->usb->devhdl,
+		libusb_fill_bulk_transfer(transfer, usb->devhdl,
 				2 | LIBUSB_ENDPOINT_IN, buf, size,
-				receive_transfer, ctx, 40);
-		if (libusb_submit_transfer(transfer) != 0) {
-			/* TODO: Free them all. */
+				receive_transfer, devc, timeout);
+		if ((ret = libusb_submit_transfer(transfer)) != 0) {
+			sr_err("Failed to submit transfer: %s.",
+			       libusb_error_name(ret));
 			libusb_free_transfer(transfer);
 			g_free(buf);
+			abort_acquisition(devc);
 			return SR_ERR;
 		}
-
-		ctx->submitted_transfers++;
-		size = 4096;
+		devc->transfers[i] = transfer;
+		devc->submitted_transfers++;
 	}
 
-	lupfd = libusb_get_pollfds(usb_context);
-	for (i = 0; lupfd[i]; i++)
+	lupfd = libusb_get_pollfds(drvc->sr_ctx->libusb_ctx);
+	for (i = 0; lupfd[i]; i++);
+	if (!(devc->usbfd = g_try_malloc(sizeof(struct libusb_pollfd) * (i + 1))))
+		return SR_ERR;
+	for (i = 0; lupfd[i]; i++) {
 		sr_source_add(lupfd[i]->fd, lupfd[i]->events,
-			      40, receive_data, NULL);
-	free(lupfd); /* NOT g_free()! */
+			      timeout, receive_data, NULL);
+		devc->usbfd[i] = lupfd[i]->fd;
+	}
+	devc->usbfd[i] = -1;
+	free(lupfd);
 
-	packet->type = SR_DF_HEADER;
-	packet->payload = header;
-	header->feed_version = 1;
-	gettimeofday(&header->starttime, NULL);
-	header->samplerate = ctx->cur_samplerate;
-	header->num_logic_probes = ctx->profile->num_probes;
-	sr_session_send(cb_data, packet);
-	g_free(header);
-	g_free(packet);
+	/* Send header packet to the session bus. */
+	std_session_send_df_header(cb_data, LOG_PREFIX);
 
-	if ((ret = command_start_acquisition (ctx->usb->devhdl,
-		ctx->cur_samplerate)) != SR_OK) {
+	if ((ret = command_start_acquisition (usb->devhdl,
+		devc->cur_samplerate, devc->sample_wide)) != SR_OK) {
+		abort_acquisition(devc);
 		return ret;
 	}
 
 	return SR_OK;
 }
 
-/* TODO: This stops acquisition on ALL devices, ignoring dev_index. */
-static int hw_dev_acquisition_stop(int dev_index, void *cb_data)
+static int hw_dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
 {
-	struct sr_dev_inst *sdi;
-
-	/* Avoid compiler warnings. */
 	(void)cb_data;
 
-	if (!(sdi = sr_dev_inst_get(dev_insts, dev_index)))
-		return SR_ERR;
- 
 	abort_acquisition(sdi->priv);
 
 	return SR_OK;
@@ -884,12 +1037,15 @@ SR_PRIV struct sr_dev_driver fx2lafw_driver_info = {
 	.api_version = 1,
 	.init = hw_init,
 	.cleanup = hw_cleanup,
+	.scan = hw_scan,
+	.dev_list = hw_dev_list,
+	.dev_clear = clear_instances,
+	.config_get = config_get,
+	.config_set = config_set,
+	.config_list = config_list,
 	.dev_open = hw_dev_open,
 	.dev_close = hw_dev_close,
-	.dev_info_get = hw_dev_info_get,
-	.dev_status_get = hw_dev_status_get,
-	.hwcap_get_all = hw_hwcap_get_all,
-	.dev_config_set = hw_dev_config_set,
 	.dev_acquisition_start = hw_dev_acquisition_start,
 	.dev_acquisition_stop = hw_dev_acquisition_stop,
+	.priv = NULL,
 };
