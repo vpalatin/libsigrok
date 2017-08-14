@@ -2,6 +2,7 @@ libsigrok (0.5.0-1) UNRELEASED; urgency=medium
 
   * New upstream release.
     + The libsigrok2 package now becomes libsigrok4 (upstream SO name change).
+    + Add build-dep on libieee1284-3-dev to enable hung-chang-dso-2100 driver
   * Move to libftdi1-dev (Closes: #810376)
 
  -- Jonathan McDowell <noodles@earth.li>  Mon, 14 Aug 2017 17:19:39 +0100
