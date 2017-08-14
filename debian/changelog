@@ -1,3 +1,9 @@
+libsigrok (0.5.0-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Jonathan McDowell <noodles@earth.li>  Mon, 14 Aug 2017 17:19:39 +0100
+
 libsigrok (0.3.0-1) unstable; urgency=medium
 
   * Acknowledge NMU, thanks David Prévot (Closes: #724126).
