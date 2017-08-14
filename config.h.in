@@ -1,127 +1,229 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-#ifndef SR_CONFIG_H
-#define SR_CONFIG_H    /* To stop multiple inclusions. */
-
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
+
+/* The canonical host libsigrok will run on. */
+#undef CONF_HOST
+
+/* Build-time version of libftdi. */
+#undef CONF_LIBFTDI_VERSION
+
+/* Build-time version of libgpib. */
+#undef CONF_LIBGPIB_VERSION
+
+/* Build-time version of librevisa. */
+#undef CONF_LIBREVISA_VERSION
+
+/* Build-time version of libserialport. */
+#undef CONF_LIBSERIALPORT_VERSION
+
+/* Build-time version of libusb. */
+#undef CONF_LIBUSB_1_0_VERSION
+
+/* Build-time version of libzip. */
+#undef CONF_LIBZIP_VERSION
+
+/* define if the compiler supports basic C++11 syntax */
+#undef HAVE_CXX11
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
-/* Agilent DMM support */
+/* Whether at least one driver is enabled. */
+#undef HAVE_DRIVERS
+
+/* Whether to support Agilent DMM device. */
 #undef HAVE_HW_AGILENT_DMM
 
-/* APPA 55II support */
+/* Whether to support Appa 55II device. */
 #undef HAVE_HW_APPA_55II
 
-/* ASIX SIGMA/SIGMA2 support */
+/* Whether to support Arachnid Labs Re:load Pro device. */
+#undef HAVE_HW_ARACHNID_LABS_RE_LOAD_PRO
+
+/* Whether to support ASIX SIGMA/SIGMA2 device. */
 #undef HAVE_HW_ASIX_SIGMA
 
-/* Atten PPS3xxx support */
+/* Whether to support Atten PPS3xxx device. */
 #undef HAVE_HW_ATTEN_PPS3XXX
 
-/* Brymen BM86X support */
+/* Whether to support BayLibre ACME device. */
+#undef HAVE_HW_BAYLIBRE_ACME
+
+/* Whether to support BeagleLogic device. */
+#undef HAVE_HW_BEAGLELOGIC
+
+/* Whether to support Brymen BM86x device. */
 #undef HAVE_HW_BRYMEN_BM86X
 
-/* Brymen DMM support */
+/* Whether to support Brymen DMM device. */
 #undef HAVE_HW_BRYMEN_DMM
 
-/* CEM DT-885x support */
+/* Whether to support CEM DT-885x device. */
 #undef HAVE_HW_CEM_DT_885X
 
-/* Center 3xx support */
+/* Whether to support Center 3xx device. */
 #undef HAVE_HW_CENTER_3XX
 
-/* ChronoVu LA support */
+/* Whether to support ChronoVu LA device. */
 #undef HAVE_HW_CHRONOVU_LA
 
-/* Colead SLM support */
+/* Whether to support Colead SLM device. */
 #undef HAVE_HW_COLEAD_SLM
 
-/* Conrad DIGI 35 CPU support */
+/* Whether to support Conrad DIGI 35 CPU device. */
 #undef HAVE_HW_CONRAD_DIGI_35_CPU
 
-/* Demo driver support */
+/* Whether to support demo device. */
 #undef HAVE_HW_DEMO
 
-/* Fluke DMM support */
+/* Whether to support Fluke DMM device. */
 #undef HAVE_HW_FLUKE_DMM
 
-/* fx2lafw support */
+/* Whether to support FTDI LA device. */
+#undef HAVE_HW_FTDI_LA
+
+/* Whether to support fx2lafw device. */
 #undef HAVE_HW_FX2LAFW
 
-/* gmc-mh-1x-2x support */
+/* Whether to support GMC MH 1x/2x device. */
 #undef HAVE_HW_GMC_MH_1X_2X
 
-/* Hameg HMO support */
+/* Whether to support GW Instek GDS-800 device. */
+#undef HAVE_HW_GWINSTEK_GDS_800
+
+/* Whether to support Hameg HMO device. */
 #undef HAVE_HW_HAMEG_HMO
 
-/* Hantek DSO support */
+/* Whether to support Hantek 6xxx device. */
+#undef HAVE_HW_HANTEK_6XXX
+
+/* Whether to support Hantek DSO device. */
 #undef HAVE_HW_HANTEK_DSO
 
-/* IKALOGIC Scanalogic-2 support */
+/* Whether to support HP 3457A device. */
+#undef HAVE_HW_HP_3457A
+
+/* Whether to support Hung-Chang DSO-2100 device. */
+#undef HAVE_HW_HUNG_CHANG_DSO_2100
+
+/* Whether to support Ikalogic Scanalogic-2 device. */
 #undef HAVE_HW_IKALOGIC_SCANALOGIC2
 
-/* IKALOGIC ScanaPLUS support */
+/* Whether to support Ikalogic Scanaplus device. */
 #undef HAVE_HW_IKALOGIC_SCANAPLUS
 
-/* Kecheng KC-330B support */
+/* Whether to support Kecheng KC-330B device. */
 #undef HAVE_HW_KECHENG_KC_330B
 
-/* Lascar EL-USB support */
+/* Whether to support KERN scale device. */
+#undef HAVE_HW_KERN_SCALE
+
+/* Whether to support Korad KAxxxxP device. */
+#undef HAVE_HW_KORAD_KAXXXXP
+
+/* Whether to support Lascar EL-USB device. */
 #undef HAVE_HW_LASCAR_EL_USB
 
-/* MIC 985xx support */
+/* Whether to support LeCroy LogicStudio device. */
+#undef HAVE_HW_LECROY_LOGICSTUDIO
+
+/* Whether to support LeCroy X-Stream device. */
+#undef HAVE_HW_LECROY_XSTREAM
+
+/* Whether to support Manson HCS-3xxx device. */
+#undef HAVE_HW_MANSON_HCS_3XXX
+
+/* Whether to support maynuo-m97 device. */
+#undef HAVE_HW_MAYNUO_M97
+
+/* Whether to support MIC 985xx device. */
 #undef HAVE_HW_MIC_985XX
 
-/* Norma DMM support */
+/* Whether to support Motech LPS 30x device. */
+#undef HAVE_HW_MOTECH_LPS_30X
+
+/* Whether to support Norma DMM device. */
 #undef HAVE_HW_NORMA_DMM
 
-/* OpenBench Logic Sniffer (OLS) support */
-#undef HAVE_HW_OLS
+/* Whether to support OpenBench Logic Sniffer device. */
+#undef HAVE_HW_OPENBENCH_LOGIC_SNIFFER
 
-/* Rigol DS support */
+/* Whether to support PCE PCE-322A device. */
+#undef HAVE_HW_PCE_322A
+
+/* Whether to support Pipistrello-OLS device. */
+#undef HAVE_HW_PIPISTRELLO_OLS
+
+/* Whether to support Rigol DS device. */
 #undef HAVE_HW_RIGOL_DS
 
-/* Saleae Logic16 support */
+/* Whether to support Rohde&Schwarz SME-0x device. */
+#undef HAVE_HW_ROHDE_SCHWARZ_SME_0X
+
+/* Whether to support Saleae Logic16 device. */
 #undef HAVE_HW_SALEAE_LOGIC16
 
-/* Serial DMM support */
+/* Whether to support SCPI PPS device. */
+#undef HAVE_HW_SCPI_PPS
+
+/* Whether to support serial DMM device. */
 #undef HAVE_HW_SERIAL_DMM
 
-/* Sysclk LWLA support */
+/* Whether to support serial LCR device. */
+#undef HAVE_HW_SERIAL_LCR
+
+/* Whether to support Sysclk LWLA device. */
 #undef HAVE_HW_SYSCLK_LWLA
 
-/* Teleinfo support */
+/* Whether to support Teleinfo device. */
 #undef HAVE_HW_TELEINFO
 
-/* Tondaj SL-814 support */
+/* Whether to support Testo device. */
+#undef HAVE_HW_TESTO
+
+/* Whether to support Tondaj SL-814 device. */
 #undef HAVE_HW_TONDAJ_SL_814
 
-/* UNI-T DMM support */
+/* Whether to support UNI-T DMM device. */
 #undef HAVE_HW_UNI_T_DMM
 
-/* UNI-T UT32x support */
+/* Whether to support UNI-T UT32x device. */
 #undef HAVE_HW_UNI_T_UT32X
 
-/* Victor DMM support */
+/* Whether to support Victor DMM device. */
 #undef HAVE_HW_VICTOR_DMM
 
-/* ZEROPLUS Logic Cube support */
+/* Whether to support Yokogawa DL/DLM device. */
+#undef HAVE_HW_YOKOGAWA_DLM
+
+/* Whether to support ZEROPLUS Logic Cube device. */
 #undef HAVE_HW_ZEROPLUS_LOGIC_CUBE
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Specifies whether we have librevisa. */
+/* Whether libftdi is available. */
+#undef HAVE_LIBFTDI
+
+/* Whether libgpib is available. */
+#undef HAVE_LIBGPIB
+
+/* Whether libieee1284 is available. */
+#undef HAVE_LIBIEEE1284
+
+/* Whether librevisa is available. */
 #undef HAVE_LIBREVISA
 
-/* Specifies whether we have libserialport. */
+/* Whether libserialport is available. */
 #undef HAVE_LIBSERIALPORT
 
-/* Specifies whether we have a libusb.h header. */
+/* Whether libusb is available. */
 #undef HAVE_LIBUSB_1_0
+
+/* Define to 1 if the system has the type `libusb_os_handle'. */
+#undef HAVE_LIBUSB_OS_HANDLE
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -135,14 +237,26 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
+/* Specifies whether we have the stoi and stod functions. */
+#undef HAVE_STOI_STOD
+
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
+#undef HAVE_SYS_IOCTL_H
+
+/* Define to 1 if you have the <sys/mman.h> header file. */
+#undef HAVE_SYS_MMAN_H
+
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/timerfd.h> header file. */
+#undef HAVE_SYS_TIMERFD_H
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
@@ -150,12 +264,17 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
-#undef LT_OBJDIR
+/* Define to 1 if you have the `zip_discard' function. */
+#undef HAVE_ZIP_DISCARD
 
-/* Name of package */
-#undef PACKAGE
+/* Define to 1 if the system has the type `__int128_t'. */
+#undef HAVE___INT128_T
+
+/* Define to 1 if the system has the type `__uint128_t'. */
+#undef HAVE___UINT128_T
+
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
+#undef LT_OBJDIR
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
@@ -175,11 +294,35 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* Whether last argument to pyg_flags_get_value() is signed. */
+#undef PYGOBJECT_FLAGS_SIGNED
+
+/* Binary age of libsigrok. */
+#undef SR_LIB_VERSION_AGE
+
+/* Binary version of libsigrok. */
+#undef SR_LIB_VERSION_CURRENT
+
+/* Binary revision of libsigrok. */
+#undef SR_LIB_VERSION_REVISION
+
+/* Binary version triple of libsigrok. */
+#undef SR_LIB_VERSION_STRING
+
+/* Major version number of libsigrok. */
+#undef SR_PACKAGE_VERSION_MAJOR
+
+/* Micro version number of libsigrok. */
+#undef SR_PACKAGE_VERSION_MICRO
+
+/* Minor version number of libsigrok. */
+#undef SR_PACKAGE_VERSION_MINOR
+
+/* Version of libsigrok. */
+#undef SR_PACKAGE_VERSION_STRING
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
-
-/* Version number of package */
-#undef VERSION
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
@@ -193,4 +336,18 @@
 # endif
 #endif
 
-#endif /* SR_CONFIG_H */
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+#undef _FILE_OFFSET_BITS
+
+/* Define for large files, on AIX-style hosts. */
+#undef _LARGE_FILES
+
+/* The targeted POSIX standard. */
+#ifndef _POSIX_C_SOURCE
+# define _POSIX_C_SOURCE 200112L
+#endif

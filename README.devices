@@ -12,9 +12,12 @@ Firmware
 Some devices supported by libsigrok need a firmware to be uploaded every time
 the device is connected to the PC (usually via USB), before it can be used.
 
-The default location where libsigrok expects the firmware files is:
+The default locations where libsigrok expects the firmware files are:
 
+  $HOME/.local/share/sigrok-firmware
   $prefix/share/sigrok-firmware
+  /usr/local/share/sigrok-firmware
+  /usr/share/sigrok-firmware
 
 ($prefix is usually /usr/local or /usr, depending on your ./configure options)
 
@@ -37,25 +40,47 @@ The following drivers/devices require a firmware upload upon connection:
    firmware files from the 'sigrok-firmware-fx2lafw' repository/project.
    The firmware is written from scratch and licensed under the GNU GPLv2+.
 
+ - hantek-6xxx: Certain oscilloscopes based on the Cypress FX2(LP) chip, such
+   as the Hantek 6022BE/6022BL, SainSmart DDS120, and Rocktech BM102, need the
+   firmware files from the 'sigrok-firmware-fx2lafw' repository/project.
+   The firmware is written from scratch and licensed under the GNU GPLv2+.
+
  - hantek-dso: The Hantek DSO-2090 (and other supported models of the same
    series of Hantek PC oscilloscopes) need firmware files.
    These can be extracted from the vendor's Windows drivers using a tool
    from our 'sigrok-util' repository/project.
+
+ - lecroy-logicstudio: The LeCroy LogicStudio requires FPGA bitstream files.
+   These can be extracted from the vendor's Windows software using a tool
+   from our 'sigrok-util' repository/project.
+   Additionally, it requires a Cypress FX2 firmware. This can be extracted
+   from the vendor's Windows software using another tool. Details:
+
+     http://sigrok.org/wiki/LeCroy_LogicStudio#Firmware
 
  - saleae-logic16: The Saleae Logic16 needs a firmware file for the
    Cypress FX2 chip in the device, as well as two FPGA bitstream files.
    These can be extracted from the vendor's Linux application using a tool
    from our 'sigrok-util' repository/project.
 
- - sysclk-lwla: The Sysclk LWLA1034 requires various bitstream files.
-   These files are available from our 'sigrok-firmware' repository/project
-   under a license which allows us to redistribute them.
+ - sysclk-lwla:
+
+    - The Sysclk LWLA1034 requires various bitstream files.
+      These files are available from our 'sigrok-firmware' repository/project
+      under a license which allows us to redistribute them.
+
+    - The Sysclk LWLA1016 requires various bitstream files.
+      These can be extracted from the vendor's Windows drivers using a tool
+      from our 'sigrok-util' repository/project.
 
 The following drivers/devices do not need any firmware upload:
 
  - agilent-dmm
  - appa-55ii
+ - arachnid-labs-re-load-pro
  - atten-pps3xxx
+ - baylibre-acme
+ - beaglelogic
  - brymen-bm86x
  - brymen-dmm
  - cem-dt-885x
@@ -65,23 +90,37 @@ The following drivers/devices do not need any firmware upload:
  - conrad-digi-35-cpu
  - demo
  - fluke-dmm
+ - ftdi-la
  - gmc-mh-1x-2x (including all subdrivers)
+ - gwinstek-gds-800
  - hameg-hmo
+ - hp-3457a
+ - hung-chang-dso-2100
  - ikalogic-scanalogic2
  - ikalogic-scanaplus
  - kecheng-kc-330b
+ - kern-scale
  - lascar-el-usb
  - link-mso19
+ - manson-hcs-3xxx
+ - maynuo-m97
  - mic-985xx (including all subdrivers)
+ - motech-lps-30x
  - norma-dmm
  - openbench-logic-sniffer
+ - pce-322a
+ - pipistrello-ols
  - rigol-ds
+ - scpi-pps
  - serial-dmm (including all subdrivers)
+ - serial-lcr (including all subdrivers)
  - teleinfo
+ - testo
  - tondaj-sl-814
  - uni-t-dmm (including all subdrivers)
  - uni-t-ut32x
  - victor-dmm
+ - yokogawa-dlm
  - zeroplus-logic-cube
 
 
@@ -118,6 +157,7 @@ The following drivers/devices require a serial port specification:
  - openbench-logic-sniffer
  - rigol-ds (for RS232; not required for USBTMC or TCP)
  - serial-dmm (including all subdrivers)
+ - serial-lcr (including all subdrivers)
  - teleinfo
  - tondaj-sl-814
 
@@ -133,17 +173,19 @@ The following drivers/devices do not require a serial port specification:
  - ikalogic-scanaplus
  - kecheng-kc-330b
  - lascar-el-usb
+ - pipistrello-ols
  - rigol-ds (USBTMC or TCP)
  - saleae-logic16
  - sysclk-lwla
  - uni-t-dmm (including all subdrivers)
  - uni-t-ut32x
  - victor-dmm
+ - yokogawa-dlm (USBTMC or TCP)
  - zeroplus-logic-cube
 
 
-Specifiying serial port parameters
-----------------------------------
+Specifying serial port parameters
+---------------------------------
 
 Every serial device's driver has default serial port parameters like baud
 rate, number of data bits, stop bits and handshake status. If a device requires
@@ -315,12 +357,15 @@ a short list for convenience:
  - Tenma 72-7750: Briefly press the "RS232C" button.
  - UNI-T UT60G: Briefly press the "RS232C" button.
  - UNI-T UT61B/C/D: Press the "REL/RS232/USB" button for roughly 1 second.
+ - UNI-T UT71x: Press the "SEND/-/MAXMIN" button for roughly 1 second.
+   Briefly pressing the "EXIT" button leaves this mode again.
  - UNI-T UT325: Briefly press the "SEND" button (as per manual). However, it
    appears that in practice you don't have to press the button (at least on
    some versions of the device), simply connect the device via USB.
  - V&A VA18B/VA40B: Keep the "Hz/DUTY" key pressed while powering on the DMM.
  - Victor 70C/86C: Press the "REL/RS232" button for roughly 1 second.
  - Voltcraft VC-830: Press the "REL/PC" button for roughly 2 seconds.
+ - Voltcraft VC-870: Press the "REL/PC" button for roughly 1 second.
 
 
 ChronoVu LA8/LA16 USB VID/PIDs

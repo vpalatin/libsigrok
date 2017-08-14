@@ -38,7 +38,7 @@ PROJECT_NAME           = "libsigrok"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = "0.3.0"
+PROJECT_NUMBER         = "0.5.0"
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -51,14 +51,14 @@ PROJECT_BRIEF          = "sigrok hardware access and backend library"
 # and the maximum width should not exceed 200 pixels. Doxygen will copy the logo
 # to the output directory.
 
-PROJECT_LOGO           = contrib/sigrok-logo-notext.png
+PROJECT_LOGO           = contrib/libsigrok_112x112.png
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) path
 # into which the generated documentation will be written. If a relative path is
 # entered, it will be relative to the location where doxygen was started. If
 # left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = doxy
+OUTPUT_DIRECTORY       = $(BUILDDIR)doxy
 
 # If the CREATE_SUBDIRS tag is set to YES, then doxygen will create 4096 sub-
 # directories (in 2 levels) under the output directory of each output format and
@@ -144,7 +144,7 @@ FULL_PATH_NAMES        = YES
 # will be relative from the directory where doxygen is started.
 # This tag requires that the tag FULL_PATH_NAMES is set to YES.
 
-STRIP_FROM_PATH        =
+STRIP_FROM_PATH        = . $(BUILDDIR)
 
 # The STRIP_FROM_INC_PATH tag can be used to strip a user-defined part of the
 # path mentioned in the documentation of a class, which tells the reader which
@@ -580,7 +580,7 @@ STRICT_PROTO_MATCHING  = NO
 # documentation.
 # The default value is: YES.
 
-GENERATE_TODOLIST      = YES
+GENERATE_TODOLIST      = NO
 
 # The GENERATE_TESTLIST tag can be used to enable ( YES) or disable ( NO) the
 # test list. This list is created by putting \test commands in the
@@ -683,7 +683,7 @@ CITE_BIB_FILES         =
 # messages are off.
 # The default value is: NO.
 
-QUIET                  = NO
+QUIET                  = YES
 
 # The WARNINGS tag can be used to turn on/off the warning messages that are
 # generated to standard error ( stderr) by doxygen. If WARNINGS is set to YES
@@ -743,7 +743,7 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = .
+INPUT                  = src include $(BUILDDIR)include/libsigrok
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -778,7 +778,10 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = config.h libsigrok-internal.h session_driver.c std.c
+EXCLUDE                = config.h src/libsigrok-internal.h src/session_driver.c
+EXCLUDE               += src/std.c src/drivers.c src/ezusb.c src/fallback.c
+EXCLUDE               += src/soft-trigger.c src/usb.c src/sw_limits.c
+EXCLUDE               += src/scpi.h
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -797,20 +800,35 @@ EXCLUDE_SYMLINKS       = NO
 #
 # Ignore the following files and directories (see also EXCLUDE above):
 #  - config.h: Non-public stuff, the file doesn't get installed.
-#  - libsigrok-internal.h: Non-public stuff, the file doesn't get installed.
-#  - session_driver.c: Special driver for "virtual" devices, non-public.
-#  - std.c: Non-public helpers, no public API stuff in there.
-#  - hardware/*: Only driver-specific stuff, no public API stuff in there.
-#  - input/*: Only input.c contains public API, everything else doesn't.
-#  - output/*: Only output.c contains public API, everything else doesn't.
+#  - src/libsigrok-internal.h: Non-public stuff, the file doesn't get installed.
+#  - src/session_driver.c: Special driver for "virtual" devices, non-public.
+#  - src/std.c: Non-public helpers, no public API stuff in there.
+#  - src/drivers.c: Non-public helpers, no public API stuff in there.
+#  - src/ezusb.c: Non-public helpers, no public API stuff in there.
+#  - src/fallback.c: Fallback functions to API calls from serial.c.
+#  - src/soft-trigger.c: Non-public helpers, no public API stuff in there.
+#  - src/usb.c: Non-public helpers, no public API stuff in there.
+#  - src/sw_limits.c: Non-public helpers, no public API stuff in there.
+#  - src/scpi.h: Non-public helpers, no public API stuff in there.
+#  - src/hardware/*: Only driver-specific stuff, no public API stuff in there.
+#  - src/input/*: Only input.c contains public API, everything else doesn't.
+#  - src/output/*: Only output.c contains public API, everything else doesn't.
+#  - src/transform/*: Only transform.c contains public API, everything else doesn't.
+#  - src/scpi/*: Non-public helpers, no public API stuff in there.
+#  - src/dmm/*: Non-public helpers, no public API stuff in there.
+#  - src/lcr/*: Non-public helpers, no public API stuff in there.
+#  - src/modbus/*: Non-public helpers, no public API stuff in there.
+#  - src/scale/*: Non-public helpers, no public API stuff in there.
 #  - tests/*: Unit tests, no public API stuff in there.
 #  - bindings/*: Language bindings, no public API stuff in there.
 #  - doxy/*: Potentially already generated docs, should not be scanned.
 #
-EXCLUDE_PATTERNS       = */hardware/* */input/* */output/* */tests/*
-EXCLUDE_PATTERNS      += */bindings/*
-EXCLUDE_PATTERNS      += */doxy/*
-INPUT                 += input/input.c output/output.c
+EXCLUDE_PATTERNS       = */src/hardware/* */src/input/* */src/output/* */src/transform/*
+EXCLUDE_PATTERNS      += */src/scpi/* */src/dmm/* */src/lcr/*
+EXCLUDE_PATTERNS      += */src/modbus/* */src/scale/*
+EXCLUDE_PATTERNS      += */src/tests/* */src/bindings/* */src/doxy/*
+INPUT                 += src/input/input.c src/output/output.c
+INPUT                 += src/transform/transform.c
 
 # The EXCLUDE_SYMBOLS tag can be used to specify one or more symbol names
 # (namespaces, classes, functions, etc.) that should be excluded from the
@@ -1795,7 +1813,7 @@ MAN_LINKS              = NO
 # captures the structure of the code including all documentation.
 # The default value is: NO.
 
-GENERATE_XML           = NO
+GENERATE_XML           = YES
 
 # The XML_OUTPUT tag is used to specify where the XML pages will be put. If a
 # relative path is entered the value of OUTPUT_DIRECTORY will be put in front of
@@ -1824,7 +1842,7 @@ XML_DTD                =
 # The default value is: YES.
 # This tag requires that the tag GENERATE_XML is set to YES.
 
-XML_PROGRAMLISTING     = YES
+XML_PROGRAMLISTING     = NO
 
 #---------------------------------------------------------------------------
 # Configuration options related to the DOCBOOK output
