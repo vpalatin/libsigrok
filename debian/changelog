@@ -3,6 +3,7 @@ libsigrok (0.5.0-1) UNRELEASED; urgency=medium
   * New upstream release.
     + The libsigrok2 package now becomes libsigrok4 (upstream SO name change).
     + Add build-dep on libieee1284-3-dev to enable hung-chang-dso-2100 driver
+    + Add new C++ library, libsigrokcxx4.
   * Move to libftdi1-dev (Closes: #810376)
   * Add build-dep on check to enable unit tests
   * Remove old transitional libsigrok0-dev package.
