@@ -55,7 +55,7 @@ static const struct elusb_profile profiles[] = {
 };
 
 
-SR_PRIV libusb_device_handle *lascar_open(struct libusb_device *dev)
+static libusb_device_handle *lascar_open(struct libusb_device *dev)
 {
 	libusb_device_handle *dev_hdl;
 	int ret;
@@ -202,7 +202,7 @@ cleanup:
 	return *configlen ? SR_OK : SR_ERR;
 }
 
-SR_PRIV int lascar_save_config(libusb_device_handle *dev_hdl,
+static int lascar_save_config(libusb_device_handle *dev_hdl,
 		unsigned char *config, int configlen)
 {
 	struct drv_context *drvc;
@@ -293,7 +293,7 @@ static struct sr_dev_inst *lascar_identify(unsigned char *config)
 	struct dev_context *devc;
 	const struct elusb_profile *profile;
 	struct sr_dev_inst *sdi;
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	int modelid, i;
 	char firmware[5];
 
@@ -329,21 +329,21 @@ static struct sr_dev_inst *lascar_identify(unsigned char *config)
 		sdi->driver = di;
 
 		if (profile->logformat == LOG_TEMP_RH) {
-			/* Model this as two probes: temperature and humidity. */
-			if (!(probe = sr_probe_new(0, SR_PROBE_ANALOG, TRUE, "Temp")))
+			/* Model this as two channels: temperature and humidity. */
+			if (!(ch = sr_channel_new(0, SR_CHANNEL_ANALOG, TRUE, "Temp")))
 				return NULL;
-			sdi->probes = g_slist_append(NULL, probe);
-			if (!(probe = sr_probe_new(0, SR_PROBE_ANALOG, TRUE, "Hum")))
+			sdi->channels = g_slist_append(NULL, ch);
+			if (!(ch = sr_channel_new(0, SR_CHANNEL_ANALOG, TRUE, "Hum")))
 				return NULL;
-			sdi->probes = g_slist_append(sdi->probes, probe);
+			sdi->channels = g_slist_append(sdi->channels, ch);
 		} else if (profile->logformat == LOG_CO) {
-			if (!(probe = sr_probe_new(0, SR_PROBE_ANALOG, TRUE, "CO")))
+			if (!(ch = sr_channel_new(0, SR_CHANNEL_ANALOG, TRUE, "CO")))
 				return NULL;
-			sdi->probes = g_slist_append(NULL, probe);
+			sdi->channels = g_slist_append(NULL, ch);
 		} else {
-			if (!(probe = sr_probe_new(0, SR_PROBE_ANALOG, TRUE, "P1")))
+			if (!(ch = sr_channel_new(0, SR_CHANNEL_ANALOG, TRUE, "P1")))
 				return NULL;
-			sdi->probes = g_slist_append(NULL, probe);
+			sdi->channels = g_slist_append(NULL, ch);
 		}
 
 		if (!(devc = g_try_malloc0(sizeof(struct dev_context))))
@@ -398,7 +398,7 @@ static void lascar_el_usb_dispatch(struct sr_dev_inst *sdi, unsigned char *buf,
 	struct dev_context *devc;
 	struct sr_datafeed_packet packet;
 	struct sr_datafeed_analog analog;
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	float *temp, *rh;
 	uint16_t s;
 	int samples, samples_left, i, j;
@@ -435,9 +435,9 @@ static void lascar_el_usb_dispatch(struct sr_dev_inst *sdi, unsigned char *buf,
 		}
 		analog.num_samples = j;
 
-		probe = sdi->probes->data;
-		if (probe->enabled) {
-			analog.probes = g_slist_append(NULL, probe);
+		ch = sdi->channels->data;
+		if (ch->enabled) {
+			analog.channels = g_slist_append(NULL, ch);
 			analog.mq = SR_MQ_TEMPERATURE;
 			if (devc->temp_unit == 1)
 				analog.unit = SR_UNIT_FAHRENHEIT;
@@ -447,9 +447,9 @@ static void lascar_el_usb_dispatch(struct sr_dev_inst *sdi, unsigned char *buf,
 			sr_session_send(devc->cb_data, &packet);
 		}
 
-		probe = sdi->probes->next->data;
-		if (probe->enabled) {
-			analog.probes = g_slist_append(NULL, probe);
+		ch = sdi->channels->next->data;
+		if (ch->enabled) {
+			analog.channels = g_slist_append(NULL, ch);
 			analog.mq = SR_MQ_RELATIVE_HUMIDITY;
 			analog.unit = SR_UNIT_PERCENTAGE;
 			analog.data = rh;
@@ -462,7 +462,7 @@ static void lascar_el_usb_dispatch(struct sr_dev_inst *sdi, unsigned char *buf,
 	case LOG_CO:
 		packet.type = SR_DF_ANALOG;
 		packet.payload = &analog;
-		analog.probes = sdi->probes;
+		analog.channels = sdi->channels;
 		analog.num_samples = samples;
 		analog.mq = SR_MQ_CARBON_MONOXIDE;
 		analog.unit = SR_UNIT_CONCENTRATION;
@@ -488,24 +488,18 @@ static void lascar_el_usb_dispatch(struct sr_dev_inst *sdi, unsigned char *buf,
 
 SR_PRIV int lascar_el_usb_handle_events(int fd, int revents, void *cb_data)
 {
-	struct dev_context *devc;
 	struct drv_context *drvc = di->priv;
 	struct sr_datafeed_packet packet;
 	struct sr_dev_inst *sdi;
 	struct timeval tv;
-	int i;
 
 	(void)fd;
 	(void)revents;
 
 	sdi = cb_data;
-	devc = sdi->priv;
 
 	if (sdi->status == SR_ST_STOPPING) {
-		for (i = 0; devc->usbfd[i] != -1; i++)
-			sr_source_remove(devc->usbfd[i]);
-
-		sdi->driver->dev_close(sdi);
+		usb_source_remove(drvc->sr_ctx);
 
 		packet.type = SR_DF_END;
 		sr_session_send(cb_data, &packet);
@@ -532,7 +526,7 @@ SR_PRIV void lascar_el_usb_receive_transfer(struct libusb_transfer *transfer)
 	switch (transfer->status) {
 	case LIBUSB_TRANSFER_NO_DEVICE:
 		/* USB device was unplugged. */
-		hw_dev_acquisition_stop(sdi, sdi);
+		dev_acquisition_stop(sdi, sdi);
 		return;
 	case LIBUSB_TRANSFER_COMPLETED:
 	case LIBUSB_TRANSFER_TIMED_OUT: /* We may have received some data though */
@@ -551,7 +545,7 @@ SR_PRIV void lascar_el_usb_receive_transfer(struct libusb_transfer *transfer)
 				devc->rcvd_bytes, devc->log_size,
 				devc->rcvd_samples, devc->logged_samples);
 		if (devc->rcvd_bytes >= devc->log_size)
-			hw_dev_acquisition_stop(sdi, sdi);
+			dev_acquisition_stop(sdi, sdi);
 	}
 
 	if (sdi->status == SR_ST_ACTIVE) {
@@ -561,7 +555,7 @@ SR_PRIV void lascar_el_usb_receive_transfer(struct libusb_transfer *transfer)
 			       libusb_error_name(ret));
 			g_free(transfer->buffer);
 			libusb_free_transfer(transfer);
-			hw_dev_acquisition_stop(sdi, sdi);
+			dev_acquisition_stop(sdi, sdi);
 		}
 	} else {
 		/* This was the last transfer we're going to receive, so
@@ -660,4 +654,3 @@ SR_PRIV int lascar_stop_logging(const struct sr_dev_inst *sdi)
 
 	return ret;
 }
-

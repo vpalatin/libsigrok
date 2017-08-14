@@ -43,10 +43,16 @@
 #define STATUS_FLAG_READ	0x10
 #define STATUS_FLAG_20		0x20
 
+/* In bytes */
 #define MEMORY_SIZE_8K		0x00
 #define MEMORY_SIZE_64K		0x01
 #define MEMORY_SIZE_128K	0x02
+#define MEMORY_SIZE_256K	0x03
 #define MEMORY_SIZE_512K	0x04
+#define MEMORY_SIZE_1M		0x05
+#define MEMORY_SIZE_2M		0x06
+#define MEMORY_SIZE_4M		0x07
+#define MEMORY_SIZE_8M		0x08
 
 #define STATUS_BUSY		0x01	/* WTF / ??? */
 #define STATUS_READY		0x02
@@ -79,11 +85,14 @@ enum {
 SR_PRIV void analyzer_set_freq(int freq, int scale);
 SR_PRIV void analyzer_set_ramsize_trigger_address(unsigned int address);
 SR_PRIV void analyzer_set_triggerbar_address(unsigned int address);
+SR_PRIV unsigned int  analyzer_get_ramsize_trigger_address(void );
+SR_PRIV unsigned int analyzer_get_triggerbar_address(void);
 SR_PRIV void analyzer_set_compression(unsigned int type);
 SR_PRIV void analyzer_set_memory_size(unsigned int size);
 SR_PRIV void analyzer_add_trigger(int channel, int type);
 SR_PRIV void analyzer_set_trigger_count(int count);
 SR_PRIV void analyzer_add_filter(int channel, int type);
+SR_PRIV void analyzer_set_voltage_threshold(int thresh);
 
 SR_PRIV unsigned int analyzer_read_status(libusb_device_handle *devh);
 SR_PRIV unsigned int analyzer_read_id(libusb_device_handle *devh);

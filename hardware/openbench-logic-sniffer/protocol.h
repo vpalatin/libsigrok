@@ -26,16 +26,9 @@
 #include "libsigrok.h"
 #include "libsigrok-internal.h"
 
-/* Message logging helpers with subsystem-specific prefix string. */
-#define LOG_PREFIX "ols: "
-#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
-#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
-#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
-#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
-#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
-#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+#define LOG_PREFIX "ols"
 
-#define NUM_PROBES             32
+#define NUM_CHANNELS             32
 #define NUM_TRIGGER_STAGES     4
 #define TRIGGER_TYPE           "01"
 #define SERIAL_SPEED           B115200
@@ -46,38 +39,38 @@
 /* Command opcodes */
 #define CMD_RESET                  0x00
 #define CMD_RUN                    0x01
+#define CMD_TESTMODE               0x03
 #define CMD_ID                     0x02
 #define CMD_METADATA               0x04
 #define CMD_SET_FLAGS              0x82
 #define CMD_SET_DIVIDER            0x80
 #define CMD_CAPTURE_SIZE           0x81
-#define CMD_SET_TRIGGER_MASK_0     0xc0
-#define CMD_SET_TRIGGER_MASK_1     0xc4
-#define CMD_SET_TRIGGER_MASK_2     0xc8
-#define CMD_SET_TRIGGER_MASK_3     0xcc
-#define CMD_SET_TRIGGER_VALUE_0    0xc1
-#define CMD_SET_TRIGGER_VALUE_1    0xc5
-#define CMD_SET_TRIGGER_VALUE_2    0xc9
-#define CMD_SET_TRIGGER_VALUE_3    0xcd
-#define CMD_SET_TRIGGER_CONFIG_0   0xc2
-#define CMD_SET_TRIGGER_CONFIG_1   0xc6
-#define CMD_SET_TRIGGER_CONFIG_2   0xca
-#define CMD_SET_TRIGGER_CONFIG_3   0xce
+#define CMD_SET_TRIGGER_MASK       0xc0
+#define CMD_SET_TRIGGER_VALUE      0xc1
+#define CMD_SET_TRIGGER_CONFIG     0xc2
+
+/* Trigger config */
+#define TRIGGER_START              (1 << 3)
 
 /* Bitmasks for CMD_FLAGS */
-#define FLAG_DEMUX                 0x01
-#define FLAG_FILTER                0x02
-#define FLAG_CHANNELGROUP_1        0x04
-#define FLAG_CHANNELGROUP_2        0x08
-#define FLAG_CHANNELGROUP_3        0x10
-#define FLAG_CHANNELGROUP_4        0x20
-#define FLAG_CLOCK_EXTERNAL        0x40
-#define FLAG_CLOCK_INVERTED        0x80
-#define FLAG_RLE                   0x0100
+/* 12-13 unused, 14-15 RLE mode (we hardcode mode 0). */
+#define FLAG_INTERNAL_TEST_MODE    (1 << 11)
+#define FLAG_EXTERNAL_TEST_MODE    (1 << 10)
+#define FLAG_SWAP_CHANNELS           (1 << 9)
+#define FLAG_RLE                   (1 << 8)
+#define FLAG_SLOPE_FALLING         (1 << 7)
+#define FLAG_CLOCK_EXTERNAL        (1 << 6)
+#define FLAG_CHANNELGROUP_4        (1 << 5)
+#define FLAG_CHANNELGROUP_3        (1 << 4)
+#define FLAG_CHANNELGROUP_2        (1 << 3)
+#define FLAG_CHANNELGROUP_1        (1 << 2)
+#define FLAG_FILTER                (1 << 1)
+#define FLAG_DEMUX                 (1 << 0)
 
 /* Private, per-device-instance driver context. */
 struct dev_context {
 	/* Fixed device settings */
+	int max_channels;
 	uint32_t max_samples;
 	uint32_t max_samplerate;
 	uint32_t protocol_version;
@@ -88,34 +81,35 @@ struct dev_context {
 	uint64_t limit_samples;
 	int capture_ratio;
 	int trigger_at;
-	uint32_t probe_mask;
+	uint32_t channel_mask;
 	uint32_t trigger_mask[4];
 	uint32_t trigger_value[4];
 	int num_stages;
-	uint32_t flag_reg;
+	uint16_t flag_reg;
 
 	/* Operational states */
 	unsigned int num_transfers;
 	unsigned int num_samples;
 	int num_bytes;
+	int cnt_bytes;
+	int cnt_samples;
+	int cnt_samples_rle;
 
 	/* Temporary variables */
-	int rle_count;
+	unsigned int rle_count;
 	unsigned char sample[4];
 	unsigned char tmp_sample[4];
 	unsigned char *raw_sample_buf;
 };
 
 
-SR_PRIV extern const char *ols_probe_names[NUM_PROBES + 1];
+SR_PRIV extern const char *ols_channel_names[NUM_CHANNELS + 1];
 
 SR_PRIV int send_shortcommand(struct sr_serial_dev_inst *serial,
 		uint8_t command);
 SR_PRIV int send_longcommand(struct sr_serial_dev_inst *serial,
-		uint8_t command, uint32_t data);
-SR_PRIV int ols_configure_probes(const struct sr_dev_inst *sdi);
-SR_PRIV uint32_t reverse16(uint32_t in);
-SR_PRIV uint32_t reverse32(uint32_t in);
+		uint8_t command, uint8_t *data);
+SR_PRIV int ols_configure_channels(const struct sr_dev_inst *sdi);
 SR_PRIV struct dev_context *ols_dev_new(void);
 SR_PRIV struct sr_dev_inst *get_metadata(struct sr_serial_dev_inst *serial);
 SR_PRIV int ols_set_samplerate(const struct sr_dev_inst *sdi,

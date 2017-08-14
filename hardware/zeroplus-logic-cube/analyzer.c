@@ -118,6 +118,7 @@ static int g_memory_size = MEMORY_SIZE_8K;
 static int g_ramsize_triggerbar_addr = 2 * 1024;
 static int g_triggerbar_addr = 0;
 static int g_compression = COMPRESSION_NONE;
+static int g_thresh = 0x31; /* 1.5V */
 
 /* Maybe unk specifies an "endpoint" or "register" of sorts. */
 static int analyzer_write_status(libusb_device_handle *devh, unsigned char unk,
@@ -404,19 +405,17 @@ SR_PRIV void analyzer_wait(libusb_device_handle *devh, int set, int unset)
 
 	while (1) {
 		status = gl_reg_read(devh, DEV_STATUS);
-		if ((status & set) && ((status & unset) == 0))
+		if ((!set || (status & set)) && ((status & unset) == 0))
 			return;
 	}
 }
 
 SR_PRIV void analyzer_read_start(libusb_device_handle *devh)
 {
-	int i;
-
 	analyzer_write_status(devh, 3, STATUS_FLAG_20 | STATUS_FLAG_READ);
 
-	for (i = 0; i < 8; i++)
-		(void)gl_reg_read(devh, READ_RAM_STATUS);
+	/* Prep for bulk reads */
+	gl_reg_read_buf(devh, READ_RAM_STATUS, NULL, 0);
 }
 
 SR_PRIV int analyzer_read_data(libusb_device_handle *devh, void *buffer,
@@ -467,20 +466,17 @@ SR_PRIV void analyzer_configure(libusb_device_handle *devh)
 	__analyzer_set_trigger_count(devh, g_trigger_count);
 
 	/* Set_Trigger_Level */
-	gl_reg_write(devh, TRIGGER_LEVEL0, 0x31);
-	gl_reg_write(devh, TRIGGER_LEVEL1, 0x31);
-	gl_reg_write(devh, TRIGGER_LEVEL2, 0x31);
-	gl_reg_write(devh, TRIGGER_LEVEL3, 0x31);
+	gl_reg_write(devh, TRIGGER_LEVEL0, g_thresh);
+	gl_reg_write(devh, TRIGGER_LEVEL1, g_thresh);
+	gl_reg_write(devh, TRIGGER_LEVEL2, g_thresh);
+	gl_reg_write(devh, TRIGGER_LEVEL3, g_thresh);
 
 	/* Size of actual memory >> 2 */
 	__analyzer_set_ramsize_trigger_address(devh, g_ramsize_triggerbar_addr);
 	__analyzer_set_triggerbar_address(devh, g_triggerbar_addr);
 
 	/* Set_Dont_Care_TriggerBar */
-	if (g_triggerbar_addr)
-		gl_reg_write(devh, DONT_CARE_TRIGGERBAR, 0x00);
-	else
-		gl_reg_write(devh, DONT_CARE_TRIGGERBAR, 0x01);
+	gl_reg_write(devh, DONT_CARE_TRIGGERBAR, 0x01);
 
 	/* Enable_Status */
 	analyzer_set_filter(devh);
@@ -569,9 +565,19 @@ SR_PRIV void analyzer_set_ramsize_trigger_address(unsigned int address)
 	g_ramsize_triggerbar_addr = address;
 }
 
+SR_PRIV unsigned int analyzer_get_ramsize_trigger_address(void)
+{
+	return g_ramsize_triggerbar_addr;
+}
+
 SR_PRIV void analyzer_set_triggerbar_address(unsigned int address)
 {
 	g_triggerbar_addr = address;
+}
+
+SR_PRIV unsigned int analyzer_get_triggerbar_address(void)
+{
+	return g_triggerbar_addr;
 }
 
 SR_PRIV unsigned int analyzer_read_status(libusb_device_handle *devh)
@@ -607,6 +613,11 @@ SR_PRIV void analyzer_set_compression(unsigned int type)
 	g_compression = type;
 }
 
+SR_PRIV void analyzer_set_voltage_threshold(int thresh)
+{
+	g_thresh = thresh;
+}
+
 SR_PRIV void analyzer_wait_button(libusb_device_handle *devh)
 {
 	analyzer_wait(devh, STATUS_BUTTON_PRESSED, 0);
@@ -614,7 +625,7 @@ SR_PRIV void analyzer_wait_button(libusb_device_handle *devh)
 
 SR_PRIV void analyzer_wait_data(libusb_device_handle *devh)
 {
-	analyzer_wait(devh, STATUS_READY | 8, STATUS_BUSY);
+	analyzer_wait(devh, 0, STATUS_BUSY);
 }
 
 SR_PRIV int analyzer_decompress(void *input, unsigned int input_len,

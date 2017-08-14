@@ -24,24 +24,17 @@
 #include "libsigrok.h"
 #include "libsigrok-internal.h"
 
-/* Message logging helpers with subsystem-specific prefix string. */
-#define LOG_PREFIX "output/analog: "
-#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
-#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
-#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
-#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
-#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
-#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+#define LOG_PREFIX "output/analog"
 
 struct context {
-	int num_enabled_probes;
-	GPtrArray *probelist;
+	int num_enabled_channels;
+	GPtrArray *channellist;
 };
 
 static int init(struct sr_output *o)
 {
 	struct context *ctx;
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	GSList *l;
 
 	sr_spew("Initializing output module.");
@@ -55,14 +48,14 @@ static int init(struct sr_output *o)
 	}
 	o->internal = ctx;
 
-	/* Get the number of probes and their names. */
-	ctx->probelist = g_ptr_array_new();
-	for (l = o->sdi->probes; l; l = l->next) {
-		probe = l->data;
-		if (!probe || !probe->enabled)
+	/* Get the number of channels and their names. */
+	ctx->channellist = g_ptr_array_new();
+	for (l = o->sdi->channels; l; l = l->next) {
+		ch = l->data;
+		if (!ch || !ch->enabled)
 			continue;
-		g_ptr_array_add(ctx->probelist, probe->name);
-		ctx->num_enabled_probes++;
+		g_ptr_array_add(ctx->channellist, ch->name);
+		ctx->num_enabled_channels++;
 	}
 
 	return SR_OK;
@@ -129,7 +122,7 @@ static void fancyprint(int unit, int mqflags, float value, GString *out)
 		si_printf(value, out, "Hz");
 		break;
 	case SR_UNIT_PERCENTAGE:
-		g_string_append_printf(out, "%f%%", value);
+		g_string_append_printf(out, "%f %%", value);
 		break;
 	case SR_UNIT_BOOLEAN:
 		if (value > 0)
@@ -173,29 +166,54 @@ static void fancyprint(int unit, int mqflags, float value, GString *out)
 	case SR_UNIT_CONCENTRATION:
 		g_string_append_printf(out, "%f ppm", value * 1000000);
 		break;
+	case SR_UNIT_REVOLUTIONS_PER_MINUTE:
+		si_printf(value, out, "RPM");
+		break;
+	case SR_UNIT_VOLT_AMPERE:
+		si_printf(value, out, "VA");
+		break;
+	case SR_UNIT_WATT:
+		si_printf(value, out, "W");
+		break;
+	case SR_UNIT_WATT_HOUR:
+		si_printf(value, out, "Wh");
+		break;
 	default:
 		si_printf(value, out, "");
 		break;
 	}
-	if ((mqflags & (SR_MQFLAG_AC | SR_MQFLAG_DC)) == (SR_MQFLAG_AC | SR_MQFLAG_DC))
-		g_string_append_printf(out, " AC+DC");
-	else if (mqflags & SR_MQFLAG_AC)
+
+	if (mqflags & SR_MQFLAG_AC)
 		g_string_append_printf(out, " AC");
-	else if (mqflags & SR_MQFLAG_DC)
+	if (mqflags & SR_MQFLAG_DC)
 		g_string_append_printf(out, " DC");
+	if (mqflags & SR_MQFLAG_RMS)
+		g_string_append_printf(out, " RMS");
+	if (mqflags & SR_MQFLAG_DIODE)
+		g_string_append_printf(out, " DIODE");
+	if (mqflags & SR_MQFLAG_HOLD)
+		g_string_append_printf(out, " HOLD");
+	if (mqflags & SR_MQFLAG_MAX)
+		g_string_append_printf(out, " MAX");
+	if (mqflags & SR_MQFLAG_MIN)
+		g_string_append_printf(out, " MIN");
+	if (mqflags & SR_MQFLAG_AUTORANGE)
+		g_string_append_printf(out, " AUTO");
+	if (mqflags & SR_MQFLAG_RELATIVE)
+		g_string_append_printf(out, " REL");
+	if (mqflags & SR_MQFLAG_AVG)
+		g_string_append_printf(out, " AVG");
 	g_string_append_c(out, '\n');
 }
 
-static int receive(struct sr_output *o, const struct sr_dev_inst *sdi,
-		const struct sr_datafeed_packet *packet, GString **out)
+static int receive(struct sr_output *o, const struct sr_datafeed_packet *packet,
+		GString **out)
 {
 	const struct sr_datafeed_analog *analog;
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	GSList *l;
 	const float *fdata;
 	int i, p;
-
-	(void)sdi;
 
 	*out = NULL;
 	if (!o || !o->sdi)
@@ -213,9 +231,9 @@ static int receive(struct sr_output *o, const struct sr_dev_inst *sdi,
 		fdata = (const float *)analog->data;
 		*out = g_string_sized_new(512);
 		for (i = 0; i < analog->num_samples; i++) {
-			for (l = analog->probes, p = 0; l; l = l->next, p++) {
-				probe = l->data;
-				g_string_append_printf(*out, "%s: ", probe->name);
+			for (l = analog->channels, p = 0; l; l = l->next, p++) {
+				ch = l->data;
+				g_string_append_printf(*out, "%s: ", ch->name);
 				fancyprint(analog->unit, analog->mqflags,
 						fdata[i + p], *out);
 			}
@@ -234,7 +252,7 @@ static int cleanup(struct sr_output *o)
 		return SR_ERR_ARG;
 	ctx = o->internal;
 
-	g_ptr_array_free(ctx->probelist, 1);
+	g_ptr_array_free(ctx->channellist, 1);
 	g_free(ctx);
 	o->internal = NULL;
 
@@ -244,7 +262,6 @@ static int cleanup(struct sr_output *o)
 SR_PRIV struct sr_output_format output_analog = {
 	.id = "analog",
 	.description = "Analog data",
-	.df_type = SR_DF_ANALOG,
 	.init = init,
 	.receive = receive,
 	.cleanup = cleanup

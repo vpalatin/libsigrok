@@ -21,17 +21,13 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "libsigrok.h"
 #include "libsigrok-internal.h"
 
-/* Message logging helpers with subsystem-specific prefix string. */
-#define LOG_PREFIX "strutil: "
-#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
-#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
-#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
-#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
-#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
-#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+/** @cond PRIVATE */
+#define LOG_PREFIX "strutil"
+/** @endcond */
 
 /**
  * @file
@@ -48,8 +44,179 @@
  */
 
 /**
- * Convert a numeric value value to its "natural" string representation.
- * in SI units
+ * @private
+ *
+ * Convert a string representation of a numeric value to a long integer. The
+ * conversion is strict and will fail if the complete string does not represent
+ * a valid long integer. The function sets errno according to the details of the
+ * failure.
+ *
+ * @param str The string representation to convert.
+ * @param ret Pointer to long where the result of the conversion will be stored.
+ *
+ * @return SR_OK if conversion is successful, otherwise SR_ERR.
+ *
+ * @since 0.3.0
+ */
+SR_PRIV int sr_atol(const char *str, long *ret)
+{
+	long tmp;
+	char *endptr = NULL;
+
+	errno = 0;
+	tmp = strtol(str, &endptr, 0);
+
+	if (!endptr || *endptr || errno) {
+		if (!errno)
+			errno = EINVAL;
+		return SR_ERR;
+	}
+
+	*ret = tmp;
+	return SR_OK;
+}
+
+/**
+ * @private
+ *
+ * Convert a string representation of a numeric value to an integer. The
+ * conversion is strict and will fail if the complete string does not represent
+ * a valid integer. The function sets errno according to the details of the
+ * failure.
+ *
+ * @param str The string representation to convert.
+ * @param ret Pointer to int where the result of the conversion will be stored.
+ *
+ * @return SR_OK if conversion is successful, otherwise SR_ERR.
+ *
+ * @since 0.3.0
+ */
+SR_PRIV int sr_atoi(const char *str, int *ret)
+{
+	long tmp;
+
+	if (sr_atol(str, &tmp) != SR_OK)
+		return SR_ERR;
+
+	if ((int) tmp != tmp) {
+		errno = ERANGE;
+		return SR_ERR;
+	}
+
+	*ret = (int) tmp;
+	return SR_OK;
+}
+
+/**
+ * @private
+ *
+ * Convert a string representation of a numeric value to a double. The
+ * conversion is strict and will fail if the complete string does not represent
+ * a valid double. The function sets errno according to the details of the
+ * failure.
+ *
+ * @param str The string representation to convert.
+ * @param ret Pointer to double where the result of the conversion will be stored.
+ *
+ * @return SR_OK if conversion is successful, otherwise SR_ERR.
+ *
+ * @since 0.3.0
+ */
+SR_PRIV int sr_atod(const char *str, double *ret)
+{
+	double tmp;
+	char *endptr = NULL;
+
+	errno = 0;
+	tmp = strtof(str, &endptr);
+
+	if (!endptr || *endptr || errno) {
+		if (!errno)
+			errno = EINVAL;
+		return SR_ERR;
+	}
+
+	*ret = tmp;
+	return SR_OK;
+}
+
+/**
+ * @private
+ *
+ * Convert a string representation of a numeric value to a float. The
+ * conversion is strict and will fail if the complete string does not represent
+ * a valid float. The function sets errno according to the details of the
+ * failure.
+ *
+ * @param str The string representation to convert.
+ * @param ret Pointer to float where the result of the conversion will be stored.
+ *
+ * @return SR_OK if conversion is successful, otherwise SR_ERR.
+ *
+ * @since 0.3.0
+ */
+SR_PRIV int sr_atof(const char *str, float *ret)
+{
+	double tmp;
+
+	if (sr_atod(str, &tmp) != SR_OK)
+		return SR_ERR;
+
+	if ((float) tmp != tmp) {
+		errno = ERANGE;
+		return SR_ERR;
+	}
+
+	*ret = (float) tmp;
+	return SR_OK;
+}
+
+/**
+ * @private
+ *
+ * Convert a string representation of a numeric value to a float. The
+ * conversion is strict and will fail if the complete string does not represent
+ * a valid float. The function sets errno according to the details of the
+ * failure. This version ignores the locale.
+ *
+ * @param str The string representation to convert.
+ * @param ret Pointer to float where the result of the conversion will be stored.
+ *
+ * @return SR_OK if conversion is successful, otherwise SR_ERR.
+ *
+ * @since 0.3.0
+ */
+SR_PRIV int sr_atof_ascii(const char *str, float *ret)
+{
+	double tmp;
+	char *endptr = NULL;
+
+	errno = 0;
+	tmp = g_ascii_strtod(str, &endptr);
+
+	if (!endptr || *endptr || errno) {
+		if (!errno)
+			errno = EINVAL;
+		return SR_ERR;
+	}
+
+	/* FIXME This fails unexpectedly. Some other method to safel downcast
+	 * needs to be found. Checking against FLT_MAX doesn't work as well. */
+	/*
+	if ((float) tmp != tmp) {
+		errno = ERANGE;
+		sr_dbg("ERANGEEEE %e != %e", (float) tmp, tmp);
+		return SR_ERR;
+	}
+	*/
+
+	*ret = (float) tmp;
+	return SR_OK;
+}
+
+/**
+ * Convert a numeric value value to its "natural" string representation
+ * in SI units.
  *
  * E.g. a value of 3000000, with units set to "W", would be converted
  * to "3 MW", 20000 to "20 kW", 31500 would become "31.5 kW".
@@ -61,35 +228,35 @@
  * @return A g_try_malloc()ed string representation of the samplerate value,
  *         or NULL upon errors. The caller is responsible to g_free() the
  *         memory.
+ *
+ * @since 0.2.0
  */
 SR_API char *sr_si_string_u64(uint64_t x, const char *unit)
 {
+	uint8_t i;
+	uint64_t quot, divisor[] = {
+		SR_HZ(1), SR_KHZ(1), SR_MHZ(1), SR_GHZ(1),
+		SR_GHZ(1000), SR_GHZ(1000 * 1000), SR_GHZ(1000 * 1000 * 1000),
+	};
+	const char *p, prefix[] = "\0kMGTPE";
+	char fmt[16], fract[20] = "", *f;
+
 	if (unit == NULL)
 		unit = "";
 
-	if ((x >= SR_GHZ(1)) && (x % SR_GHZ(1) == 0)) {
-		return g_strdup_printf("%" PRIu64 " G%s", x / SR_GHZ(1), unit);
-	} else if ((x >= SR_GHZ(1)) && (x % SR_GHZ(1) != 0)) {
-		return g_strdup_printf("%" PRIu64 ".%" PRIu64 " G%s",
-				       x / SR_GHZ(1), x % SR_GHZ(1), unit);
-	} else if ((x >= SR_MHZ(1)) && (x % SR_MHZ(1) == 0)) {
-		return g_strdup_printf("%" PRIu64 " M%s",
-				       x / SR_MHZ(1), unit);
-	} else if ((x >= SR_MHZ(1)) && (x % SR_MHZ(1) != 0)) {
-		return g_strdup_printf("%" PRIu64 ".%" PRIu64 " M%s",
-				    x / SR_MHZ(1), x % SR_MHZ(1), unit);
-	} else if ((x >= SR_KHZ(1)) && (x % SR_KHZ(1) == 0)) {
-		return g_strdup_printf("%" PRIu64 " k%s",
-				    x / SR_KHZ(1), unit);
-	} else if ((x >= SR_KHZ(1)) && (x % SR_KHZ(1) != 0)) {
-		return g_strdup_printf("%" PRIu64 ".%" PRIu64 " k%s",
-				    x / SR_KHZ(1), x % SR_KHZ(1), unit);
-	} else {
-		return g_strdup_printf("%" PRIu64 " %s", x, unit);
+	for (i = 0; (quot = x / divisor[i]) >= 1000; i++);
+
+	if (i) {
+		sprintf(fmt, ".%%0%d"PRIu64, i * 3);
+		f = fract + sprintf(fract, fmt, x % divisor[i]) - 1;
+
+		while (f >= fract && strchr("0.", *f))
+			*f-- = 0;
 	}
 
-	sr_err("%s: Error creating SI units string.", __func__);
-	return NULL;
+	p = prefix + i;
+
+	return g_strdup_printf("%" PRIu64 "%s %.1s%s", quot, fract, p, unit);
 }
 
 /**
@@ -103,6 +270,8 @@ SR_API char *sr_si_string_u64(uint64_t x, const char *unit)
  * @return A g_try_malloc()ed string representation of the samplerate value,
  *         or NULL upon errors. The caller is responsible to g_free() the
  *         memory.
+ *
+ * @since 0.1.0
  */
 SR_API char *sr_samplerate_string(uint64_t samplerate)
 {
@@ -120,6 +289,8 @@ SR_API char *sr_samplerate_string(uint64_t samplerate)
  * @return A g_try_malloc()ed string representation of the frequency value,
  *         or NULL upon errors. The caller is responsible to g_free() the
  *         memory.
+ *
+ * @since 0.1.0
  */
 SR_API char *sr_period_string(uint64_t frequency)
 {
@@ -163,6 +334,8 @@ SR_API char *sr_period_string(uint64_t frequency)
  * @return A g_try_malloc()ed string representation of the voltage value,
  *         or NULL upon errors. The caller is responsible to g_free() the
  *         memory.
+ *
+ * @since 0.2.0
  */
 SR_API char *sr_voltage_string(uint64_t v_p, uint64_t v_q)
 {
@@ -197,9 +370,9 @@ SR_API char *sr_voltage_string(uint64_t v_p, uint64_t v_q)
  *            intended. Must not be NULL. Also, sdi->driver and
  *            sdi->driver->info_get must not be NULL.
  * @param triggerstring The string containing the trigger specification for
- *        one or more probes of this device. Entries for multiple probes are
+ *        one or more channels of this device. Entries for multiple channels are
  *        comma-separated. Triggers are specified in the form key=value,
- *        where the key is a probe number (or probe name) and the value is
+ *        where the key is a channel number (or channel name) and the value is
  *        the requested trigger type. Valid trigger types currently
  *        include 'r' (rising edge), 'f' (falling edge), 'c' (any pin value
  *        change), '0' (low value), or '1' (high value).
@@ -207,52 +380,55 @@ SR_API char *sr_voltage_string(uint64_t v_p, uint64_t v_q)
  *
  * @return Pointer to a list of trigger types (strings), or NULL upon errors.
  *         The pointer list (if non-NULL) has as many entries as the
- *         respective device has probes (all physically available probes,
+ *         respective device has channels (all physically available channels,
  *         not just enabled ones). Entries of the list which don't have
  *         a trigger value set in 'triggerstring' are NULL, the other entries
  *         contain the respective trigger type which is requested for the
- *         respective probe (e.g. "r", "c", and so on).
+ *         respective channel (e.g. "r", "c", and so on).
+ *
+ * @since 0.2.0
  */
 SR_API char **sr_parse_triggerstring(const struct sr_dev_inst *sdi,
 				     const char *triggerstring)
 {
 	GSList *l;
 	GVariant *gvar;
-	struct sr_probe *probe;
-	int max_probes, probenum, i;
+	struct sr_channel *ch;
+	int max_channels, channelnum, i;
 	char **tokens, **triggerlist, *trigger, *tc;
 	const char *trigger_types;
 	gboolean error;
 
-	max_probes = g_slist_length(sdi->probes);
+	max_channels = g_slist_length(sdi->channels);
 	error = FALSE;
 
-	if (!(triggerlist = g_try_malloc0(max_probes * sizeof(char *)))) {
+	if (!(triggerlist = g_try_malloc0(max_channels * sizeof(char *)))) {
 		sr_err("%s: triggerlist malloc failed", __func__);
 		return NULL;
 	}
 
-	if (sdi->driver->config_list(SR_CONF_TRIGGER_TYPE, &gvar, sdi) != SR_OK) {
+	if (sdi->driver->config_list(SR_CONF_TRIGGER_TYPE,
+				&gvar, sdi, NULL) != SR_OK) {
 		sr_err("%s: Device doesn't support any triggers.", __func__);
 		return NULL;
 	}
 	trigger_types = g_variant_get_string(gvar, NULL);
 
-	tokens = g_strsplit(triggerstring, ",", max_probes);
+	tokens = g_strsplit(triggerstring, ",", max_channels);
 	for (i = 0; tokens[i]; i++) {
-		probenum = -1;
-		for (l = sdi->probes; l; l = l->next) {
-			probe = (struct sr_probe *)l->data;
-			if (probe->enabled
-				&& !strncmp(probe->name, tokens[i],
-					strlen(probe->name))) {
-				probenum = probe->index;
+		channelnum = -1;
+		for (l = sdi->channels; l; l = l->next) {
+			ch = (struct sr_channel *)l->data;
+			if (ch->enabled
+				&& !strncmp(ch->name, tokens[i],
+					strlen(ch->name))) {
+				channelnum = ch->index;
 				break;
 			}
 		}
 
-		if (probenum < 0 || probenum >= max_probes) {
-			sr_err("Invalid probe.");
+		if (channelnum < 0 || channelnum >= max_channels) {
+			sr_err("Invalid channel.");
 			error = TRUE;
 			break;
 		}
@@ -267,14 +443,14 @@ SR_API char **sr_parse_triggerstring(const struct sr_dev_inst *sdi,
 				}
 			}
 			if (!error)
-				triggerlist[probenum] = g_strdup(trigger);
+				triggerlist[channelnum] = g_strdup(trigger);
 		}
 	}
 	g_strfreev(tokens);
 	g_variant_unref(gvar);
 
 	if (error) {
-		for (i = 0; i < max_probes; i++)
+		for (i = 0; i < max_channels; i++)
 			g_free(triggerlist[i]);
 		g_free(triggerlist);
 		triggerlist = NULL;
@@ -297,18 +473,25 @@ SR_API char **sr_parse_triggerstring(const struct sr_dev_inst *sdi,
  * @param size Pointer to uint64_t which will contain the string's size value.
  *
  * @return SR_OK upon success, SR_ERR upon errors.
+ *
+ * @since 0.1.0
  */
 SR_API int sr_parse_sizestring(const char *sizestring, uint64_t *size)
 {
 	int multiplier, done;
+	double frac_part;
 	char *s;
 
 	*size = strtoull(sizestring, &s, 10);
 	multiplier = 0;
+	frac_part = 0;
 	done = FALSE;
 	while (s && *s && multiplier == 0 && !done) {
 		switch (*s) {
 		case ' ':
+			break;
+		case '.':
+			frac_part = g_ascii_strtod(s, &s);
 			break;
 		case 'k':
 		case 'K':
@@ -328,8 +511,11 @@ SR_API int sr_parse_sizestring(const char *sizestring, uint64_t *size)
 		}
 		s++;
 	}
-	if (multiplier > 0)
+	if (multiplier > 0) {
 		*size *= multiplier;
+		*size += frac_part * multiplier;
+	} else
+		*size += frac_part;
 
 	if (*s && strcasecmp(s, "Hz"))
 		return SR_ERR;
@@ -354,6 +540,8 @@ SR_API int sr_parse_sizestring(const char *sizestring, uint64_t *size)
  * @todo Add support for "m" (minutes) and others.
  * @todo Add support for picoseconds?
  * @todo Allow both lower-case and upper-case? If no, document it.
+ *
+ * @since 0.1.0
  */
 SR_API uint64_t sr_parse_timestring(const char *timestring)
 {
@@ -380,6 +568,7 @@ SR_API uint64_t sr_parse_timestring(const char *timestring)
 	return time_msec;
 }
 
+/** @since 0.1.0 */
 SR_API gboolean sr_parse_boolstring(const char *boolstr)
 {
 	if (!boolstr)
@@ -394,6 +583,7 @@ SR_API gboolean sr_parse_boolstring(const char *boolstr)
 	return FALSE;
 }
 
+/** @since 0.2.0 */
 SR_API int sr_parse_period(const char *periodstr, uint64_t *p, uint64_t *q)
 {
 	char *s;
@@ -426,7 +616,7 @@ SR_API int sr_parse_period(const char *periodstr, uint64_t *p, uint64_t *q)
 	return SR_OK;
 }
 
-
+/** @since 0.2.0 */
 SR_API int sr_parse_voltage(const char *voltstr, uint64_t *p, uint64_t *q)
 {
 	char *s;

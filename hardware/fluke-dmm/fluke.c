@@ -26,7 +26,6 @@
 #include "libsigrok-internal.h"
 #include "fluke-dmm.h"
 
-
 static struct sr_datafeed_analog *handle_qm_18x(const struct sr_dev_inst *sdi,
 		char **tokens)
 {
@@ -35,18 +34,23 @@ static struct sr_datafeed_analog *handle_qm_18x(const struct sr_dev_inst *sdi,
 	char *e, *u;
 	gboolean is_oor;
 
-	(void)sdi;
-
 	if (strcmp(tokens[0], "QM") || !tokens[1])
 		return NULL;
 
 	if ((e = strstr(tokens[1], "Out of range"))) {
 		is_oor = TRUE;
 		fvalue = -1;
+		while(*e && *e != '.')
+			e++;
 	} else {
 		is_oor = FALSE;
-		fvalue = strtof(tokens[1], &e);
-		if (fvalue == 0.0 && e == tokens[1]) {
+		/* Delimit the float, since sr_atof_ascii() wants only
+		 * a valid float here. */
+		e = tokens[1];
+		while(*e && *e != ' ')
+			e++;
+		*e++ = '\0';
+		if (sr_atof_ascii(tokens[1], &fvalue) != SR_OK || fvalue == 0.0) {
 			/* Happens all the time, when switching modes. */
 			sr_dbg("Invalid float.");
 			return NULL;
@@ -59,7 +63,7 @@ static struct sr_datafeed_analog *handle_qm_18x(const struct sr_dev_inst *sdi,
 		return NULL;
 	if (!(analog->data = g_try_malloc(sizeof(float))))
 		return NULL;
-	analog->probes = sdi->probes;
+	analog->channels = sdi->channels;
 	analog->num_samples = 1;
 	if (is_oor)
 		*analog->data = NAN;
@@ -157,16 +161,12 @@ static struct sr_datafeed_analog *handle_qm_28x(const struct sr_dev_inst *sdi,
 {
 	struct sr_datafeed_analog *analog;
 	float fvalue;
-	char *eptr;
-
-	(void)sdi;
 
 	if (!tokens[1])
 		return NULL;
 
-	fvalue = strtof(tokens[0], &eptr);
-	if (fvalue == 0.0 && eptr == tokens[0]) {
-		sr_err("Invalid float.");
+	if (sr_atof_ascii(tokens[0], &fvalue) != SR_OK || fvalue == 0.0) {
+		sr_err("Invalid float '%s'.", tokens[0]);
 		return NULL;
 	}
 
@@ -174,7 +174,7 @@ static struct sr_datafeed_analog *handle_qm_28x(const struct sr_dev_inst *sdi,
 		return NULL;
 	if (!(analog->data = g_try_malloc(sizeof(float))))
 		return NULL;
-	analog->probes = sdi->probes;
+	analog->channels = sdi->channels;
 	analog->num_samples = 1;
 	*analog->data = fvalue;
 	analog->mq = -1;
@@ -368,7 +368,6 @@ static void handle_qm_19x_data(const struct sr_dev_inst *sdi, char **tokens)
 	struct sr_datafeed_packet packet;
 	struct sr_datafeed_analog analog;
 	float fvalue;
-	char *eptr;
 
 	if (!strcmp(tokens[0], "9.9E+37")) {
 		/* An invalid measurement shows up on the display as "OL", but
@@ -376,8 +375,7 @@ static void handle_qm_19x_data(const struct sr_dev_inst *sdi, char **tokens)
 		 * is rather problematic, we'll cut through this here. */
 		fvalue = NAN;
 	} else {
-		fvalue = strtof(tokens[0], &eptr);
-		if (fvalue == 0.0 && eptr == tokens[0]) {
+		if (sr_atof_ascii(tokens[0], &fvalue) != SR_OK || fvalue == 0.0) {
 			sr_err("Invalid float '%s'.", tokens[0]);
 			return;
 		}
@@ -398,7 +396,7 @@ static void handle_qm_19x_data(const struct sr_dev_inst *sdi, char **tokens)
 			fvalue = 1.0;
 	}
 
-	analog.probes = sdi->probes;
+	analog.channels = sdi->channels;
 	analog.num_samples = 1;
 	analog.data = &fvalue;
 	analog.mq = devc->mq;
@@ -437,7 +435,7 @@ static void handle_line(const struct sr_dev_inst *sdi)
 	analog = NULL;
 	tokens = g_strsplit(devc->buf, ",", 0);
 	if (tokens[0]) {
-		if (devc->profile->model == FLUKE_187) {
+		if (devc->profile->model == FLUKE_187 || devc->profile->model == FLUKE_189) {
 			devc->expect_response = FALSE;
 			analog = handle_qm_18x(sdi, tokens);
 		} else if (devc->profile->model == FLUKE_287) {
@@ -536,5 +534,3 @@ SR_PRIV int fluke_receive_data(int fd, int revents, void *cb_data)
 
 	return TRUE;
 }
-
-

@@ -17,24 +17,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef LIBSIGROK_HARDWARE_FLUKE_DMM_FLUKE_DMM_H
+#define LIBSIGROK_HARDWARE_FLUKE_DMM_FLUKE_DMM_H
 
-#ifndef LIBSIGROK_FLUKE_DMM_H
-#define LIBSIGROK_FLUKE_DMM_H
-
-/* Message logging helpers with subsystem-specific prefix string. */
-#define LOG_PREFIX "fluke-dmm: "
-#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
-#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
-#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
-#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
-#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
-#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+#define LOG_PREFIX "fluke-dmm"
 
 #define FLUKEDMM_BUFSIZE  256
 
 /* Supported models */
 enum {
 	FLUKE_187 = 1,
+	FLUKE_189,
 	FLUKE_287,
 	FLUKE_190,
 };
@@ -73,4 +66,4 @@ struct dev_context {
 
 SR_PRIV int fluke_receive_data(int fd, int revents, void *cb_data);
 
-#endif /* LIBSIGROK_FLUKE_DMM_H */
+#endif

@@ -3,32 +3,71 @@
 #ifndef SR_CONFIG_H
 #define SR_CONFIG_H    /* To stop multiple inclusions. */
 
+/* Define if building universal (internal helper macro) */
+#undef AC_APPLE_UNIVERSAL_BUILD
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
-
-/* Define to 1 if you have the <fcntl.h> header file. */
-#undef HAVE_FCNTL_H
-
-/* Define to 1 if you have the `gettimeofday' function. */
-#undef HAVE_GETTIMEOFDAY
 
 /* Agilent DMM support */
 #undef HAVE_HW_AGILENT_DMM
 
-/* ALSA driver support */
-#undef HAVE_HW_ALSA
+/* APPA 55II support */
+#undef HAVE_HW_APPA_55II
+
+/* ASIX SIGMA/SIGMA2 support */
+#undef HAVE_HW_ASIX_SIGMA
+
+/* Atten PPS3xxx support */
+#undef HAVE_HW_ATTEN_PPS3XXX
+
+/* Brymen BM86X support */
+#undef HAVE_HW_BRYMEN_BM86X
 
 /* Brymen DMM support */
 #undef HAVE_HW_BRYMEN_DMM
 
+/* CEM DT-885x support */
+#undef HAVE_HW_CEM_DT_885X
+
+/* Center 3xx support */
+#undef HAVE_HW_CENTER_3XX
+
+/* ChronoVu LA support */
+#undef HAVE_HW_CHRONOVU_LA
+
 /* Colead SLM support */
 #undef HAVE_HW_COLEAD_SLM
+
+/* Conrad DIGI 35 CPU support */
+#undef HAVE_HW_CONRAD_DIGI_35_CPU
+
+/* Demo driver support */
+#undef HAVE_HW_DEMO
 
 /* Fluke DMM support */
 #undef HAVE_HW_FLUKE_DMM
 
+/* fx2lafw support */
+#undef HAVE_HW_FX2LAFW
+
+/* gmc-mh-1x-2x support */
+#undef HAVE_HW_GMC_MH_1X_2X
+
+/* Hameg HMO support */
+#undef HAVE_HW_HAMEG_HMO
+
 /* Hantek DSO support */
 #undef HAVE_HW_HANTEK_DSO
+
+/* IKALOGIC Scanalogic-2 support */
+#undef HAVE_HW_IKALOGIC_SCANALOGIC2
+
+/* IKALOGIC ScanaPLUS support */
+#undef HAVE_HW_IKALOGIC_SCANAPLUS
+
+/* Kecheng KC-330B support */
+#undef HAVE_HW_KECHENG_KC_330B
 
 /* Lascar EL-USB support */
 #undef HAVE_HW_LASCAR_EL_USB
@@ -36,11 +75,26 @@
 /* MIC 985xx support */
 #undef HAVE_HW_MIC_985XX
 
-/* Rigol DS1xx2 support */
-#undef HAVE_HW_RIGOL_DS1XX2
+/* Norma DMM support */
+#undef HAVE_HW_NORMA_DMM
+
+/* OpenBench Logic Sniffer (OLS) support */
+#undef HAVE_HW_OLS
+
+/* Rigol DS support */
+#undef HAVE_HW_RIGOL_DS
+
+/* Saleae Logic16 support */
+#undef HAVE_HW_SALEAE_LOGIC16
 
 /* Serial DMM support */
 #undef HAVE_HW_SERIAL_DMM
+
+/* Sysclk LWLA support */
+#undef HAVE_HW_SYSCLK_LWLA
+
+/* Teleinfo support */
+#undef HAVE_HW_TELEINFO
 
 /* Tondaj SL-814 support */
 #undef HAVE_HW_TONDAJ_SL_814
@@ -48,29 +102,23 @@
 /* UNI-T DMM support */
 #undef HAVE_HW_UNI_T_DMM
 
+/* UNI-T UT32x support */
+#undef HAVE_HW_UNI_T_UT32X
+
 /* Victor DMM support */
 #undef HAVE_HW_VICTOR_DMM
+
+/* ZEROPLUS Logic Cube support */
+#undef HAVE_HW_ZEROPLUS_LOGIC_CUBE
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* ASIX SIGMA/SIGMA2 support */
-#undef HAVE_LA_ASIX_SIGMA
+/* Specifies whether we have librevisa. */
+#undef HAVE_LIBREVISA
 
-/* ChronoVu LA8 support */
-#undef HAVE_LA_CHRONOVU_LA8
-
-/* Demo driver support */
-#undef HAVE_LA_DEMO
-
-/* fx2lafw support */
-#undef HAVE_LA_FX2LAFW
-
-/* OpenBench Logic Sniffer (OLS) support */
-#undef HAVE_LA_OLS
-
-/* ZEROPLUS Logic Cube support */
-#undef HAVE_LA_ZEROPLUS_LOGIC_CUBE
+/* Specifies whether we have libserialport. */
+#undef HAVE_LIBSERIALPORT
 
 /* Specifies whether we have a libusb.h header. */
 #undef HAVE_LIBUSB_1_0
@@ -78,8 +126,8 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
-/* Define to 1 if you have the `memset' function. */
-#undef HAVE_MEMSET
+/* Specifies whether we have RPC support. */
+#undef HAVE_RPC
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -87,50 +135,17 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
-/* Define to 1 if you have the `strchr' function. */
-#undef HAVE_STRCHR
-
-/* Define to 1 if you have the `strcspn' function. */
-#undef HAVE_STRCSPN
-
-/* Define to 1 if you have the `strdup' function. */
-#undef HAVE_STRDUP
-
-/* Define to 1 if you have the `strerror' function. */
-#undef HAVE_STRERROR
-
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
-/* Define to 1 if you have the `strncasecmp' function. */
-#undef HAVE_STRNCASECMP
-
-/* Define to 1 if you have the `strstr' function. */
-#undef HAVE_STRSTR
-
-/* Define to 1 if you have the `strtol' function. */
-#undef HAVE_STRTOL
-
-/* Define to 1 if you have the `strtoul' function. */
-#undef HAVE_STRTOUL
-
-/* Define to 1 if you have the `strtoull' function. */
-#undef HAVE_STRTOULL
-
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
 
-/* Define to 1 if you have the <sys/time.h> header file. */
-#undef HAVE_SYS_TIME_H
-
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
-
-/* Define to 1 if you have the <termios.h> header file. */
-#undef HAVE_TERMIOS_H
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
@@ -138,9 +153,6 @@
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
 #undef LT_OBJDIR
-
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
 
 /* Name of package */
 #undef PACKAGE
@@ -169,60 +181,16 @@
 /* Version number of package */
 #undef VERSION
 
-/* Define for Solaris 2.5.1 so the uint32_t typedef from <sys/synch.h>,
-   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
-   #define below would cause a syntax error. */
-#undef _UINT32_T
-
-/* Define for Solaris 2.5.1 so the uint64_t typedef from <sys/synch.h>,
-   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
-   #define below would cause a syntax error. */
-#undef _UINT64_T
-
-/* Define for Solaris 2.5.1 so the uint8_t typedef from <sys/synch.h>,
-   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
-   #define below would cause a syntax error. */
-#undef _UINT8_T
-
-/* Define to `__inline__' or `__inline' if that's what the C compiler
-   calls it, or to nothing if 'inline' is not supported under any name.  */
-#ifndef __cplusplus
-#undef inline
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+#  undef WORDS_BIGENDIAN
+# endif
 #endif
-
-/* Define to the type of a signed integer type of width exactly 16 bits if
-   such a type exists and the standard includes do not define it. */
-#undef int16_t
-
-/* Define to the type of a signed integer type of width exactly 32 bits if
-   such a type exists and the standard includes do not define it. */
-#undef int32_t
-
-/* Define to the type of a signed integer type of width exactly 64 bits if
-   such a type exists and the standard includes do not define it. */
-#undef int64_t
-
-/* Define to the type of a signed integer type of width exactly 8 bits if such
-   a type exists and the standard includes do not define it. */
-#undef int8_t
-
-/* Define to `unsigned int' if <sys/types.h> does not define. */
-#undef size_t
-
-/* Define to the type of an unsigned integer type of width exactly 16 bits if
-   such a type exists and the standard includes do not define it. */
-#undef uint16_t
-
-/* Define to the type of an unsigned integer type of width exactly 32 bits if
-   such a type exists and the standard includes do not define it. */
-#undef uint32_t
-
-/* Define to the type of an unsigned integer type of width exactly 64 bits if
-   such a type exists and the standard includes do not define it. */
-#undef uint64_t
-
-/* Define to the type of an unsigned integer type of width exactly 8 bits if
-   such a type exists and the standard includes do not define it. */
-#undef uint8_t
 
 #endif /* SR_CONFIG_H */

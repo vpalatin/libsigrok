@@ -144,7 +144,7 @@ static int agdmm_send(const struct sr_dev_inst *sdi, const char *cmd)
 		sr_err("Failed to send: %s.", strerror(errno));
 		return SR_ERR;
 	}
-	
+
 	return SR_OK;
 }
 
@@ -234,7 +234,7 @@ static int recv_fetc(const struct sr_dev_inst *sdi, GMatchInfo *match)
 	struct sr_datafeed_packet packet;
 	struct sr_datafeed_analog analog;
 	float fvalue;
-	char *mstr, *eptr;
+	char *mstr;
 
 	sr_spew("FETC reply '%s'.", g_match_info_get_string(match));
 	devc = sdi->priv;
@@ -252,12 +252,12 @@ static int recv_fetc(const struct sr_dev_inst *sdi, GMatchInfo *match)
 		fvalue = NAN;
 	} else {
 		mstr = g_match_info_fetch(match, 1);
-		fvalue = strtof(mstr, &eptr);
-		g_free(mstr);
-		if (fvalue == 0.0 && eptr == mstr) {
+		if (sr_atof_ascii(mstr, &fvalue) != SR_OK || fvalue == 0.0) {
+			g_free(mstr);
 			sr_err("Invalid float.");
 			return SR_ERR;
 		}
+		g_free(mstr);
 		if (devc->cur_divider > 0)
 			fvalue /= devc->cur_divider;
 	}
@@ -266,7 +266,7 @@ static int recv_fetc(const struct sr_dev_inst *sdi, GMatchInfo *match)
 	analog.mq = devc->cur_mq;
 	analog.unit = devc->cur_unit;
 	analog.mqflags = devc->cur_mqflags;
-	analog.probes = sdi->probes;
+	analog.channels = sdi->channels;
 	analog.num_samples = 1;
 	analog.data = &fvalue;
 	packet.type = SR_DF_ANALOG;

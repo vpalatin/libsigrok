@@ -31,14 +31,7 @@
 #include "libsigrok.h"
 #include "libsigrok-internal.h"
 
-/* Message logging helpers with subsystem-specific prefix string. */
-#define LOG_PREFIX "output/ols: "
-#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
-#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
-#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
-#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
-#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
-#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+#define LOG_PREFIX "output/ols"
 
 struct context {
 	uint64_t samplerate;
@@ -63,28 +56,31 @@ static int init(struct sr_output *o)
 
 static GString *gen_header(const struct sr_dev_inst *sdi, struct context *ctx)
 {
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	GSList *l;
 	GString *s;
 	GVariant *gvar;
-	int num_enabled_probes;
+	int num_enabled_channels;
 
-	if (!ctx->samplerate && sr_config_get(sdi->driver, SR_CONF_SAMPLERATE,
-			&gvar, sdi) == SR_OK) {
+	if (!ctx->samplerate && sr_config_get(sdi->driver, sdi, NULL,
+			SR_CONF_SAMPLERATE, &gvar) == SR_OK) {
 		ctx->samplerate = g_variant_get_uint64(gvar);
 		g_variant_unref(gvar);
 	}
 
-	num_enabled_probes = 0;
-	for (l = sdi->probes; l; l = l->next) {
-		probe = l->data;
-		if (probe->enabled)
-			num_enabled_probes++;
+	num_enabled_channels = 0;
+	for (l = sdi->channels; l; l = l->next) {
+		ch = l->data;
+		if (ch->type != SR_CHANNEL_LOGIC)
+			continue;
+		if (!ch->enabled)
+			continue;
+		num_enabled_channels++;
 	}
 
 	s = g_string_sized_new(512);
 	g_string_append_printf(s, ";Rate: %"PRIu64"\n", ctx->samplerate);
-	g_string_append_printf(s, ";Channels: %d\n", num_enabled_probes);
+	g_string_append_printf(s, ";Channels: %d\n", num_enabled_channels);
 	g_string_append_printf(s, ";EnabledChannels: -1\n");
 	g_string_append_printf(s, ";Compressed: true\n");
 	g_string_append_printf(s, ";CursorEnabled: false\n");
@@ -92,8 +88,8 @@ static GString *gen_header(const struct sr_dev_inst *sdi, struct context *ctx)
 	return s;
 }
 
-static int receive(struct sr_output *o, const struct sr_dev_inst *sdi,
-		const struct sr_datafeed_packet *packet, GString **out)
+static int receive(struct sr_output *o, const struct sr_datafeed_packet *packet,
+		GString **out)
 {
 	struct context *ctx;
 	const struct sr_datafeed_meta *meta;
@@ -121,7 +117,7 @@ static int receive(struct sr_output *o, const struct sr_dev_inst *sdi,
 		logic = packet->payload;
 		if (ctx->num_samples == 0) {
 			/* First logic packet in the feed. */
-			*out = gen_header(sdi, ctx);
+			*out = gen_header(o->sdi, ctx);
 		} else
 			*out = g_string_sized_new(512);
 		for (i = 0; i <= logic->length - logic->unitsize; i += logic->unitsize) {
@@ -155,7 +151,6 @@ static int cleanup(struct sr_output *o)
 SR_PRIV struct sr_output_format output_ols = {
 	.id = "ols",
 	.description = "OpenBench Logic Sniffer",
-	.df_type = SR_DF_LOGIC,
 	.init = init,
 	.receive = receive,
 	.cleanup = cleanup

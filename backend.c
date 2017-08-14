@@ -23,6 +23,12 @@
 #include "libsigrok.h"
 #include "libsigrok-internal.h"
 
+/** @cond PRIVATE */
+#define LOG_PREFIX "backend"
+/** @endcond */
+
+extern struct sr_session *session;
+
 /**
  * @mainpage libsigrok API
  *
@@ -94,7 +100,7 @@
  *   	struct sr_context *sr_ctx;
  *
  *   	if ((ret = sr_init(&sr_ctx)) != SR_OK) {
- *   		printf("Error initializing libsigrok (%s): %s.",
+ *   		printf("Error initializing libsigrok (%s): %s.\n",
  *   		       sr_strerror_name(ret), sr_strerror(ret));
  *   		return 1;
  *   	}
@@ -102,7 +108,7 @@
  *   	// Use libsigrok functions here...
  *
  *   	if ((ret = sr_exit(sr_ctx)) != SR_OK) {
- *   		printf("Error shutting down libsigrok (%s): %s.",
+ *   		printf("Error shutting down libsigrok (%s): %s.\n",
  *   		       sr_strerror_name(ret), sr_strerror(ret));
  *   		return 1;
  *   	}
@@ -117,7 +123,8 @@
 /**
  * Sanity-check all libsigrok drivers.
  *
- * @return SR_OK if all drivers are OK, SR_ERR if one or more have issues.
+ * @retval SR_OK All drivers are OK
+ * @retval SR_ERR One or more drivers have issues.
  */
 static int sanity_check_all_drivers(void)
 {
@@ -159,10 +166,6 @@ static int sanity_check_all_drivers(void)
 		}
 		if (!drivers[i]->dev_list) {
 			sr_err("No dev_list in driver %d ('%s').", i, d);
-			errors++;
-		}
-		if (!drivers[i]->dev_clear) {
-			sr_err("No dev_clear in driver %d ('%s').", i, d);
 			errors++;
 		}
 		/* Note: config_get() is optional. */
@@ -207,7 +210,8 @@ static int sanity_check_all_drivers(void)
 /**
  * Sanity-check all libsigrok input modules.
  *
- * @return SR_OK if all modules are OK, SR_ERR if one or more have issues.
+ * @retval SR_OK All modules are OK
+ * @retval SR_ERR One or more modules have issues.
  */
 static int sanity_check_all_input_modules(void)
 {
@@ -256,7 +260,8 @@ static int sanity_check_all_input_modules(void)
 /**
  * Sanity-check all libsigrok output modules.
  *
- * @return SR_OK if all modules are OK, SR_ERR if one or more have issues.
+ * @retval SR_OK All modules are OK
+ * @retval SR_ERR One or more modules have issues.
  */
 static int sanity_check_all_output_modules(void)
 {
@@ -277,25 +282,13 @@ static int sanity_check_all_output_modules(void)
 			errors++;
 		}
 		if (!outputs[i]->description) {
-			sr_err("No description in module %d ('%s').", i, d);
+			sr_err("No description in module '%s'.", d);
 			errors++;
 		}
-		if (outputs[i]->df_type < 10000 || outputs[i]->df_type > 10007) {
-			sr_err("Invalid df_type %d in module %d ('%s').",
-			       outputs[i]->df_type, i, d);
+		if (!outputs[i]->receive) {
+			sr_err("No receive in module '%s'.", d);
 			errors++;
 		}
-
-		/* All modules must provide a data or recv API callback. */
-		if (!outputs[i]->data && !outputs[i]->receive) {
-			sr_err("No data/receive in module %d ('%s').", i, d);
-			errors++;
-		}
-
-		/*
-		 * Currently most API calls are optional (their function
-		 * pointers can thus be NULL) in theory: init, event, cleanup.
-		 */
 
 		if (errors == 0)
 			continue;
@@ -320,7 +313,7 @@ static int sanity_check_all_output_modules(void)
  *         the context will be free'd by sr_exit() as part of the libsigrok
  *         shutdown.
  *
- * @since 0.1.0 (but the API changed in 0.2.0)
+ * @since 0.2.0
  */
 SR_API int sr_init(struct sr_context **ctx)
 {
@@ -358,7 +351,7 @@ SR_API int sr_init(struct sr_context **ctx)
 #ifdef HAVE_LIBUSB_1_0
 	ret = libusb_init(&context->libusb_ctx);
 	if (LIBUSB_SUCCESS != ret) {
-		sr_err("libusb_init() returned %s.\n", libusb_error_name(ret));
+		sr_err("libusb_init() returned %s.", libusb_error_name(ret));
 		ret = SR_ERR;
 		goto done;
 	}
@@ -366,6 +359,7 @@ SR_API int sr_init(struct sr_context **ctx)
 
 	*ctx = context;
 	context = NULL;
+	session = NULL;
 	ret = SR_OK;
 
 done:
@@ -379,9 +373,10 @@ done:
  *
  * @param ctx Pointer to a libsigrok context struct. Must not be NULL.
  *
- * @return SR_OK upon success, a (negative) error code otherwise.
+ * @retval SR_OK Success
+ * @retval other Error code SR_ERR, ...
  *
- * @since 0.1.0 (but the API changed in 0.2.0)
+ * @since 0.2.0
  */
 SR_API int sr_exit(struct sr_context *ctx)
 {

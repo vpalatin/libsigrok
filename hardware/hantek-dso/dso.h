@@ -19,17 +19,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBSIGROK_HARDWARE_HANTEK_DSO_H
-#define LIBSIGROK_HARDWARE_HANTEK_DSO_H
+#ifndef LIBSIGROK_HARDWARE_HANTEK_DSO_DSO_H
+#define LIBSIGROK_HARDWARE_HANTEK_DSO_DSO_H
 
-/* Message logging helpers with subsystem-specific prefix string. */
-#define LOG_PREFIX "hantek-dso: "
-#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
-#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
-#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
-#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
-#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
-#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+#define LOG_PREFIX "hantek-dso"
 
 #define USB_INTERFACE           0
 #define USB_CONFIGURATION       1
@@ -76,8 +69,8 @@ enum dso_commands {
 	CMD_GET_CAPTURESTATE,
 	CMD_SET_VOLTAGE,
 	/* unused */
-	cmdSetLogicalData,
-	cmdGetLogicalData,
+	CMD_SET_LOGICALDATA,
+	CMD_GET_LOGICALDATA,
 };
 
 /* Must match the coupling table. */
@@ -172,7 +165,7 @@ struct dev_context {
 	void *cb_data;
 	uint64_t limit_frames;
 	uint64_t num_frames;
-	GSList *enabled_probes;
+	GSList *enabled_channels;
 	/* We can't keep track of an FX2-based device after upgrading
 	 * the firmware (it re-enumerates into a different device address
 	 * after the upgrade) this is like a global lock. No device will open

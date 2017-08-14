@@ -29,18 +29,7 @@
 #define CONN_USB_VIDPID  "^([0-9a-z]{4})\\.([0-9a-z]{4})$"
 #define CONN_USB_BUSADDR "^(\\d+)\\.(\\d+)$"
 
-/* Some USBTMC-specific enums, as defined in the USBTMC standard. */
-#define SUBCLASS_USBTMC 0x03
-#define USBTMC_USB488   0x01
-
-/* Message logging helpers with subsystem-specific prefix string. */
-#define LOG_PREFIX "usb: "
-#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
-#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
-#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
-#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
-#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
-#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+#define LOG_PREFIX "usb"
 
 /**
  * Find USB devices according to a connection string.
@@ -142,63 +131,6 @@ SR_PRIV GSList *sr_usb_find(libusb_context *usb_ctx, const char *conn)
 	return devices;
 }
 
-/**
- * Find USB devices supporting the USBTMC class
- *
- * @param usb_ctx libusb context to use while scanning.
- *
- * @return A GSList of struct sr_usb_dev_inst, with bus and address fields
- * indicating devices with USBTMC support.
- */
-SR_PRIV GSList *sr_usb_find_usbtmc(libusb_context *usb_ctx)
-{
-	struct sr_usb_dev_inst *usb;
-	struct libusb_device **devlist;
-	struct libusb_device_descriptor des;
-	struct libusb_config_descriptor *confdes;
-	const struct libusb_interface_descriptor *intfdes;
-	GSList *devices;
-	int confidx, intfidx, ret, i;
-
-	devices = NULL;
-	libusb_get_device_list(usb_ctx, &devlist);
-	for (i = 0; devlist[i]; i++) {
-		if ((ret = libusb_get_device_descriptor(devlist[i], &des))) {
-			sr_err("Failed to get device descriptor: %s.",
-			       libusb_error_name(ret));
-			continue;
-		}
-
-		for (confidx = 0; confidx < des.bNumConfigurations; confidx++) {
-			if (libusb_get_config_descriptor(devlist[i], confidx, &confdes) != 0) {
-				sr_err("Failed to get configuration descriptor.");
-				break;
-			}
-			for (intfidx = 0; intfidx < confdes->bNumInterfaces; intfidx++) {
-				intfdes = confdes->interface[intfidx].altsetting;
-				if (intfdes->bInterfaceClass != LIBUSB_CLASS_APPLICATION
-						|| intfdes->bInterfaceSubClass != SUBCLASS_USBTMC
-						|| intfdes->bInterfaceProtocol != USBTMC_USB488)
-					continue;
-				sr_dbg("Found USBTMC device (VID:PID = %04x:%04x, bus.address = "
-					   "%d.%d).", des.idVendor, des.idProduct,
-					   libusb_get_bus_number(devlist[i]),
-					   libusb_get_device_address(devlist[i]));
-
-				usb = sr_usb_dev_inst_new(libusb_get_bus_number(devlist[i]),
-						libusb_get_device_address(devlist[i]), NULL);
-				devices = g_slist_append(devices, usb);
-			}
-			libusb_free_config_descriptor(confdes);
-		}
-	}
-	libusb_free_device_list(devlist, 1);
-
-	sr_dbg("Found %d device(s).", g_slist_length(devices));
-
-	return devices;
-}
-
 SR_PRIV int sr_usb_open(libusb_context *usb_ctx, struct sr_usb_dev_inst *usb)
 {
 	struct libusb_device **devlist;
@@ -242,4 +174,96 @@ SR_PRIV int sr_usb_open(libusb_context *usb_ctx, struct sr_usb_dev_inst *usb)
 	libusb_free_device_list(devlist, 1);
 
 	return ret;
+}
+
+#ifdef _WIN32
+static gpointer usb_thread(gpointer data)
+{
+	struct sr_context *ctx = data;
+
+	while (ctx->usb_thread_running) {
+		g_mutex_lock(&ctx->usb_mutex);
+		libusb_wait_for_event(ctx->libusb_ctx, NULL);
+		SetEvent(ctx->usb_event);
+		g_mutex_unlock(&ctx->usb_mutex);
+		g_thread_yield();
+	}
+
+	return NULL;
+}
+
+static int usb_callback(int fd, int revents, void *cb_data)
+{
+	struct sr_context *ctx = cb_data;
+	int ret;
+
+	g_mutex_lock(&ctx->usb_mutex);
+	ret = ctx->usb_cb(fd, revents, ctx->usb_cb_data);
+
+	if (ctx->usb_thread_running) {
+		ResetEvent(ctx->usb_event);
+		g_mutex_unlock(&ctx->usb_mutex);
+	}
+
+	return ret;
+}
+#endif
+
+SR_PRIV int usb_source_add(struct sr_context *ctx, int timeout,
+		sr_receive_data_callback cb, void *cb_data)
+{
+	if (ctx->usb_source_present) {
+		sr_err("A USB event source is already present.");
+		return SR_ERR;
+	}
+
+#ifdef _WIN32
+	ctx->usb_event = CreateEvent(NULL, TRUE, FALSE, NULL);
+	g_mutex_init(&ctx->usb_mutex);
+	ctx->usb_thread_running = TRUE;
+	ctx->usb_thread = g_thread_new("usb", usb_thread, ctx);
+	ctx->usb_pollfd.fd = ctx->usb_event;
+	ctx->usb_pollfd.events = G_IO_IN;
+	ctx->usb_cb = cb;
+	ctx->usb_cb_data = cb_data;
+	sr_session_source_add_pollfd(&ctx->usb_pollfd, timeout, usb_callback, ctx);
+#else
+	const struct libusb_pollfd **lupfd;
+	unsigned int i;
+
+	lupfd = libusb_get_pollfds(ctx->libusb_ctx);
+	for (i = 0; lupfd[i]; i++)
+		sr_source_add(lupfd[i]->fd, lupfd[i]->events, timeout, cb, cb_data);
+	free(lupfd);
+#endif
+	ctx->usb_source_present = TRUE;
+
+	return SR_OK;
+}
+
+SR_PRIV int usb_source_remove(struct sr_context *ctx)
+{
+	if (!ctx->usb_source_present)
+		return SR_OK;
+
+#ifdef _WIN32
+	ctx->usb_thread_running = FALSE;
+	g_mutex_unlock(&ctx->usb_mutex);
+	libusb_unlock_events(ctx->libusb_ctx);
+	g_thread_join(ctx->usb_thread);
+	g_mutex_clear(&ctx->usb_mutex);
+	sr_session_source_remove_pollfd(&ctx->usb_pollfd);
+	CloseHandle(ctx->usb_event);
+#else
+	const struct libusb_pollfd **lupfd;
+	unsigned int i;
+
+	lupfd = libusb_get_pollfds(ctx->libusb_ctx);
+	for (i = 0; lupfd[i]; i++)
+		sr_source_remove(lupfd[i]->fd);
+	free(lupfd);
+#endif
+	ctx->usb_source_present = FALSE;
+
+	return SR_OK;
 }

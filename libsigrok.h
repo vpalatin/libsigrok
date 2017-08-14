@@ -17,8 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBSIGROK_SIGROK_H
-#define LIBSIGROK_SIGROK_H
+#ifndef LIBSIGROK_LIBSIGROK_H
+#define LIBSIGROK_LIBSIGROK_H
 
 #include <stdio.h>
 #include <sys/time.h>
@@ -63,15 +63,17 @@ extern "C" {
  */
 
 /** Status/error codes returned by libsigrok functions. */
-enum {
-	SR_OK             =  0, /**< No error. */
-	SR_ERR            = -1, /**< Generic/unspecified error. */
-	SR_ERR_MALLOC     = -2, /**< Malloc/calloc/realloc error. */
-	SR_ERR_ARG        = -3, /**< Function argument error. */
-	SR_ERR_BUG        = -4, /**< Errors hinting at internal bugs. */
-	SR_ERR_SAMPLERATE = -5, /**< Incorrect samplerate. */
-	SR_ERR_NA         = -6, /**< Not applicable. */
-	SR_ERR_DEV_CLOSED = -7, /**< Device is closed, but needs to be open. */
+enum sr_error_code {
+	SR_OK                =  0, /**< No error. */
+	SR_ERR               = -1, /**< Generic/unspecified error. */
+	SR_ERR_MALLOC        = -2, /**< Malloc/calloc/realloc error. */
+	SR_ERR_ARG           = -3, /**< Function argument error. */
+	SR_ERR_BUG           = -4, /**< Errors hinting at internal bugs. */
+	SR_ERR_SAMPLERATE    = -5, /**< Incorrect samplerate. */
+	SR_ERR_NA            = -6, /**< Not applicable. */
+	SR_ERR_DEV_CLOSED    = -7, /**< Device is closed, but must be open. */
+	SR_ERR_TIMEOUT       = -8, /**< A timeout occurred. */
+	SR_ERR_CHANNEL_GROUP = -9, /**< A channel group must be specified. */
 
 	/*
 	 * Note: When adding entries here, don't forget to also update the
@@ -79,7 +81,7 @@ enum {
 	 */
 };
 
-#define SR_MAX_PROBENAME_LEN 32
+#define SR_MAX_CHANNELNAME_LEN 32
 
 /* Handy little macros */
 #define SR_HZ(n)  (n)
@@ -90,7 +92,7 @@ enum {
 #define SR_HZ_TO_NS(n) ((uint64_t)(1000000000ULL) / (n))
 
 /** libsigrok loglevels. */
-enum {
+enum sr_loglevel {
 	SR_LOG_NONE = 0, /**< Output no messages at all. */
 	SR_LOG_ERR  = 1, /**< Output error messages. */
 	SR_LOG_WARN = 2, /**< Output warnings. */
@@ -129,40 +131,54 @@ enum {
 #define SR_PRIV
 #endif
 
-typedef int (*sr_receive_data_callback_t)(int fd, int revents, void *cb_data);
+/** Type definition for callback function for data reception. */
+typedef int (*sr_receive_data_callback)(int fd, int revents, void *cb_data);
 
 /** Data types used by sr_config_info(). */
-enum {
+enum sr_datatype {
 	SR_T_UINT64 = 10000,
-	SR_T_CHAR,
+	SR_T_STRING,
 	SR_T_BOOL,
 	SR_T_FLOAT,
 	SR_T_RATIONAL_PERIOD,
 	SR_T_RATIONAL_VOLT,
 	SR_T_KEYVALUE,
+	SR_T_UINT64_RANGE,
+	SR_T_DOUBLE_RANGE,
+	SR_T_INT32,
 };
 
 /** Value for sr_datafeed_packet.type. */
-enum {
+enum sr_packettype {
+	/** Payload is sr_datafeed_header. */
 	SR_DF_HEADER = 10000,
+	/** End of stream (no further data). */
 	SR_DF_END,
+	/** Payload is struct sr_datafeed_meta */
 	SR_DF_META,
+	/** The trigger matched at this point in the data feed. No payload. */
 	SR_DF_TRIGGER,
+	/** Payload is struct sr_datafeed_logic. */
 	SR_DF_LOGIC,
+	/** Payload is struct sr_datafeed_analog. */
 	SR_DF_ANALOG,
+	/** Beginning of frame. No payload. */
 	SR_DF_FRAME_BEGIN,
+	/** End of frame. No payload. */
 	SR_DF_FRAME_END,
 };
 
-/** Values for sr_datafeed_analog.mq. */
-enum {
+/** Measured quantity, sr_datafeed_analog.mq. */
+enum sr_mq {
 	SR_MQ_VOLTAGE = 10000,
 	SR_MQ_CURRENT,
 	SR_MQ_RESISTANCE,
 	SR_MQ_CAPACITANCE,
 	SR_MQ_TEMPERATURE,
 	SR_MQ_FREQUENCY,
+	/** Duty cycle, e.g. on/off ratio. */
 	SR_MQ_DUTY_CYCLE,
+	/** Continuity test. */
 	SR_MQ_CONTINUITY,
 	SR_MQ_PULSE_WIDTH,
 	SR_MQ_CONDUCTANCE,
@@ -173,22 +189,37 @@ enum {
 	/** Logarithmic representation of sound pressure relative to a
 	 * reference value. */
 	SR_MQ_SOUND_PRESSURE_LEVEL,
+	/** Carbon monoxide level */
 	SR_MQ_CARBON_MONOXIDE,
+	/** Humidity */
 	SR_MQ_RELATIVE_HUMIDITY,
+	/** Time */
+	SR_MQ_TIME,
 };
 
-/** Values for sr_datafeed_analog.unit. */
-enum {
+/** Unit of measured quantity, sr_datafeed_analog.unit. */
+enum sr_unit {
+	/** Volt */
 	SR_UNIT_VOLT = 10000,
+	/** Ampere (current). */
 	SR_UNIT_AMPERE,
+	/** Ohm (resistance). */
 	SR_UNIT_OHM,
+	/** Farad (capacity). */
 	SR_UNIT_FARAD,
+	/** Kelvin (temperature). */
 	SR_UNIT_KELVIN,
+	/** Degrees Celsius (temperature). */
 	SR_UNIT_CELSIUS,
+	/** Degrees Fahrenheit (temperature). */
 	SR_UNIT_FAHRENHEIT,
+	/** Hertz (frequency, 1/s, [Hz]). */
 	SR_UNIT_HERTZ,
+	/** Percent value. */
 	SR_UNIT_PERCENTAGE,
+	/** Boolean value. */
 	SR_UNIT_BOOLEAN,
+	/** Time in seconds. */
 	SR_UNIT_SECOND,
 	/** Unit of conductance, the inverse of resistance. */
 	SR_UNIT_SIEMENS,
@@ -213,10 +244,18 @@ enum {
 	 * represented as the fraction of number of particles of the substance.
 	 */
 	SR_UNIT_CONCENTRATION,
+	/** Revolutions per minute. */
+	SR_UNIT_REVOLUTIONS_PER_MINUTE,
+	/** Apparent power [VA]. */
+	SR_UNIT_VOLT_AMPERE,
+	/** Real power [W]. */
+	SR_UNIT_WATT,
+	/** Consumption [Wh]. */
+	SR_UNIT_WATT_HOUR,
 };
 
 /** Values for sr_datafeed_analog.flags. */
-enum {
+enum sr_mqflag {
 	/** Voltage measurement is alternating current (AC). */
 	SR_MQFLAG_AC = 0x01,
 	/** Voltage measurement is direct current (DC). */
@@ -259,42 +298,61 @@ enum {
 	/** Sound pressure level represented as a percentage of measurements
 	 * that were over a preset alarm level. */
 	SR_MQFLAG_SPL_PCT_OVER_ALARM = 0x10000,
+	/** Time is duration (as opposed to epoch, ...). */
+	SR_MQFLAG_DURATION = 0x20000,
+	/** Device is in "avg" mode, averaging upon each new value. */
+	SR_MQFLAG_AVG = 0x40000,
 };
 
+/**
+ * @struct sr_context
+ * Opaque structure representing a libsigrok context.
+ *
+ * None of the fields of this structure are meant to be accessed directly.
+ *
+ * @see sr_init(), sr_exit().
+ */
 struct sr_context;
 
+/** Packet in a sigrok data feed. */
 struct sr_datafeed_packet {
 	uint16_t type;
 	const void *payload;
 };
 
+/** Header of a sigrok data feed. */
 struct sr_datafeed_header {
 	int feed_version;
 	struct timeval starttime;
 };
 
+/** Datafeed payload for type SR_DF_META. */
 struct sr_datafeed_meta {
 	GSList *config;
 };
 
+/** Logic datafeed payload for type SR_DF_LOGIC. */
 struct sr_datafeed_logic {
 	uint64_t length;
 	uint16_t unitsize;
 	void *data;
 };
 
+/** Analog datafeed payload for type SR_DF_ANALOG. */
 struct sr_datafeed_analog {
-	/** The probes for which data is included in this packet. */
-	GSList *probes;
+	/** The channels for which data is included in this packet. */
+	GSList *channels;
+	/** Number of samples in data */
 	int num_samples;
-	/** Measured quantity (voltage, current, temperature, and so on). */
+	/** Measured quantity (voltage, current, temperature, and so on).
+	 *  Use SR_MQ_VOLTAGE, ... */
 	int mq;
-	/** Unit in which the MQ is measured. */
+	/** Unit in which the MQ is measured. Use SR_UNIT_VOLT, ... */
 	int unit;
-	/** Bitmap with extra information about the MQ. */
+	/** Bitmap with extra information about the MQ. Use SR_MQFLAG_AC, ... */
 	uint64_t mqflags;
 	/** The analog value(s). The data is interleaved according to
-	 * the probes list. */
+	 * the channels list. */
 	float *data;
 };
 
@@ -313,6 +371,7 @@ struct sr_input {
 	void *internal;
 };
 
+/** Input (file) format driver. */
 struct sr_input_format {
 	/** The unique ID for this input format. Must not be NULL. */
 	char *id;
@@ -326,9 +385,10 @@ struct sr_input_format {
 	/**
 	 * Check if this input module can load and parse the specified file.
 	 *
-	 * @param filename The name (and path) of the file to check.
+	 * @param[in] filename The name (and path) of the file to check.
 	 *
-	 * @return TRUE if this module knows the format, FALSE if it doesn't.
+	 * @retval TRUE This module knows the format.
+	 * @retval FALSE This module does not know the format.
 	 */
 	int (*format_match) (const char *filename);
 
@@ -338,9 +398,10 @@ struct sr_input_format {
 	 * @param in A pointer to a valid 'struct sr_input' that the caller
 	 *           has to allocate and provide to this function. It is also
 	 *           the responsibility of the caller to free it later.
-	 * @param filename The name (and path) of the file to use.
+	 * @param[in] filename The name (and path) of the file to use.
 	 *
-	 * @return SR_OK upon success, a negative error code upon failure.
+	 * @retval SR_OK Success
+	 * @retval other Negative error code.
 	 */
 	int (*init) (struct sr_input *in, const char *filename);
 
@@ -361,31 +422,29 @@ struct sr_input_format {
 	 *           the responsibility of the caller to free it later.
 	 * @param filename The name (and path) of the file to use.
 	 *
-	 * @return SR_OK upon success, a negative error code upon failure.
+	 * @retval SR_OK Success
+	 * @retval other Negative error code.
 	 */
 	int (*loadfile) (struct sr_input *in, const char *filename);
 };
 
 /** Output (file) format struct. */
 struct sr_output {
-	/**
-	 * A pointer to this output format's 'struct sr_output_format'.
-	 * The frontend can use this to call the module's callbacks.
-	 */
+	/** A pointer to this output's format.  */
 	struct sr_output_format *format;
 
 	/**
 	 * The device for which this output module is creating output. This
-	 * can be used by the module to find out probe names and numbers.
+	 * can be used by the module to find out channel names and numbers.
 	 */
-	struct sr_dev_inst *sdi;
+	const struct sr_dev_inst *sdi;
 
 	/**
 	 * An optional parameter which the frontend can pass in to the
 	 * output module. How the string is interpreted is entirely up to
 	 * the module.
 	 */
-	char *param;
+	GHashTable *params;
 
 	/**
 	 * A generic pointer which can be used by the module to keep internal
@@ -397,6 +456,7 @@ struct sr_output {
 	void *internal;
 };
 
+/** Output (file) format driver. */
 struct sr_output_format {
 	/**
 	 * A unique ID for this output format. Must not be NULL.
@@ -416,8 +476,6 @@ struct sr_output_format {
 	 */
 	char *description;
 
-	int df_type;
-
 	/**
 	 * This function is called once, at the beginning of an output stream.
 	 *
@@ -430,73 +488,10 @@ struct sr_output_format {
 	 *
 	 * @param o Pointer to the respective 'struct sr_output'.
 	 *
-	 * @return SR_OK upon success, a negative error code otherwise.
+	 * @retval SR_OK Success
+	 * @retval other Negative error code.
 	 */
 	int (*init) (struct sr_output *o);
-
-	/**
-	 * Whenever a chunk of data comes in, it will be passed to the
-	 * output module via this function. The <code>data_in</code> and
-	 * <code>length_in</code> values refers to this data; the module
-	 * must not alter or g_free() this buffer.
-	 *
-	 * The function must allocate a buffer for storing its output, and
-	 * pass along a pointer to this buffer in the <code>data_out</code>
-	 * parameter, as well as storing the length of the buffer in
-	 * <code>length_out</code>. The calling frontend will g_free()
-	 * this buffer when it's done with it.
-	 *
-	 * IMPORTANT: The memory allocation much happen using a glib memory
-	 * allocation call (not a "normal" malloc) since g_free() will be
-	 * used to free the memory!
-	 *
-	 * If there is no output, this function MUST store NULL in the
-	 * <code>data_out</code> parameter, so the caller knows not to try
-	 * and g_free() it.
-	 *
-	 * Note: This API call is obsolete, use receive() instead.
-	 *
-	 * @param o Pointer to the respective 'struct sr_output'.
-	 * @param data_in Pointer to the input data buffer.
-	 * @param length_in Length of the input.
-	 * @param data_out Pointer to the allocated output buffer.
-	 * @param length_out Length (in bytes) of the output.
-	 *
-	 * @return SR_OK upon success, a negative error code otherwise.
-	 */
-	int (*data) (struct sr_output *o, const uint8_t *data_in,
-		     uint64_t length_in, uint8_t **data_out,
-		     uint64_t *length_out);
-
-	/**
-	 * This function is called when an event occurs in the datafeed
-	 * which the output module may need to be aware of. No data is
-	 * passed in, only the fact that the event occurs. The following
-	 * events can currently be passed in:
-	 *
-	 *  - SR_DF_TRIGGER: At this point in the datafeed, the trigger
-	 *    matched. The output module may mark this in some way, e.g. by
-	 *    plotting a red line on a graph.
-	 *
-	 *  - SR_DF_END: This marks the end of the datafeed. No more calls
-	 *    into the output module will be done, so this is a good time to
-	 *    free up any memory used to keep state, for example.
-	 *
-	 * Any output generated by this function must have a reference to
-	 * it stored in the <code>data_out</code> and <code>length_out</code>
-	 * parameters, or NULL if no output was generated.
-	 *
-	 * Note: This API call is obsolete, use receive() instead.
-	 *
-	 * @param o Pointer to the respective 'struct sr_output'.
-	 * @param event_type Type of event that occured.
-	 * @param data_out Pointer to the allocated output buffer.
-	 * @param length_out Length (in bytes) of the output.
-	 *
-	 * @return SR_OK upon success, a negative error code otherwise.
-	 */
-	int (*event) (struct sr_output *o, int event_type, uint8_t **data_out,
-			uint64_t *length_out);
 
 	/**
 	 * This function is passed a copy of every packed in the data feed.
@@ -513,9 +508,10 @@ struct sr_output_format {
 	 * @param out A pointer where a GString * should be stored if
 	 * the module generates output, or NULL if not.
 	 *
-	 * @return SR_OK upon success, a negative error code otherwise.
+	 * @retval SR_OK Success
+	 * @retval other Negative error code.
 	 */
-	int (*receive) (struct sr_output *o, const struct sr_dev_inst *sdi,
+	int (*receive) (struct sr_output *o,
 			const struct sr_datafeed_packet *packet, GString **out);
 
 	/**
@@ -523,39 +519,68 @@ struct sr_output_format {
 	 * the output module, and can be used to free any internal
 	 * resources the module may keep.
 	 *
-	 * @return SR_OK upon success, a negative error code otherwise.
+	 * @retval SR_OK Success
+	 * @retval other Negative error code.
 	 */
 	int (*cleanup) (struct sr_output *o);
 };
 
-enum {
-	SR_PROBE_LOGIC = 10000,
-	SR_PROBE_ANALOG,
+/** Constants for channel type. */
+enum sr_channeltype {
+	/** Channel type is logic channel. */
+	SR_CHANNEL_LOGIC = 10000,
+	/** Channel type is analog channel. */
+	SR_CHANNEL_ANALOG,
 };
 
-struct sr_probe {
-	/* The index field will go: use g_slist_length(sdi->probes) instead. */
+/** Information on single channel. */
+struct sr_channel {
+	/** Number of channels, starting at 0. */
 	int index;
+	/** Channel type (SR_CHANNEL_LOGIC, ...) */
 	int type;
+	/** Is this channel enabled? */
 	gboolean enabled;
+	/** Name of channel. */
 	char *name;
+	/** Trigger string, format like used by sigrok-cli */
 	char *trigger;
 };
 
+/** Structure for groups of channels that have common properties. */
+struct sr_channel_group {
+	/** Name of the channel group. */
+	char *name;
+	/** List of sr_channel structs of the channels belonging to this group. */
+	GSList *channels;
+	/** Private data for driver use. */
+	void *priv;
+};
+
+/** Used for setting or getting value of a config item. */
 struct sr_config {
+	/** Config key like SR_CONF_CONN, etc. */
 	int key;
+	/** Key-specific data. */
 	GVariant *data;
 };
 
+/** Information about a config key. */
 struct sr_config_info {
+	/** Config key like SR_CONF_CONN, etc. */
 	int key;
+	/** Data type like SR_T_STRING, etc. */
 	int datatype;
+	/** Id string, e.g. "serialcomm". */
 	char *id;
+	/** Name, e.g. "Serial communication". */
 	char *name;
+	/** Verbose description (unused currently). */
 	char *description;
 };
 
-enum {
+/** Constants for device classes */
+enum sr_configkey {
 	/*--- Device classes ------------------------------------------------*/
 
 	/** The device can act as logic analyzer. */
@@ -578,6 +603,15 @@ enum {
 
 	/** The device can measure humidity. */
 	SR_CONF_HYGROMETER,
+
+	/** The device can measure energy consumption. */
+	SR_CONF_ENERGYMETER,
+
+	/** The device can demodulate signals. */
+	SR_CONF_DEMODULATOR,
+
+	/** Programmable power supply. */
+	SR_CONF_POWER_SUPPLY,
 
 	/*--- Driver scan options -------------------------------------------*/
 
@@ -608,7 +642,7 @@ enum {
 	 * flow   0      no flow control
 	 *        1      hardware-based (RTS/CTS) flow control
 	 *        2      software-based (XON/XOFF) flow control
-	 * 
+	 *
 	 * This is always an optional parameter, since a driver typically
 	 * knows the speed at which the device wants to communicate.
 	 */
@@ -664,6 +698,72 @@ enum {
 	/** Number of vertical divisions, as related to SR_CONF_VDIV.  */
 	SR_CONF_NUM_VDIV,
 
+	/** Sound pressure level frequency weighting.  */
+	SR_CONF_SPL_WEIGHT_FREQ,
+
+	/** Sound pressure level time weighting.  */
+	SR_CONF_SPL_WEIGHT_TIME,
+
+	/** Sound pressure level measurement range.  */
+	SR_CONF_SPL_MEASUREMENT_RANGE,
+
+	/** Max hold mode. */
+	SR_CONF_HOLD_MAX,
+
+	/** Min hold mode. */
+	SR_CONF_HOLD_MIN,
+
+	/** Logic low-high threshold range. */
+	SR_CONF_VOLTAGE_THRESHOLD,
+
+	/** The device supports using an external clock. */
+	SR_CONF_EXTERNAL_CLOCK,
+
+	/**
+	 * The device supports swapping channels. Typical this is between
+	 * buffered and unbuffered channels.
+	 */
+	SR_CONF_SWAP,
+
+	/** Center frequency.
+	 * The input signal is downmixed by this frequency before the ADC
+	 * anti-aliasing filter.
+	 */
+	SR_CONF_CENTER_FREQUENCY,
+
+	/** The device supports setting the number of logic channels. */
+	SR_CONF_NUM_LOGIC_CHANNELS,
+
+	/** The device supports setting the number of analog channels. */
+	SR_CONF_NUM_ANALOG_CHANNELS,
+
+	/** Output voltage. */
+	SR_CONF_OUTPUT_VOLTAGE,
+
+	/** Maximum output voltage. */
+	SR_CONF_OUTPUT_VOLTAGE_MAX,
+
+	/** Output current. */
+	SR_CONF_OUTPUT_CURRENT,
+
+	/** Maximum output current. */
+	SR_CONF_OUTPUT_CURRENT_MAX,
+
+	/** Enabling/disabling output. */
+	SR_CONF_OUTPUT_ENABLED,
+
+	/** Channel output configuration. */
+	SR_CONF_OUTPUT_CHANNEL,
+
+	/** Over-voltage protection (OVP) */
+	SR_CONF_OVER_VOLTAGE_PROTECTION,
+
+	/** Over-current protection (OCP) */
+	SR_CONF_OVER_CURRENT_PROTECTION,
+
+	/** Choice of clock edge for external clock ("r" or "f"). */
+	SR_CONF_CLOCK_EDGE,
+
 	/*--- Special stuff -------------------------------------------------*/
 
 	/** Scan options supported by the driver. */
@@ -681,8 +781,22 @@ enum {
 	/** The device supports specifying the capturefile unit size. */
 	SR_CONF_CAPTURE_UNITSIZE,
 
-	/** The device supports setting the number of probes. */
-	SR_CONF_CAPTURE_NUM_PROBES,
+	/** Power off the device. */
+	SR_CONF_POWER_OFF,
+
+	/**
+	 * Data source for acquisition. If not present, acquisition from
+	 * the device is always "live", i.e. acquisition starts when the
+	 * frontend asks and the results are sent out as soon as possible.
+	 *
+	 * If present, it indicates that either the device has no live
+	 * acquisition capability (for example a pure data logger), or
+	 * there is a choice. sr_config_list() returns those choices.
+	 *
+	 * In any case if a device has live acquisition capabilities, it
+	 * is always the default.
+	 */
+	SR_CONF_DATA_SOURCE,
 
 	/*--- Acquisition modes ---------------------------------------------*/
 
@@ -714,31 +828,53 @@ enum {
 	/** The device has internal storage, into which data is logged. This
 	 * starts or stops the internal logging. */
 	SR_CONF_DATALOG,
+
+	/** Device mode for multi-function devices. */
+	SR_CONF_DEVICE_MODE,
+
+	/** Self test mode. */
+	SR_CONF_TEST_MODE,
 };
 
+/** Device instance data
+ */
 struct sr_dev_inst {
+	/** Device driver. */
 	struct sr_dev_driver *driver;
+	/** Index of device in driver. */
 	int index;
+	/** Device instance status. SR_ST_NOT_FOUND, etc. */
 	int status;
+	/** Device instance type. SR_INST_USB, etc. */
 	int inst_type;
+	/** Device vendor. */
 	char *vendor;
+	/** Device model. */
 	char *model;
+	/** Device version. */
 	char *version;
-	GSList *probes;
+	/** List of channels. */
+	GSList *channels;
+	/** List of sr_channel_group structs */
+	GSList *channel_groups;
+	/** Device instance connection data (used?) */
 	void *conn;
+	/** Device instance private data (used?) */
 	void *priv;
 };
 
-/** Types of device instances (sr_dev_inst). */
-enum {
+/** Types of device instance, struct sr_dev_inst.type */
+enum sr_dev_inst_type {
 	/** Device instance type for USB devices. */
 	SR_INST_USB = 10000,
 	/** Device instance type for serial port devices. */
 	SR_INST_SERIAL,
+	/** Device instance type for SCPI devices. */
+	SR_INST_SCPI,
 };
 
-/** Device instance status. */
-enum {
+/** Device instance status, struct sr_dev_inst.status */
+enum sr_dev_inst_status {
 	/** The device instance was not found. */
 	SR_ST_NOT_FOUND = 10000,
 	/** The device instance was found, but is still booting. */
@@ -751,62 +887,83 @@ enum {
 	SR_ST_STOPPING,
 };
 
+/** Device driver data. See also http://sigrok.org/wiki/Hardware_driver_API . */
 struct sr_dev_driver {
 	/* Driver-specific */
+	/** Driver name. Lowercase a-z, 0-9 and dashes (-) only. */
 	char *name;
+	/** Long name. Verbose driver name shown to user. */
 	char *longname;
+	/** API version (currently 1).	*/
 	int api_version;
+	/** Called when driver is loaded, e.g. program startup. */
 	int (*init) (struct sr_context *sr_ctx);
+	/** Called before driver is unloaded.
+	 *  Driver must free all resouces held by it. */
 	int (*cleanup) (void);
+	/** Scan for devices. Driver should do all initialisation required.
+	 *  Can be called several times, e.g. with different port options.
+	 *  \retval NULL Error or no devices found.
+	 *  \retval other GSList of a struct sr_dev_inst for each device.
+	 *                Must be freed by caller!
+	 */
 	GSList *(*scan) (GSList *options);
+	/** Get list of device instances the driver knows about.
+	 *  \returns NULL or GSList of a struct sr_dev_inst for each device.
+	 *           Must not be freed by caller!
+	 */
 	GSList *(*dev_list) (void);
+	/** Clear list of devices the driver knows about. */
 	int (*dev_clear) (void);
+	/** Query value of a configuration key in driver or given device instance.
+	 *  @see sr_config_get().
+	 */
 	int (*config_get) (int id, GVariant **data,
-			const struct sr_dev_inst *sdi);
+			const struct sr_dev_inst *sdi,
+			const struct sr_channel_group *cg);
+	/** Set value of a configuration key in driver or a given device instance.
+	 *  @see sr_config_set(). */
 	int (*config_set) (int id, GVariant *data,
-			const struct sr_dev_inst *sdi);
+			const struct sr_dev_inst *sdi,
+			const struct sr_channel_group *cg);
+	/** Channel status change.
+	 *  @see sr_dev_channel_enable(), sr_dev_trigger_set(). */
+	int (*config_channel_set) (const struct sr_dev_inst *sdi,
+			struct sr_channel *ch, unsigned int changes);
+	/** Apply configuration settings to the device hardware.
+	 *  @see sr_config_commit().*/
+	int (*config_commit) (const struct sr_dev_inst *sdi);
+	/** List all possible values for a configuration key in a device instance.
+	 *  @see sr_config_list().
+	 */
 	int (*config_list) (int info_id, GVariant **data,
-			const struct sr_dev_inst *sdi);
+			const struct sr_dev_inst *sdi,
+			const struct sr_channel_group *cg);
 
 	/* Device-specific */
+	/** Open device */
 	int (*dev_open) (struct sr_dev_inst *sdi);
+	/** Close device */
 	int (*dev_close) (struct sr_dev_inst *sdi);
+	/** Begin data acquisition on the specified device. */
 	int (*dev_acquisition_start) (const struct sr_dev_inst *sdi,
 			void *cb_data);
+	/** End data acquisition on the specified device. */
 	int (*dev_acquisition_stop) (struct sr_dev_inst *sdi,
 			void *cb_data);
 
 	/* Dynamic */
+	/** Device driver private data. Initialized by init(). */
 	void *priv;
 };
 
-struct sr_session {
-	/** List of struct sr_dev pointers. */
-	GSList *devs;
-	/** List of struct datafeed_callback pointers. */
-	GSList *datafeed_callbacks;
-	GTimeVal starttime;
-
-	unsigned int num_sources;
-
-	/*
-	 * Both "sources" and "pollfds" are of the same size and contain pairs
-	 * of descriptor and callback function. We can not embed the GPollFD
-	 * into the source struct since we want to be able to pass the array
-	 * of all poll descriptors to g_poll().
-	 */
-	struct source *sources;
-	GPollFD *pollfds;
-	int source_timeout;
-
-	/*
-	 * These are our synchronization primitives for stopping the session in
-	 * an async fashion. We need to make sure the session is stopped from
-	 * within the session thread itself.
-	 */
-	GMutex stop_mutex;
-	gboolean abort_session;
-};
+/**
+ * @struct sr_session
+ *
+ * Opaque data structure representing a libsigrok session. None of the fields
+ * of this structure are meant to be accessed directly.
+ */
+struct sr_session;
 
 #include "proto.h"
 #include "version.h"

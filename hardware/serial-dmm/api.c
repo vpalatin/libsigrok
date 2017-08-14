@@ -41,35 +41,57 @@ static const int32_t hwcaps[] = {
 	SR_CONF_CONTINUOUS,
 };
 
+SR_PRIV struct sr_dev_driver bbcgm_m2110_driver_info;
 SR_PRIV struct sr_dev_driver digitek_dt4000zc_driver_info;
 SR_PRIV struct sr_dev_driver tekpower_tp4000zc_driver_info;
 SR_PRIV struct sr_dev_driver metex_me31_driver_info;
 SR_PRIV struct sr_dev_driver peaktech_3410_driver_info;
 SR_PRIV struct sr_dev_driver mastech_mas345_driver_info;
 SR_PRIV struct sr_dev_driver va_va18b_driver_info;
+SR_PRIV struct sr_dev_driver va_va40b_driver_info;
 SR_PRIV struct sr_dev_driver metex_m3640d_driver_info;
+SR_PRIV struct sr_dev_driver metex_m4650cr_driver_info;
 SR_PRIV struct sr_dev_driver peaktech_4370_driver_info;
 SR_PRIV struct sr_dev_driver pce_pce_dm32_driver_info;
 SR_PRIV struct sr_dev_driver radioshack_22_168_driver_info;
 SR_PRIV struct sr_dev_driver radioshack_22_805_driver_info;
 SR_PRIV struct sr_dev_driver radioshack_22_812_driver_info;
-SR_PRIV struct sr_dev_driver tecpel_dmm_8060_ser_driver_info;
 SR_PRIV struct sr_dev_driver tecpel_dmm_8061_ser_driver_info;
+SR_PRIV struct sr_dev_driver voltcraft_m3650cr_driver_info;
+SR_PRIV struct sr_dev_driver voltcraft_m3650d_driver_info;
+SR_PRIV struct sr_dev_driver voltcraft_m4650cr_driver_info;
+SR_PRIV struct sr_dev_driver voltcraft_me42_driver_info;
 SR_PRIV struct sr_dev_driver voltcraft_vc820_ser_driver_info;
+SR_PRIV struct sr_dev_driver voltcraft_vc830_ser_driver_info;
 SR_PRIV struct sr_dev_driver voltcraft_vc840_ser_driver_info;
+SR_PRIV struct sr_dev_driver uni_t_ut60a_ser_driver_info;
+SR_PRIV struct sr_dev_driver uni_t_ut60e_ser_driver_info;
+SR_PRIV struct sr_dev_driver uni_t_ut60g_ser_driver_info;
+SR_PRIV struct sr_dev_driver uni_t_ut61b_ser_driver_info;
+SR_PRIV struct sr_dev_driver uni_t_ut61c_ser_driver_info;
 SR_PRIV struct sr_dev_driver uni_t_ut61d_ser_driver_info;
 SR_PRIV struct sr_dev_driver uni_t_ut61e_ser_driver_info;
+SR_PRIV struct sr_dev_driver iso_tech_idm103n_driver_info;
+SR_PRIV struct sr_dev_driver tenma_72_7745_ser_driver_info;
+SR_PRIV struct sr_dev_driver tenma_72_7750_ser_driver_info;
 
 SR_PRIV struct dmm_info dmms[] = {
 	{
-		"Digitek", "DT4000ZC", "2400/8n1", 2400,
+		"BBC Goertz Metrawatt", "M2110", "1200/7n2", 1200,
+		BBCGM_M2110_PACKET_SIZE, NULL,
+		sr_m2110_packet_valid, sr_m2110_parse,
+		NULL,
+		&bbcgm_m2110_driver_info, receive_data_BBCGM_M2110,
+	},
+	{
+		"Digitek", "DT4000ZC", "2400/8n1/dtr=1", 2400,
 		FS9721_PACKET_SIZE, NULL,
 		sr_fs9721_packet_valid, sr_fs9721_parse,
 		sr_fs9721_10_temp_c,
 		&digitek_dt4000zc_driver_info, receive_data_DIGITEK_DT4000ZC,
 	},
 	{
-		"TekPower", "TP4000ZC", "2400/8n1", 2400,
+		"TekPower", "TP4000ZC", "2400/8n1/dtr=1", 2400,
 		FS9721_PACKET_SIZE, NULL,
 		sr_fs9721_packet_valid, sr_fs9721_parse,
 		sr_fs9721_10_temp_c,
@@ -104,11 +126,25 @@ SR_PRIV struct dmm_info dmms[] = {
 		&va_va18b_driver_info, receive_data_VA_VA18B,
 	},
 	{
+		"V&A", "VA40B", "2400/8n1", 2400,
+		FS9721_PACKET_SIZE, NULL,
+		sr_fs9721_packet_valid, sr_fs9721_parse,
+		sr_fs9721_max_c_min,
+		&va_va40b_driver_info, receive_data_VA_VA40B,
+	},
+	{
 		"Metex", "M-3640D", "1200/7n2/rts=0/dtr=1", 1200,
 		METEX14_PACKET_SIZE, sr_metex14_packet_request,
 		sr_metex14_packet_valid, sr_metex14_parse,
 		NULL,
 		&metex_m3640d_driver_info, receive_data_METEX_M3640D,
+	},
+	{
+		"Metex", "M-4650CR", "1200/7n2/rts=0/dtr=1", 1200,
+		METEX14_PACKET_SIZE, sr_metex14_packet_request,
+		sr_metex14_packet_valid, sr_metex14_parse,
+		NULL,
+		&metex_m4650cr_driver_info, receive_data_METEX_M4650CR,
 	},
 	{
 		"PeakTech", "4370", "1200/7n2/rts=0/dtr=1", 1200,
@@ -146,20 +182,40 @@ SR_PRIV struct dmm_info dmms[] = {
 		&radioshack_22_812_driver_info, receive_data_RADIOSHACK_22_812,
 	},
 	{
-		"Tecpel", "DMM-8060 (UT-D02 cable)", "2400/8n1/rts=0/dtr=1",
-		2400, FS9721_PACKET_SIZE, NULL,
-		sr_fs9721_packet_valid, sr_fs9721_parse,
-		NULL,
-		&tecpel_dmm_8060_ser_driver_info,
-		receive_data_TECPEL_DMM_8060_SER,
-	},
-	{
 		"Tecpel", "DMM-8061 (UT-D02 cable)", "2400/8n1/rts=0/dtr=1",
 		2400, FS9721_PACKET_SIZE, NULL,
 		sr_fs9721_packet_valid, sr_fs9721_parse,
 		sr_fs9721_00_temp_c,
 		&tecpel_dmm_8061_ser_driver_info,
 		receive_data_TECPEL_DMM_8061_SER,
+	},
+	{
+		"Voltcraft", "M-3650CR", "1200/7n2/rts=0/dtr=1", 1200,
+		METEX14_PACKET_SIZE, sr_metex14_packet_request,
+		sr_metex14_packet_valid, sr_metex14_parse,
+		NULL,
+		&voltcraft_m3650cr_driver_info, receive_data_VOLTCRAFT_M3650CR,
+	},
+	{
+		"Voltcraft", "M-3650D", "1200/7n2/rts=0/dtr=1", 1200,
+		METEX14_PACKET_SIZE, sr_metex14_packet_request,
+		sr_metex14_packet_valid, sr_metex14_parse,
+		NULL,
+		&voltcraft_m3650d_driver_info, receive_data_VOLTCRAFT_M3650D,
+	},
+	{
+		"Voltcraft", "M-4650CR", "1200/7n2/rts=0/dtr=1", 1200,
+		METEX14_PACKET_SIZE, sr_metex14_packet_request,
+		sr_metex14_packet_valid, sr_metex14_parse,
+		NULL,
+		&voltcraft_m4650cr_driver_info, receive_data_VOLTCRAFT_M4650CR,
+	},
+	{
+		"Voltcraft", "ME-42", "600/7n2/rts=0/dtr=1", 600,
+		METEX14_PACKET_SIZE, sr_metex14_packet_request,
+		sr_metex14_packet_valid, sr_metex14_parse,
+		NULL,
+		&voltcraft_me42_driver_info, receive_data_VOLTCRAFT_ME42,
 	},
 	{
 		"Voltcraft", "VC-820 (UT-D02 cable)", "2400/8n1/rts=0/dtr=1",
@@ -170,12 +226,61 @@ SR_PRIV struct dmm_info dmms[] = {
 		receive_data_VOLTCRAFT_VC820_SER,
 	},
 	{
+		/*
+		 * Note: The VC830 doesn't set the 'volt' and 'diode' bits of
+		 * the FS9922 protocol. Instead, it only sets the user-defined
+		 * bit "z1" to indicate "diode mode" and "voltage".
+		 */
+		"Voltcraft", "VC-830 (UT-D02 cable)", "2400/8n1/rts=0/dtr=1",
+		2400, FS9922_PACKET_SIZE, NULL,
+		sr_fs9922_packet_valid, sr_fs9922_parse,
+		&sr_fs9922_z1_diode,
+		&voltcraft_vc830_ser_driver_info,
+		receive_data_VOLTCRAFT_VC830_SER,
+	},
+	{
 		"Voltcraft", "VC-840 (UT-D02 cable)", "2400/8n1/rts=0/dtr=1",
 		2400, FS9721_PACKET_SIZE, NULL,
 		sr_fs9721_packet_valid, sr_fs9721_parse,
 		sr_fs9721_00_temp_c,
 		&voltcraft_vc840_ser_driver_info,
 		receive_data_VOLTCRAFT_VC840_SER,
+	},
+	{
+		"UNI-T", "UT60A (UT-D02 cable)", "2400/8n1/rts=0/dtr=1",
+		2400, FS9721_PACKET_SIZE, NULL,
+		sr_fs9721_packet_valid, sr_fs9721_parse,
+		NULL,
+		&uni_t_ut60a_ser_driver_info,
+		receive_data_UNI_T_UT60A_SER,
+	},
+	{
+		"UNI-T", "UT60E (UT-D02 cable)", "2400/8n1/rts=0/dtr=1",
+		2400, FS9721_PACKET_SIZE, NULL,
+		sr_fs9721_packet_valid, sr_fs9721_parse,
+		sr_fs9721_00_temp_c,
+		&uni_t_ut60e_ser_driver_info,
+		receive_data_UNI_T_UT60E_SER,
+	},
+	{
+		/* Note: ES51986 baudrate is actually 19230! */
+		"UNI-T", "UT60G (UT-D02 cable)", "19200/7o1/rts=0/dtr=1",
+		19200, ES519XX_11B_PACKET_SIZE, NULL,
+		sr_es519xx_19200_11b_packet_valid, sr_es519xx_19200_11b_parse,
+		NULL,
+		&uni_t_ut60g_ser_driver_info, receive_data_UNI_T_UT60G_SER,
+	},
+	{
+		"UNI-T", "UT61B (UT-D02 cable)", "2400/8n1/rts=0/dtr=1",
+		2400, FS9922_PACKET_SIZE, NULL,
+		sr_fs9922_packet_valid, sr_fs9922_parse, NULL,
+		&uni_t_ut61b_ser_driver_info, receive_data_UNI_T_UT61B_SER,
+	},
+	{
+		"UNI-T", "UT61C (UT-D02 cable)", "2400/8n1/rts=0/dtr=1",
+		2400, FS9922_PACKET_SIZE, NULL,
+		sr_fs9922_packet_valid, sr_fs9922_parse, NULL,
+		&uni_t_ut61c_ser_driver_info, receive_data_UNI_T_UT61C_SER,
 	},
 	{
 		"UNI-T", "UT61D (UT-D02 cable)", "2400/8n1/rts=0/dtr=1",
@@ -186,56 +291,53 @@ SR_PRIV struct dmm_info dmms[] = {
 	{
 		/* Note: ES51922 baudrate is actually 19230! */
 		"UNI-T", "UT61E (UT-D02 cable)", "19200/7o1/rts=0/dtr=1",
-		19200, ES51922_PACKET_SIZE, NULL,
-		sr_es51922_packet_valid, sr_es51922_parse, NULL,
+		19200, ES519XX_14B_PACKET_SIZE, NULL,
+		sr_es519xx_19200_14b_packet_valid, sr_es519xx_19200_14b_parse,
+		NULL,
 		&uni_t_ut61e_ser_driver_info, receive_data_UNI_T_UT61E_SER,
+	},
+	{
+		"ISO-TECH", "IDM103N", "2400/7o1/rts=0/dtr=1",
+		2400, ES519XX_11B_PACKET_SIZE, NULL,
+		sr_es519xx_2400_11b_packet_valid, sr_es519xx_2400_11b_parse,
+		NULL,
+		&iso_tech_idm103n_driver_info, receive_data_ISO_TECH_IDM103N,
+	},
+	{
+		"Tenma", "72-7745 (UT-D02 cable)", "2400/8n1/rts=0/dtr=1",
+		2400, FS9721_PACKET_SIZE, NULL,
+		sr_fs9721_packet_valid, sr_fs9721_parse,
+		sr_fs9721_00_temp_c,
+		&tenma_72_7745_ser_driver_info, receive_data_TENMA_72_7745_SER,
+	},
+	{
+		/* Note: ES51986 baudrate is actually 19230! */
+		"Tenma", "72-7750 (UT-D02 cable)", "19200/7o1/rts=0/dtr=1",
+		19200, ES519XX_11B_PACKET_SIZE, NULL,
+		sr_es519xx_19200_11b_packet_valid, sr_es519xx_19200_11b_parse,
+		NULL,
+		&tenma_72_7750_ser_driver_info, receive_data_TENMA_72_7750_SER,
 	},
 };
 
-/* Properly close and free all devices. */
-static int clear_instances(int dmm)
+static int dev_clear(int dmm)
 {
-	struct sr_dev_inst *sdi;
-	struct drv_context *drvc;
-	struct dev_context *devc;
-	struct sr_serial_dev_inst *serial;
-	GSList *l;
-	struct sr_dev_driver *di;
-
-	di = dmms[dmm].di;
-
-	if (!(drvc = di->priv))
-		return SR_OK;
-
-	drvc = di->priv;
-	for (l = drvc->instances; l; l = l->next) {
-		if (!(sdi = l->data))
-			continue;
-		if (!(devc = sdi->priv))
-			continue;
-		serial = sdi->conn;
-		sr_serial_dev_inst_free(serial);
-		sr_dev_inst_free(sdi);
-	}
-	g_slist_free(drvc->instances);
-	drvc->instances = NULL;
-
-	return SR_OK;
+	return std_dev_clear(dmms[dmm].di, NULL);
 }
 
-static int hw_init(struct sr_context *sr_ctx, int dmm)
+static int init(struct sr_context *sr_ctx, int dmm)
 {
 	sr_dbg("Selected '%s' subdriver.", dmms[dmm].di->name);
 
-	return std_hw_init(sr_ctx, dmms[dmm].di, LOG_PREFIX);
+	return std_init(sr_ctx, dmms[dmm].di, LOG_PREFIX);
 }
 
-static GSList *scan(const char *conn, const char *serialcomm, int dmm)
+static GSList *sdmm_scan(const char *conn, const char *serialcomm, int dmm)
 {
 	struct sr_dev_inst *sdi;
 	struct drv_context *drvc;
 	struct dev_context *devc;
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	struct sr_serial_dev_inst *serial;
 	GSList *devices;
 	int dropped, ret;
@@ -271,7 +373,7 @@ static GSList *scan(const char *conn, const char *serialcomm, int dmm)
 	/* Let's get a bit of data and see if we can find a packet. */
 	len = sizeof(buf);
 	ret = serial_stream_detect(serial, buf, &len, dmms[dmm].packet_size,
-				   dmms[dmm].packet_valid, 1000,
+				   dmms[dmm].packet_valid, 3000,
 				   dmms[dmm].baudrate);
 	if (ret != SR_OK)
 		goto scan_cleanup;
@@ -290,7 +392,7 @@ static GSList *scan(const char *conn, const char *serialcomm, int dmm)
 	sr_info("Found device on port %s.", conn);
 
 	if (!(sdi = sr_dev_inst_new(0, SR_ST_INACTIVE, dmms[dmm].vendor,
-				    dmms[dmm].device, "")))
+				    dmms[dmm].device, NULL)))
 		goto scan_cleanup;
 
 	if (!(devc = g_try_malloc0(sizeof(struct dev_context)))) {
@@ -303,9 +405,9 @@ static GSList *scan(const char *conn, const char *serialcomm, int dmm)
 
 	sdi->priv = devc;
 	sdi->driver = dmms[dmm].di;
-	if (!(probe = sr_probe_new(0, SR_PROBE_ANALOG, TRUE, "P1")))
+	if (!(ch = sr_channel_new(0, SR_CHANNEL_ANALOG, TRUE, "P1")))
 		goto scan_cleanup;
-	sdi->probes = g_slist_append(sdi->probes, probe);
+	sdi->channels = g_slist_append(sdi->channels, ch);
 	drvc->instances = g_slist_append(drvc->instances, sdi);
 	devices = g_slist_append(devices, sdi);
 
@@ -315,7 +417,7 @@ scan_cleanup:
 	return devices;
 }
 
-static GSList *hw_scan(GSList *options, int dmm)
+static GSList *scan(GSList *options, int dmm)
 {
 	struct sr_config *src;
 	GSList *l, *devices;
@@ -338,56 +440,31 @@ static GSList *hw_scan(GSList *options, int dmm)
 
 	if (serialcomm) {
 		/* Use the provided comm specs. */
-		devices = scan(conn, serialcomm, dmm);
+		devices = sdmm_scan(conn, serialcomm, dmm);
 	} else {
 		/* Try the default. */
-		devices = scan(conn, dmms[dmm].conn, dmm);
+		devices = sdmm_scan(conn, dmms[dmm].conn, dmm);
 	}
 
 	return devices;
 }
 
-static GSList *hw_dev_list(int dmm)
+static GSList *dev_list(int dmm)
 {
 	return ((struct drv_context *)(dmms[dmm].di->priv))->instances;
 }
 
-static int hw_dev_open(struct sr_dev_inst *sdi)
+static int cleanup(int dmm)
 {
-	struct sr_serial_dev_inst *serial;
-
-	serial = sdi->conn;
-	if (serial_open(serial, SERIAL_RDWR | SERIAL_NONBLOCK) != SR_OK)
-		return SR_ERR;
-
-	sdi->status = SR_ST_ACTIVE;
-
-	return SR_OK;
+	return dev_clear(dmm);
 }
 
-static int hw_dev_close(struct sr_dev_inst *sdi)
-{
-	struct sr_serial_dev_inst *serial;
-
-	serial = sdi->conn;
-	if (serial && serial->fd != -1) {
-		serial_close(serial);
-		sdi->status = SR_ST_INACTIVE;
-	}
-
-	return SR_OK;
-}
-
-static int hw_cleanup(int dmm)
-{
-	clear_instances(dmm);
-
-	return SR_OK;
-}
-
-static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
+static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
 	struct dev_context *devc;
+
+	(void)cg;
 
 	if (sdi->status != SR_ST_ACTIVE)
 		return SR_ERR_DEV_CLOSED;
@@ -415,10 +492,11 @@ static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
+static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
-
 	(void)sdi;
+	(void)cg;
 
 	switch (key) {
 	case SR_CONF_SCAN_OPTIONS:
@@ -436,7 +514,7 @@ static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
+static int dev_acquisition_start(const struct sr_dev_inst *sdi,
 				    void *cb_data, int dmm)
 {
 	struct dev_context *devc;
@@ -465,32 +543,32 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 
 	/* Poll every 50ms, or whenever some data comes in. */
 	serial = sdi->conn;
-	sr_source_add(serial->fd, G_IO_IN, 50,
+	serial_source_add(serial, G_IO_IN, 50,
 		      dmms[dmm].receive_data, (void *)sdi);
 
 	return SR_OK;
 }
 
-static int hw_dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
+static int dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
 {
-	return std_hw_dev_acquisition_stop_serial(sdi, cb_data, hw_dev_close,
-						  sdi->conn, LOG_PREFIX);
+	return std_serial_dev_acquisition_stop(sdi, cb_data, std_serial_dev_close,
+			sdi->conn, LOG_PREFIX);
 }
 
 /* Driver-specific API function wrappers */
 #define HW_INIT(X) \
-static int hw_init_##X(struct sr_context *sr_ctx) { return hw_init(sr_ctx, X); }
+static int init_##X(struct sr_context *sr_ctx) { return init(sr_ctx, X); }
 #define HW_CLEANUP(X) \
-static int hw_cleanup_##X(void) { return hw_cleanup(X); }
+static int cleanup_##X(void) { return cleanup(X); }
 #define HW_SCAN(X) \
-static GSList *hw_scan_##X(GSList *options) { return hw_scan(options, X); }
+static GSList *scan_##X(GSList *options) { return scan(options, X); }
 #define HW_DEV_LIST(X) \
-static GSList *hw_dev_list_##X(void) { return hw_dev_list(X); }
-#define CLEAR_INSTANCES(X) \
-static int clear_instances_##X(void) { return clear_instances(X); }
+static GSList *dev_list_##X(void) { return dev_list(X); }
+#define HW_DEV_CLEAR(X) \
+static int dev_clear_##X(void) { return dev_clear(X); }
 #define HW_DEV_ACQUISITION_START(X) \
-static int hw_dev_acquisition_start_##X(const struct sr_dev_inst *sdi, \
-void *cb_data) { return hw_dev_acquisition_start(sdi, cb_data, X); }
+static int dev_acquisition_start_##X(const struct sr_dev_inst *sdi, \
+void *cb_data) { return dev_acquisition_start(sdi, cb_data, X); }
 
 /* Driver structs and API function wrappers */
 #define DRV(ID, ID_UPPER, NAME, LONGNAME) \
@@ -498,42 +576,57 @@ HW_INIT(ID_UPPER) \
 HW_CLEANUP(ID_UPPER) \
 HW_SCAN(ID_UPPER) \
 HW_DEV_LIST(ID_UPPER) \
-CLEAR_INSTANCES(ID_UPPER) \
+HW_DEV_CLEAR(ID_UPPER) \
 HW_DEV_ACQUISITION_START(ID_UPPER) \
 SR_PRIV struct sr_dev_driver ID##_driver_info = { \
 	.name = NAME, \
 	.longname = LONGNAME, \
 	.api_version = 1, \
-	.init = hw_init_##ID_UPPER, \
-	.cleanup = hw_cleanup_##ID_UPPER, \
-	.scan = hw_scan_##ID_UPPER, \
-	.dev_list = hw_dev_list_##ID_UPPER, \
-	.dev_clear = clear_instances_##ID_UPPER, \
+	.init = init_##ID_UPPER, \
+	.cleanup = cleanup_##ID_UPPER, \
+	.scan = scan_##ID_UPPER, \
+	.dev_list = dev_list_##ID_UPPER, \
+	.dev_clear = dev_clear_##ID_UPPER, \
 	.config_get = NULL, \
 	.config_set = config_set, \
 	.config_list = config_list, \
-	.dev_open = hw_dev_open, \
-	.dev_close = hw_dev_close, \
-	.dev_acquisition_start = hw_dev_acquisition_start_##ID_UPPER, \
-	.dev_acquisition_stop = hw_dev_acquisition_stop, \
+	.dev_open = std_serial_dev_open, \
+	.dev_close = std_serial_dev_close, \
+	.dev_acquisition_start = dev_acquisition_start_##ID_UPPER, \
+	.dev_acquisition_stop = dev_acquisition_stop, \
 	.priv = NULL, \
 };
 
+DRV(bbcgm_m2110, BBCGM_M2110, "bbcgm-m2110", "BBC Goertz Metrawatt M2110")
 DRV(digitek_dt4000zc, DIGITEK_DT4000ZC, "digitek-dt4000zc", "Digitek DT4000ZC")
 DRV(tekpower_tp4000zc, TEKPOWER_TP4000ZC, "tekpower-tp4000zc", "TekPower TP4000ZC")
 DRV(metex_me31, METEX_ME31, "metex-me31", "Metex ME-31")
 DRV(peaktech_3410, PEAKTECH_3410, "peaktech-3410", "PeakTech 3410")
 DRV(mastech_mas345, MASTECH_MAS345, "mastech-mas345", "MASTECH MAS345")
 DRV(va_va18b, VA_VA18B, "va-va18b", "V&A VA18B")
+DRV(va_va40b, VA_VA40B, "va-va40b", "V&A VA40B")
 DRV(metex_m3640d, METEX_M3640D, "metex-m3640d", "Metex M-3640D")
+DRV(metex_m4650cr, METEX_M4650CR, "metex-m4650cr", "Metex M-4650CR")
 DRV(peaktech_4370, PEAKTECH_4370, "peaktech-4370", "PeakTech 4370")
 DRV(pce_pce_dm32, PCE_PCE_DM32, "pce-pce-dm32", "PCE PCE-DM32")
 DRV(radioshack_22_168, RADIOSHACK_22_168, "radioshack-22-168", "RadioShack 22-168")
 DRV(radioshack_22_805, RADIOSHACK_22_805, "radioshack-22-805", "RadioShack 22-805")
 DRV(radioshack_22_812, RADIOSHACK_22_812, "radioshack-22-812", "RadioShack 22-812")
-DRV(tecpel_dmm_8060_ser, TECPEL_DMM_8060_SER, "tecpel-dmm-8060-ser", "Tecpel DMM-8060 (UT-D02 cable)")
 DRV(tecpel_dmm_8061_ser, TECPEL_DMM_8061_SER, "tecpel-dmm-8061-ser", "Tecpel DMM-8061 (UT-D02 cable)")
+DRV(voltcraft_m3650cr, VOLTCRAFT_M3650CR, "voltcraft-m3650cr", "Voltcraft M-3650CR")
+DRV(voltcraft_m3650d, VOLTCRAFT_M3650D, "voltcraft-m3650d", "Voltcraft M-3650D")
+DRV(voltcraft_m4650cr, VOLTCRAFT_M4650CR, "voltcraft-m4650cr", "Voltcraft M-4650CR")
+DRV(voltcraft_me42, VOLTCRAFT_ME42, "voltcraft-me42", "Voltcraft ME-42")
 DRV(voltcraft_vc820_ser, VOLTCRAFT_VC820_SER, "voltcraft-vc820-ser", "Voltcraft VC-820 (UT-D02 cable)")
+DRV(voltcraft_vc830_ser, VOLTCRAFT_VC830_SER, "voltcraft-vc830-ser", "Voltcraft VC-830 (UT-D02 cable)")
 DRV(voltcraft_vc840_ser, VOLTCRAFT_VC840_SER, "voltcraft-vc840-ser", "Voltcraft VC-840 (UT-D02 cable)")
+DRV(uni_t_ut60a_ser, UNI_T_UT60A_SER, "uni-t-ut60a-ser", "UNI-T UT60A (UT-D02 cable)")
+DRV(uni_t_ut60e_ser, UNI_T_UT60E_SER, "uni-t-ut60e-ser", "UNI-T UT60E (UT-D02 cable)")
+DRV(uni_t_ut60g_ser, UNI_T_UT60G_SER, "uni-t-ut60g-ser", "UNI-T UT60G (UT-D02 cable)")
+DRV(uni_t_ut61b_ser, UNI_T_UT61B_SER, "uni-t-ut61b-ser", "UNI-T UT61B (UT-D02 cable)")
+DRV(uni_t_ut61c_ser, UNI_T_UT61C_SER, "uni-t-ut61c-ser", "UNI-T UT61C (UT-D02 cable)")
 DRV(uni_t_ut61d_ser, UNI_T_UT61D_SER, "uni-t-ut61d-ser", "UNI-T UT61D (UT-D02 cable)")
 DRV(uni_t_ut61e_ser, UNI_T_UT61E_SER, "uni-t-ut61e-ser", "UNI-T UT61E (UT-D02 cable)")
+DRV(iso_tech_idm103n, ISO_TECH_IDM103N, "iso-tech-idm103n", "ISO-TECH IDM103N")
+DRV(tenma_72_7745_ser, TENMA_72_7745_SER, "tenma-72-7745-ser", "Tenma 72-7745 (UT-D02 cable)")
+DRV(tenma_72_7750_ser, TENMA_72_7750_SER, "tenma-72-7750-ser", "Tenma 72-7750 (UT-D02 cable)")

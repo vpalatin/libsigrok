@@ -18,6 +18,7 @@
  */
 
 #include "protocol.h"
+#include <libserialport.h>
 
 #define SERIALCOMM "115200/8n1"
 
@@ -32,11 +33,36 @@ static const int32_t hwcaps[] = {
 	SR_CONF_TRIGGER_TYPE,
 	SR_CONF_CAPTURE_RATIO,
 	SR_CONF_LIMIT_SAMPLES,
+	SR_CONF_EXTERNAL_CLOCK,
+	SR_CONF_PATTERN_MODE,
+	SR_CONF_SWAP,
 	SR_CONF_RLE,
 };
 
-/* Probes are numbered 0-31 (on the PCB silkscreen). */
-SR_PRIV const char *ols_probe_names[NUM_PROBES + 1] = {
+#define STR_PATTERN_NONE     "None"
+#define STR_PATTERN_EXTERNAL "External"
+#define STR_PATTERN_INTERNAL "Internal"
+
+/* Supported methods of test pattern outputs */
+enum {
+	/**
+	 * Capture pins 31:16 (unbuffered wing) output a test pattern
+	 * that can captured on pins 0:15.
+	 */
+	PATTERN_EXTERNAL,
+
+	/** Route test pattern internally to capture buffer. */
+	PATTERN_INTERNAL,
+};
+
+static const char *patterns[] = {
+	STR_PATTERN_NONE,
+	STR_PATTERN_EXTERNAL,
+	STR_PATTERN_INTERNAL,
+};
+
+/* Channels are numbered 0-31 (on the PCB silkscreen). */
+SR_PRIV const char *ols_channel_names[NUM_CHANNELS + 1] = {
 	"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12",
 	"13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23",
 	"24", "25", "26", "27", "28", "29", "30", "31",
@@ -53,26 +79,24 @@ static const uint64_t samplerates[] = {
 SR_PRIV struct sr_dev_driver ols_driver_info;
 static struct sr_dev_driver *di = &ols_driver_info;
 
-static int hw_init(struct sr_context *sr_ctx)
+static int init(struct sr_context *sr_ctx)
 {
-	return std_hw_init(sr_ctx, di, LOG_PREFIX);
+	return std_init(sr_ctx, di, LOG_PREFIX);
 }
 
-static GSList *hw_scan(GSList *options)
+static GSList *scan(GSList *options)
 {
 	struct sr_config *src;
 	struct sr_dev_inst *sdi;
 	struct drv_context *drvc;
 	struct dev_context *devc;
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	struct sr_serial_dev_inst *serial;
 	GPollFD probefd;
 	GSList *l, *devices;
 	int ret, i;
 	const char *conn, *serialcomm;
 	char buf[8];
-
-	(void)options;
 
 	drvc = di->priv;
 
@@ -126,13 +150,13 @@ static GSList *hw_scan(GSList *options)
 	/* Wait 10ms for a response. */
 	g_usleep(10000);
 
-	probefd.fd = serial->fd;
+	sp_get_port_handle(serial->data, &probefd.fd);
 	probefd.events = G_IO_IN;
 	g_poll(&probefd, 1, 1);
 
 	if (probefd.revents != G_IO_IN)
 		return NULL;
-	if (serial_read(serial, buf, 4) != 4)
+	if (serial_read_blocking(serial, buf, 4) != 4)
 		return NULL;
 	if (strncmp(buf, "1SLO", 4) && strncmp(buf, "1ALS", 4))
 		return NULL;
@@ -153,10 +177,10 @@ static GSList *hw_scan(GSList *options)
 				"Sump", "Logic Analyzer", "v1.0");
 		sdi->driver = di;
 		for (i = 0; i < 32; i++) {
-			if (!(probe = sr_probe_new(i, SR_PROBE_LOGIC, TRUE,
-					ols_probe_names[i])))
+			if (!(ch = sr_channel_new(i, SR_CHANNEL_LOGIC, TRUE,
+					ols_channel_names[i])))
 				return 0;
-			sdi->probes = g_slist_append(sdi->probes, probe);
+			sdi->channels = g_slist_append(sdi->channels, ch);
 		}
 		devc = ols_dev_new();
 		sdi->priv = devc;
@@ -166,7 +190,7 @@ static GSList *hw_scan(GSList *options)
 		sr_dbg("Failed to set default samplerate (%"PRIu64").",
 				DEFAULT_SAMPLERATE);
 	/* Clear trigger masks, values and stages. */
-	ols_configure_probes(sdi);
+	ols_configure_channels(sdi);
 	sdi->inst_type = SR_INST_SERIAL;
 	sdi->conn = serial;
 
@@ -178,77 +202,22 @@ static GSList *hw_scan(GSList *options)
 	return devices;
 }
 
-static GSList *hw_dev_list(void)
+static GSList *dev_list(void)
 {
 	return ((struct drv_context *)(di->priv))->instances;
 }
 
-static int hw_dev_open(struct sr_dev_inst *sdi)
+static int cleanup(void)
 {
-	struct sr_serial_dev_inst *serial;
-
-	serial = sdi->conn;
-	if (serial_open(serial, SERIAL_RDWR) != SR_OK)
-		return SR_ERR;
-
-	sdi->status = SR_ST_ACTIVE;
-
-	return SR_OK;
+	return std_dev_clear(di, NULL);
 }
 
-static int hw_dev_close(struct sr_dev_inst *sdi)
-{
-	struct sr_serial_dev_inst *serial;
-
-	serial = sdi->conn;
-	if (serial && serial->fd != -1) {
-		serial_close(serial);
-		sdi->status = SR_ST_INACTIVE;
-	}
-
-	return SR_OK;
-}
-
-static int hw_cleanup(void)
-{
-	GSList *l;
-	struct sr_dev_inst *sdi;
-	struct drv_context *drvc;
-	struct dev_context *devc;
-	struct sr_serial_dev_inst *serial;
-	int ret = SR_OK;
-
-	if (!(drvc = di->priv))
-		return SR_OK;
-
-	/* Properly close and free all devices. */
-	for (l = drvc->instances; l; l = l->next) {
-		if (!(sdi = l->data)) {
-			/* Log error, but continue cleaning up the rest. */
-			sr_err("%s: sdi was NULL, continuing", __func__);
-			ret = SR_ERR_BUG;
-			continue;
-		}
-		if (!(devc = sdi->priv)) {
-			/* Log error, but continue cleaning up the rest. */
-			sr_err("%s: sdi->priv was NULL, continuing", __func__);
-			ret = SR_ERR_BUG;
-			continue;
-		}
-		hw_dev_close(sdi);
-		serial = sdi->conn;
-		sr_serial_dev_inst_free(serial);
-		sr_dev_inst_free(sdi);
-	}
-	g_slist_free(drvc->instances);
-	drvc->instances = NULL;
-
-	return ret;
-}
-
-static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi)
+static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
 	struct dev_context *devc;
+
+	(void)cg;
 
 	if (!sdi)
 		return SR_ERR_ARG;
@@ -264,6 +233,14 @@ static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi)
 	case SR_CONF_LIMIT_SAMPLES:
 		*data = g_variant_new_uint64(devc->limit_samples);
 		break;
+	case SR_CONF_PATTERN_MODE:
+		if (devc->flag_reg & FLAG_EXTERNAL_TEST_MODE)
+			*data = g_variant_new_string(STR_PATTERN_EXTERNAL);
+		else if (devc->flag_reg & FLAG_INTERNAL_TEST_MODE)
+			*data = g_variant_new_string(STR_PATTERN_INTERNAL);
+		else
+			*data = g_variant_new_string(STR_PATTERN_NONE);
+		break;
 	case SR_CONF_RLE:
 		*data = g_variant_new_boolean(devc->flag_reg & FLAG_RLE ? TRUE : FALSE);
 		break;
@@ -274,11 +251,16 @@ static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
+static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
 	struct dev_context *devc;
-	int ret;
+	uint16_t flag;
 	uint64_t tmp_u64;
+	int ret;
+	const char *stropt;
+
+	(void)cg;
 
 	if (sdi->status != SR_ST_ACTIVE)
 		return SR_ERR_DEV_CLOSED;
@@ -307,6 +289,48 @@ static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
 		} else
 			ret = SR_OK;
 		break;
+	case SR_CONF_EXTERNAL_CLOCK:
+		if (g_variant_get_boolean(data)) {
+			sr_info("Enabling external clock.");
+			devc->flag_reg |= FLAG_CLOCK_EXTERNAL;
+		} else {
+			sr_info("Disabled external clock.");
+			devc->flag_reg &= ~FLAG_CLOCK_EXTERNAL;
+		}
+		ret = SR_OK;
+		break;
+	case SR_CONF_PATTERN_MODE:
+		stropt = g_variant_get_string(data, NULL);
+		ret = SR_OK;
+		flag = 0xffff;
+		if (!strcmp(stropt, STR_PATTERN_NONE)) {
+			sr_info("Disabling test modes.");
+			flag = 0x0000;
+		}else if (!strcmp(stropt, STR_PATTERN_INTERNAL)) {
+			sr_info("Enabling internal test mode.");
+			flag = FLAG_INTERNAL_TEST_MODE;
+		} else if (!strcmp(stropt, STR_PATTERN_EXTERNAL)) {
+			sr_info("Enabling external test mode.");
+			flag = FLAG_EXTERNAL_TEST_MODE;
+		} else {
+			ret = SR_ERR;
+		}
+		if (flag != 0xffff) {
+			devc->flag_reg &= ~(FLAG_INTERNAL_TEST_MODE | FLAG_EXTERNAL_TEST_MODE);
+			devc->flag_reg |= flag;
+		}
+		break;
+	case SR_CONF_SWAP:
+		if (g_variant_get_boolean(data)) {
+			sr_info("Enabling channel swapping.");
+			devc->flag_reg |= FLAG_SWAP_CHANNELS;
+		} else {
+			sr_info("Disabling channel swapping.");
+			devc->flag_reg &= ~FLAG_SWAP_CHANNELS;
+		}
+		ret = SR_OK;
+		break;
+
 	case SR_CONF_RLE:
 		if (g_variant_get_boolean(data)) {
 			sr_info("Enabling RLE.");
@@ -324,12 +348,15 @@ static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
 	return ret;
 }
 
-static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
+static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
-	GVariant *gvar;
+	struct dev_context *devc;
+	GVariant *gvar, *grange[2];
 	GVariantBuilder gvb;
+	int num_channels, i;
 
-	(void)sdi;
+	(void)cg;
 
 	switch (key) {
 	case SR_CONF_SCAN_OPTIONS:
@@ -350,6 +377,38 @@ static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
 	case SR_CONF_TRIGGER_TYPE:
 		*data = g_variant_new_string(TRIGGER_TYPE);
 		break;
+	case SR_CONF_PATTERN_MODE:
+		*data = g_variant_new_strv(patterns, ARRAY_SIZE(patterns));
+		break;
+	case SR_CONF_LIMIT_SAMPLES:
+		if (!sdi)
+			return SR_ERR_ARG;
+		devc = sdi->priv;
+		if (devc->flag_reg & FLAG_RLE)
+			return SR_ERR_NA;
+		if (devc->max_samples == 0)
+			/* Device didn't specify sample memory size in metadata. */
+			return SR_ERR_NA;
+		/*
+		 * Channel groups are turned off if no channels in that group are
+		 * enabled, making more room for samples for the enabled group.
+		*/
+		ols_configure_channels(sdi);
+		num_channels = 0;
+		for (i = 0; i < 4; i++) {
+			if (devc->channel_mask & (0xff << (i * 8)))
+				num_channels++;
+		}
+		if (num_channels == 0) {
+			/* This can happen, but shouldn't cause too much drama.
+			 * However we can't continue because the code below would
+			 * divide by zero. */
+			break;
+		}
+		grange[0] = g_variant_new_uint64(MIN_NUM_SAMPLES);
+		grange[1] = g_variant_new_uint64(devc->max_samples / num_channels);
+		*data = g_variant_new_tuple(grange, 2);
+		break;
 	default:
 		return SR_ERR_NA;
 	}
@@ -357,17 +416,52 @@ static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
+static int set_trigger(const struct sr_dev_inst *sdi, int stage)
+{
+	struct dev_context *devc;
+	struct sr_serial_dev_inst *serial;
+	uint8_t cmd, arg[4];
+
+	devc = sdi->priv;
+	serial = sdi->conn;
+
+	cmd = CMD_SET_TRIGGER_MASK + stage * 4;
+	arg[0] = devc->trigger_mask[stage] & 0xff;
+	arg[1] = (devc->trigger_mask[stage] >> 8) & 0xff;
+	arg[2] = (devc->trigger_mask[stage] >> 16) & 0xff;
+	arg[3] = (devc->trigger_mask[stage] >> 24) & 0xff;
+	if (send_longcommand(serial, cmd, arg) != SR_OK)
+		return SR_ERR;
+
+	cmd = CMD_SET_TRIGGER_VALUE + stage * 4;
+	arg[0] = devc->trigger_value[stage] & 0xff;
+	arg[1] = (devc->trigger_value[stage] >> 8) & 0xff;
+	arg[2] = (devc->trigger_value[stage] >> 16) & 0xff;
+	arg[3] = (devc->trigger_value[stage] >> 24) & 0xff;
+	if (send_longcommand(serial, cmd, arg) != SR_OK)
+		return SR_ERR;
+
+	cmd = CMD_SET_TRIGGER_CONFIG + stage * 4;
+	arg[0] = arg[1] = arg[3] = 0x00;
+	arg[2] = stage;
+	if (stage == devc->num_stages)
+		/* Last stage, fire when this one matches. */
+		arg[3] |= TRIGGER_START;
+	if (send_longcommand(serial, cmd, arg) != SR_OK)
+		return SR_ERR;
+
+	return SR_OK;
+}
+
+static int dev_acquisition_start(const struct sr_dev_inst *sdi,
 		void *cb_data)
 {
 	struct dev_context *devc;
 	struct sr_serial_dev_inst *serial;
-	uint32_t trigger_config[4];
-	uint32_t data;
-	uint16_t readcount, delaycount;
-	uint8_t changrp_mask;
+	uint16_t samplecount, readcount, delaycount;
+	uint8_t changrp_mask, arg[4];
 	int num_channels;
-	int i;
+	int ret, i;
 
 	if (sdi->status != SR_ST_ACTIVE)
 		return SR_ERR_DEV_CLOSED;
@@ -375,20 +469,20 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 	devc = sdi->priv;
 	serial = sdi->conn;
 
-	if (ols_configure_probes(sdi) != SR_OK) {
-		sr_err("Failed to configure probes.");
+	if (ols_configure_channels(sdi) != SR_OK) {
+		sr_err("Failed to configure channels.");
 		return SR_ERR;
 	}
 
 	/*
 	 * Enable/disable channel groups in the flag register according to the
-	 * probe mask. Calculate this here, because num_channels is needed
+	 * channel mask. Calculate this here, because num_channels is needed
 	 * to limit readcount.
 	 */
 	changrp_mask = 0;
 	num_channels = 0;
 	for (i = 0; i < 4; i++) {
-		if (devc->probe_mask & (0xff << (i * 8))) {
+		if (devc->channel_mask & (0xff << (i * 8))) {
 			changrp_mask |= (1 << i);
 			num_channels++;
 		}
@@ -398,85 +492,64 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 	 * Limit readcount to prevent reading past the end of the hardware
 	 * buffer.
 	 */
-	readcount = MIN(devc->max_samples / num_channels, devc->limit_samples) / 4;
+	samplecount = MIN(devc->max_samples / num_channels, devc->limit_samples);
+	readcount = samplecount / 4;
 
-	memset(trigger_config, 0, 16);
-	trigger_config[devc->num_stages] |= 0x08;
-	if (devc->trigger_mask[0]) {
+	/* Rather read too many samples than too few. */
+	if (samplecount % 4 != 0)
+		readcount++;
+
+	/* Basic triggers. */
+	if (devc->trigger_mask[0] != 0x00000000) {
+		/* At least one channel has a trigger on it. */
 		delaycount = readcount * (1 - devc->capture_ratio / 100.0);
 		devc->trigger_at = (readcount - delaycount) * 4 - devc->num_stages;
-
-		if (send_longcommand(serial, CMD_SET_TRIGGER_MASK_0,
-			reverse32(devc->trigger_mask[0])) != SR_OK)
-			return SR_ERR;
-		if (send_longcommand(serial, CMD_SET_TRIGGER_VALUE_0,
-			reverse32(devc->trigger_value[0])) != SR_OK)
-			return SR_ERR;
-		if (send_longcommand(serial, CMD_SET_TRIGGER_CONFIG_0,
-			trigger_config[0]) != SR_OK)
-			return SR_ERR;
-
-		if (send_longcommand(serial, CMD_SET_TRIGGER_MASK_1,
-			reverse32(devc->trigger_mask[1])) != SR_OK)
-			return SR_ERR;
-		if (send_longcommand(serial, CMD_SET_TRIGGER_VALUE_1,
-			reverse32(devc->trigger_value[1])) != SR_OK)
-			return SR_ERR;
-		if (send_longcommand(serial, CMD_SET_TRIGGER_CONFIG_1,
-			trigger_config[1]) != SR_OK)
-			return SR_ERR;
-
-		if (send_longcommand(serial, CMD_SET_TRIGGER_MASK_2,
-			reverse32(devc->trigger_mask[2])) != SR_OK)
-			return SR_ERR;
-		if (send_longcommand(serial, CMD_SET_TRIGGER_VALUE_2,
-			reverse32(devc->trigger_value[2])) != SR_OK)
-			return SR_ERR;
-		if (send_longcommand(serial, CMD_SET_TRIGGER_CONFIG_2,
-			trigger_config[2]) != SR_OK)
-			return SR_ERR;
-
-		if (send_longcommand(serial, CMD_SET_TRIGGER_MASK_3,
-			reverse32(devc->trigger_mask[3])) != SR_OK)
-			return SR_ERR;
-		if (send_longcommand(serial, CMD_SET_TRIGGER_VALUE_3,
-			reverse32(devc->trigger_value[3])) != SR_OK)
-			return SR_ERR;
-		if (send_longcommand(serial, CMD_SET_TRIGGER_CONFIG_3,
-			trigger_config[3]) != SR_OK)
-			return SR_ERR;
+		for (i = 0; i <= devc->num_stages; i++) {
+			sr_dbg("Setting stage %d trigger.", i);
+			if ((ret = set_trigger(sdi, i)) != SR_OK)
+				return ret;
+		}
 	} else {
-		if (send_longcommand(serial, CMD_SET_TRIGGER_MASK_0,
-				devc->trigger_mask[0]) != SR_OK)
-			return SR_ERR;
-		if (send_longcommand(serial, CMD_SET_TRIGGER_VALUE_0,
-				devc->trigger_value[0]) != SR_OK)
-			return SR_ERR;
-		if (send_longcommand(serial, CMD_SET_TRIGGER_CONFIG_0,
-		     0x00000008) != SR_OK)
-			return SR_ERR;
+		/* No triggers configured, force trigger on first stage. */
+		sr_dbg("Forcing trigger at stage 0.");
+		if ((ret = set_trigger(sdi, 0)) != SR_OK)
+			return ret;
 		delaycount = readcount;
 	}
 
-	sr_info("Setting samplerate to %" PRIu64 "Hz (divider %u, "
-		"demux %s)", devc->cur_samplerate, devc->cur_samplerate_divider,
-		devc->flag_reg & FLAG_DEMUX ? "on" : "off");
-	if (send_longcommand(serial, CMD_SET_DIVIDER,
-			reverse32(devc->cur_samplerate_divider)) != SR_OK)
+	/* Samplerate. */
+	sr_dbg("Setting samplerate to %" PRIu64 "Hz (divider %u)",
+			devc->cur_samplerate, devc->cur_samplerate_divider);
+	arg[0] = devc->cur_samplerate_divider & 0xff;
+	arg[1] = (devc->cur_samplerate_divider & 0xff00) >> 8;
+	arg[2] = (devc->cur_samplerate_divider & 0xff0000) >> 16;
+	arg[3] = 0x00;
+	if (send_longcommand(serial, CMD_SET_DIVIDER, arg) != SR_OK)
 		return SR_ERR;
 
 	/* Send sample limit and pre/post-trigger capture ratio. */
-	data = ((readcount - 1) & 0xffff) << 16;
-	data |= (delaycount - 1) & 0xffff;
-	if (send_longcommand(serial, CMD_CAPTURE_SIZE, reverse16(data)) != SR_OK)
+	sr_dbg("Setting sample limit %d, trigger point at %d",
+			(readcount - 1) * 4, (delaycount - 1) * 4);
+	arg[0] = ((readcount - 1) & 0xff);
+	arg[1] = ((readcount - 1) & 0xff00) >> 8;
+	arg[2] = ((delaycount - 1) & 0xff);
+	arg[3] = ((delaycount - 1) & 0xff00) >> 8;
+	if (send_longcommand(serial, CMD_CAPTURE_SIZE, arg) != SR_OK)
 		return SR_ERR;
 
-	/* The flag register wants them here, and 1 means "disable channel". */
+	/* Flag register. */
+	sr_dbg("Setting intpat %s, extpat %s, RLE %s, noise_filter %s, demux %s",
+			devc->flag_reg & FLAG_INTERNAL_TEST_MODE ? "on": "off",
+			devc->flag_reg & FLAG_EXTERNAL_TEST_MODE ? "on": "off",
+			devc->flag_reg & FLAG_RLE ? "on" : "off",
+			devc->flag_reg & FLAG_FILTER ? "on": "off",
+			devc->flag_reg & FLAG_DEMUX ? "on" : "off");
+	/* 1 means "disable channel". */
 	devc->flag_reg |= ~(changrp_mask << 2) & 0x3c;
-	devc->flag_reg |= FLAG_FILTER;
-	devc->rle_count = 0;
-	data = (devc->flag_reg << 24) | ((devc->flag_reg << 8) & 0xff0000);
-	if (send_longcommand(serial, CMD_SET_FLAGS, data) != SR_OK)
+	arg[0] = devc->flag_reg & 0xff;
+	arg[1] = devc->flag_reg >> 8;
+	arg[2] = arg[3] = 0x00;
+	if (send_longcommand(serial, CMD_SET_FLAGS, arg) != SR_OK)
 		return SR_ERR;
 
 	/* Start acquisition on the device. */
@@ -484,19 +557,21 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 		return SR_ERR;
 
 	/* Reset all operational states. */
-	devc->num_transfers = devc->num_samples = devc->num_bytes = 0;
+	devc->rle_count = devc->num_transfers = 0;
+	devc->num_samples = devc->num_bytes = 0;
+	devc->cnt_bytes = devc->cnt_samples = devc->cnt_samples_rle = 0;
+	memset(devc->sample, 0, 4);
 
 	/* Send header packet to the session bus. */
 	std_session_send_df_header(cb_data, LOG_PREFIX);
 
-	sr_source_add(serial->fd, G_IO_IN, -1, ols_receive_data, cb_data);
+	serial_source_add(serial, G_IO_IN, -1, ols_receive_data, cb_data);
 
 	return SR_OK;
 }
 
-static int hw_dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
+static int dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
 {
-	/* Avoid compiler warnings. */
 	(void)cb_data;
 
 	abort_acquisition(sdi);
@@ -508,17 +583,17 @@ SR_PRIV struct sr_dev_driver ols_driver_info = {
 	.name = "ols",
 	.longname = "Openbench Logic Sniffer",
 	.api_version = 1,
-	.init = hw_init,
-	.cleanup = hw_cleanup,
-	.scan = hw_scan,
-	.dev_list = hw_dev_list,
-	.dev_clear = hw_cleanup,
+	.init = init,
+	.cleanup = cleanup,
+	.scan = scan,
+	.dev_list = dev_list,
+	.dev_clear = NULL,
 	.config_get = config_get,
 	.config_set = config_set,
 	.config_list = config_list,
-	.dev_open = hw_dev_open,
-	.dev_close = hw_dev_close,
-	.dev_acquisition_start = hw_dev_acquisition_start,
-	.dev_acquisition_stop = hw_dev_acquisition_stop,
+	.dev_open = std_serial_dev_open,
+	.dev_close = std_serial_dev_close,
+	.dev_acquisition_start = dev_acquisition_start,
+	.dev_acquisition_stop = dev_acquisition_stop,
 	.priv = NULL,
 };

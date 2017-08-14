@@ -17,8 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIBSIGROK_SIGROK_PROTO_H
-#define LIBSIGROK_SIGROK_PROTO_H
+#ifndef LIBSIGROK_PROTO_H
+#define LIBSIGROK_PROTO_H
 
 /**
  * @file
@@ -33,23 +33,23 @@ SR_API int sr_exit(struct sr_context *ctx);
 
 /*--- log.c -----------------------------------------------------------------*/
 
-typedef int (*sr_log_callback_t)(void *cb_data, int loglevel,
-				 const char *format, va_list args);
+typedef int (*sr_log_callback)(void *cb_data, int loglevel,
+				const char *format, va_list args);
 
 SR_API int sr_log_loglevel_set(int loglevel);
 SR_API int sr_log_loglevel_get(void);
-SR_API int sr_log_callback_set(sr_log_callback_t cb, void *cb_data);
+SR_API int sr_log_callback_set(sr_log_callback cb, void *cb_data);
 SR_API int sr_log_callback_set_default(void);
 SR_API int sr_log_logdomain_set(const char *logdomain);
 SR_API char *sr_log_logdomain_get(void);
 
 /*--- device.c --------------------------------------------------------------*/
 
-SR_API int sr_dev_probe_name_set(const struct sr_dev_inst *sdi,
-		int probenum, const char *name);
-SR_API int sr_dev_probe_enable(const struct sr_dev_inst *sdi, int probenum,
+SR_API int sr_dev_channel_name_set(const struct sr_dev_inst *sdi,
+		int channelnum, const char *name);
+SR_API int sr_dev_channel_enable(const struct sr_dev_inst *sdi, int channelnum,
 		gboolean state);
-SR_API int sr_dev_trigger_set(const struct sr_dev_inst *sdi, int probenum,
+SR_API int sr_dev_trigger_set(const struct sr_dev_inst *sdi, int channelnum,
 		const char *trigger);
 SR_API gboolean sr_dev_has_option(const struct sr_dev_inst *sdi, int key);
 SR_API GSList *sr_dev_list(const struct sr_dev_driver *driver);
@@ -57,31 +57,30 @@ SR_API int sr_dev_clear(const struct sr_dev_driver *driver);
 SR_API int sr_dev_open(struct sr_dev_inst *sdi);
 SR_API int sr_dev_close(struct sr_dev_inst *sdi);
 
-/*--- filter.c --------------------------------------------------------------*/
-
-SR_API int sr_filter_probes(unsigned int in_unitsize, unsigned int out_unitsize,
-			    const GArray *probe_array, const uint8_t *data_in,
-			    uint64_t length_in, uint8_t **data_out,
-			    uint64_t *length_out);
-
 /*--- hwdriver.c ------------------------------------------------------------*/
 
 SR_API struct sr_dev_driver **sr_driver_list(void);
 SR_API int sr_driver_init(struct sr_context *ctx,
 		struct sr_dev_driver *driver);
 SR_API GSList *sr_driver_scan(struct sr_dev_driver *driver, GSList *options);
-SR_API int sr_config_get(const struct sr_dev_driver *driver, int key,
-		GVariant **data, const struct sr_dev_inst *sdi);
-SR_API int sr_config_set(const struct sr_dev_inst *sdi, int key,
-		GVariant *data);
-SR_API int sr_config_list(const struct sr_dev_driver *driver, int key,
-		GVariant **data, const struct sr_dev_inst *sdi);
+SR_API int sr_config_get(const struct sr_dev_driver *driver,
+		const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg,
+		int key, GVariant **data);
+SR_API int sr_config_set(const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg,
+		int key, GVariant *data);
+SR_API int sr_config_commit(const struct sr_dev_inst *sdi);
+SR_API int sr_config_list(const struct sr_dev_driver *driver,
+		const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg,
+		int key, GVariant **data);
 SR_API const struct sr_config_info *sr_config_info_get(int key);
 SR_API const struct sr_config_info *sr_config_info_name_get(const char *optname);
 
 /*--- session.c -------------------------------------------------------------*/
 
-typedef void (*sr_datafeed_callback_t)(const struct sr_dev_inst *sdi,
+typedef void (*sr_datafeed_callback)(const struct sr_dev_inst *sdi,
 		const struct sr_datafeed_packet *packet, void *cb_data);
 
 /* Session setup */
@@ -90,10 +89,11 @@ SR_API struct sr_session *sr_session_new(void);
 SR_API int sr_session_destroy(void);
 SR_API int sr_session_dev_remove_all(void);
 SR_API int sr_session_dev_add(const struct sr_dev_inst *sdi);
+SR_API int sr_session_dev_list(GSList **devlist);
 
 /* Datafeed setup */
 SR_API int sr_session_datafeed_callback_remove_all(void);
-SR_API int sr_session_datafeed_callback_add(sr_datafeed_callback_t cb,
+SR_API int sr_session_datafeed_callback_add(sr_datafeed_callback cb,
 		void *cb_data);
 
 /* Session control */
@@ -102,12 +102,16 @@ SR_API int sr_session_run(void);
 SR_API int sr_session_stop(void);
 SR_API int sr_session_save(const char *filename, const struct sr_dev_inst *sdi,
 		unsigned char *buf, int unitsize, int units);
+SR_API int sr_session_save_init(const char *filename, uint64_t samplerate,
+		char **channels);
+SR_API int sr_session_append(const char *filename, unsigned char *buf,
+		int unitsize, int units);
 SR_API int sr_session_source_add(int fd, int events, int timeout,
-		sr_receive_data_callback_t cb, void *cb_data);
+		sr_receive_data_callback cb, void *cb_data);
 SR_API int sr_session_source_add_pollfd(GPollFD *pollfd, int timeout,
-		sr_receive_data_callback_t cb, void *cb_data);
+		sr_receive_data_callback cb, void *cb_data);
 SR_API int sr_session_source_add_channel(GIOChannel *channel, int events,
-		int timeout, sr_receive_data_callback_t cb, void *cb_data);
+		int timeout, sr_receive_data_callback cb, void *cb_data);
 SR_API int sr_session_source_remove(int fd);
 SR_API int sr_session_source_remove_pollfd(GPollFD *pollfd);
 SR_API int sr_session_source_remove_channel(GIOChannel *channel);
@@ -119,6 +123,11 @@ SR_API struct sr_input_format **sr_input_list(void);
 /*--- output/output.c -------------------------------------------------------*/
 
 SR_API struct sr_output_format **sr_output_list(void);
+SR_API struct sr_output *sr_output_new(struct sr_output_format *of,
+		GHashTable *params, const struct sr_dev_inst *sdi);
+SR_API int sr_output_send(struct sr_output *o,
+		const struct sr_datafeed_packet *packet, GString **out);
+SR_API int sr_output_free(struct sr_output *o);
 
 /*--- strutil.c -------------------------------------------------------------*/
 

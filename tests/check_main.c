@@ -21,10 +21,7 @@
 #include <stdlib.h>
 #include <check.h>
 #include "../libsigrok.h"
-
-Suite *suite_core(void);
-Suite *suite_strutil(void);
-Suite *suite_driver_all(void);
+#include "lib.h"
 
 int main(void)
 {
@@ -37,8 +34,12 @@ int main(void)
 
 	/* Add all testsuites to the master suite. */
 	srunner_add_suite(srunner, suite_core());
-	srunner_add_suite(srunner, suite_strutil());
 	srunner_add_suite(srunner, suite_driver_all());
+	srunner_add_suite(srunner, suite_input_all());
+	srunner_add_suite(srunner, suite_input_binary());
+	srunner_add_suite(srunner, suite_output_all());
+	srunner_add_suite(srunner, suite_strutil());
+	srunner_add_suite(srunner, suite_version());
 
 	srunner_run_all(srunner, CK_VERBOSE);
 	ret = srunner_ntests_failed(srunner);

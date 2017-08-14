@@ -24,6 +24,8 @@
 #include "libsigrok-internal.h"
 #include "protocol.h"
 
+extern struct dmm_info udmms[];
+
 /*
  * Driver for various UNI-T multimeters (and rebranded ones).
  *
@@ -49,24 +51,6 @@
  *  f0 00 00 00 00 00 00 00 (no data bytes)
  *  f2 55 77 00 00 00 00 00 (2 data bytes, 0x55 and 0x77)
  *  f1 d1 00 00 00 00 00 00 (1 data byte, 0xd1)
- *
- * Chips and serial settings used in UNI-T DMMs (and rebranded ones):
- *  - Tecpel DMM-8060: ? (very likely Fortune Semiconductor FS9721_LP3)
- *  - Tecpel DMM-8061: ? (very likely Fortune Semiconductor FS9721_LP3)
- *  - UNI-T UT108: ?
- *  - UNI-T UT109: ?
- *  - UNI-T UT30A: ?
- *  - UNI-T UT30E: ?
- *  - UNI-T UT60E: Fortune Semiconductor FS9721_LP3
- *  - UNI-T UT60G: ?
- *  - UNI-T UT61B: ?
- *  - UNI-T UT61C: ?
- *  - UNI-T UT61D: Fortune Semiconductor FS9922-DMM4
- *  - UNI-T UT61E: Cyrustek ES51922
- *  - UNI-T UT70B: ?
- *  - Voltcraft VC-820: Fortune Semiconductor FS9721_LP3
- *  - Voltcraft VC-840: Fortune Semiconductor FS9721_LP3
- *  - ...
  */
 
 static void decode_packet(struct sr_dev_inst *sdi, int dmm, const uint8_t *buf,
@@ -93,7 +77,7 @@ static void decode_packet(struct sr_dev_inst *sdi, int dmm, const uint8_t *buf,
 		udmms[dmm].dmm_details(&analog, info);
 
 	/* Send a sample packet with one analog value. */
-	analog.probes = sdi->probes;
+	analog.channels = sdi->channels;
 	analog.num_samples = 1;
 	analog.data = &floatval;
 	packet.type = SR_DF_ANALOG;
@@ -238,10 +222,24 @@ static int get_and_handle_data(struct sr_dev_inst *sdi, int dmm, void *info)
 
 	devc->bufoffset = 0;
 
-	/* Append the 1-7 data bytes of this chunk to pbuf. */
+	/*
+	 * Append the 1-7 data bytes of this chunk to pbuf.
+	 *
+	 * Special case:
+	 * DMMs with Cyrustek ES51922 chip need serial settings of
+	 * 19230/7o1. The WCH CH9325 UART to USB/HID chip used in (some
+	 * versions of) the UNI-T UT-D04 cable however, will also send
+	 * the parity bit to the host in the 8-byte data chunks. This bit
+	 * is encoded in bit 7 of each of the 1-7 data bytes and must thus
+	 * be removed in order for the actual ES51922 protocol parser to
+	 * work properly.
+	 */
 	num_databytes_in_chunk = buf[0] & 0x0f;
-	for (i = 0; i < num_databytes_in_chunk; i++)
-		pbuf[devc->buflen++] = buf[1 + i];
+	for (i = 0; i < num_databytes_in_chunk; i++, devc->buflen++) {
+		pbuf[devc->buflen] = buf[1 + i];
+		if (udmms[dmm].packet_parse == sr_es519xx_19200_14b_parse)
+			pbuf[devc->buflen] &= ~(1 << 7);
+	}
 
 	/* Now look for packets in that data. */
 	while ((devc->buflen - devc->bufoffset) >= udmms[dmm].packet_size) {
@@ -302,9 +300,16 @@ SR_PRIV int receive_data_##ID_UPPER(int fd, int revents, void *cb_data) { \
 	return receive_data(fd, revents, ID_UPPER, &info, cb_data); }
 
 /* Driver-specific receive_data() wrappers */
-RECEIVE_DATA(TECPEL_DMM_8060, fs9721)
 RECEIVE_DATA(TECPEL_DMM_8061, fs9721)
+RECEIVE_DATA(UNI_T_UT60A, fs9721)
+RECEIVE_DATA(UNI_T_UT60E, fs9721)
+RECEIVE_DATA(UNI_T_UT60G, es519xx)
+RECEIVE_DATA(UNI_T_UT61B, fs9922)
+RECEIVE_DATA(UNI_T_UT61C, fs9922)
 RECEIVE_DATA(UNI_T_UT61D, fs9922)
-RECEIVE_DATA(UNI_T_UT61E, es51922)
+RECEIVE_DATA(UNI_T_UT61E, es519xx)
 RECEIVE_DATA(VOLTCRAFT_VC820, fs9721)
+RECEIVE_DATA(VOLTCRAFT_VC830, fs9922)
 RECEIVE_DATA(VOLTCRAFT_VC840, fs9721)
+RECEIVE_DATA(TENMA_72_7745, es519xx)
+RECEIVE_DATA(TENMA_72_7750, es519xx)

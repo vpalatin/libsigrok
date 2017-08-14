@@ -54,42 +54,14 @@ static char *scan_conn[] = {
 
 static const struct flukedmm_profile supported_flukedmm[] = {
 	{ FLUKE_187, "187", 100, 1000 },
+	{ FLUKE_189, "189", 100, 1000 },
 	{ FLUKE_287, "287", 100, 1000 },
 	{ FLUKE_190, "199B", 1000, 3500 },
 };
 
-
-/* Properly close and free all devices. */
-static int clear_instances(void)
+static int init(struct sr_context *sr_ctx)
 {
-	struct sr_dev_inst *sdi;
-	struct drv_context *drvc;
-	struct dev_context *devc;
-	struct sr_serial_dev_inst *serial;
-	GSList *l;
-
-	if (!(drvc = di->priv))
-		return SR_OK;
-
-	drvc = di->priv;
-	for (l = drvc->instances; l; l = l->next) {
-		if (!(sdi = l->data))
-			continue;
-		if (!(devc = sdi->priv))
-			continue;
-		serial = sdi->conn;
-		sr_serial_dev_inst_free(serial);
-		sr_dev_inst_free(sdi);
-	}
-	g_slist_free(drvc->instances);
-	drvc->instances = NULL;
-
-	return SR_OK;
-}
-
-static int hw_init(struct sr_context *sr_ctx)
-{
-	return std_hw_init(sr_ctx, di, LOG_PREFIX);
+	return std_init(sr_ctx, di, LOG_PREFIX);
 }
 
 static GSList *fluke_scan(const char *conn, const char *serialcomm)
@@ -97,7 +69,7 @@ static GSList *fluke_scan(const char *conn, const char *serialcomm)
 	struct sr_dev_inst *sdi;
 	struct drv_context *drvc;
 	struct dev_context *devc;
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	struct sr_serial_dev_inst *serial;
 	GSList *devices;
 	int retry, len, i, s;
@@ -159,12 +131,13 @@ static GSList *fluke_scan(const char *conn, const char *serialcomm)
 					return NULL;
 				}
 				devc->profile = &supported_flukedmm[i];
+				sdi->inst_type = SR_INST_SERIAL;
 				sdi->conn = serial;
 				sdi->priv = devc;
 				sdi->driver = di;
-				if (!(probe = sr_probe_new(0, SR_PROBE_ANALOG, TRUE, "P1")))
+				if (!(ch = sr_channel_new(0, SR_CHANNEL_ANALOG, TRUE, "P1")))
 					return NULL;
-				sdi->probes = g_slist_append(sdi->probes, probe);
+				sdi->channels = g_slist_append(sdi->channels, ch);
 				drvc->instances = g_slist_append(drvc->instances, sdi);
 				devices = g_slist_append(devices, sdi);
 				break;
@@ -182,7 +155,7 @@ static GSList *fluke_scan(const char *conn, const char *serialcomm)
 	return devices;
 }
 
-static GSList *hw_scan(GSList *options)
+static GSList *scan(GSList *options)
 {
 	struct sr_config *src;
 	GSList *l, *devices;
@@ -220,48 +193,22 @@ static GSList *hw_scan(GSList *options)
 	return devices;
 }
 
-static GSList *hw_dev_list(void)
+static GSList *dev_list(void)
 {
 	return ((struct drv_context *)(di->priv))->instances;
 }
 
-static int hw_dev_open(struct sr_dev_inst *sdi)
+static int cleanup(void)
 {
-	struct sr_serial_dev_inst *serial;
-
-	serial = sdi->conn;
-	if (serial_open(serial, SERIAL_RDWR | SERIAL_NONBLOCK) != SR_OK)
-		return SR_ERR;
-
-	sdi->status = SR_ST_ACTIVE;
-
-	return SR_OK;
+	return std_dev_clear(di, NULL);
 }
 
-static int hw_dev_close(struct sr_dev_inst *sdi)
-{
-	struct sr_serial_dev_inst *serial;
-
-	serial = sdi->conn;
-	if (serial && serial->fd != -1) {
-		serial_close(serial);
-		sdi->status = SR_ST_INACTIVE;
-	}
-
-	return SR_OK;
-}
-
-static int hw_cleanup(void)
-{
-
-	clear_instances();
-
-	return SR_OK;
-}
-
-static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
+static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
 	struct dev_context *devc;
+
+	(void)cg;
 
 	if (sdi->status != SR_ST_ACTIVE)
 		return SR_ERR_DEV_CLOSED;
@@ -294,10 +241,11 @@ static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
+static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
-
 	(void)sdi;
+	(void)cg;
 
 	switch (key) {
 	case SR_CONF_SCAN_OPTIONS:
@@ -315,8 +263,7 @@ static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
-		void *cb_data)
+static int dev_acquisition_start(const struct sr_dev_inst *sdi, void *cb_data)
 {
 	struct dev_context *devc;
 	struct sr_serial_dev_inst *serial;
@@ -336,7 +283,7 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 
 	/* Poll every 100ms, or whenever some data comes in. */
 	serial = sdi->conn;
-	sr_source_add(serial->fd, G_IO_IN, 50, fluke_receive_data, (void *)sdi);
+	serial_source_add(serial, G_IO_IN, 50, fluke_receive_data, (void *)sdi);
 
 	if (serial_write(serial, "QM\r", 3) == -1) {
 		sr_err("Unable to send QM: %s.", strerror(errno));
@@ -348,27 +295,27 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 	return SR_OK;
 }
 
-static int hw_dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
+static int dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
 {
-	return std_hw_dev_acquisition_stop_serial(sdi, cb_data, hw_dev_close,
-	       sdi->conn, LOG_PREFIX);
+	return std_serial_dev_acquisition_stop(sdi, cb_data, std_serial_dev_close,
+			sdi->conn, LOG_PREFIX);
 }
 
 SR_PRIV struct sr_dev_driver flukedmm_driver_info = {
 	.name = "fluke-dmm",
 	.longname = "Fluke 18x/28x series DMMs",
 	.api_version = 1,
-	.init = hw_init,
-	.cleanup = hw_cleanup,
-	.scan = hw_scan,
-	.dev_list = hw_dev_list,
-	.dev_clear = clear_instances,
+	.init = init,
+	.cleanup = cleanup,
+	.scan = scan,
+	.dev_list = dev_list,
+	.dev_clear = NULL,
 	.config_get = NULL,
 	.config_set = config_set,
 	.config_list = config_list,
-	.dev_open = hw_dev_open,
-	.dev_close = hw_dev_close,
-	.dev_acquisition_start = hw_dev_acquisition_start,
-	.dev_acquisition_stop = hw_dev_acquisition_stop,
+	.dev_open = std_serial_dev_open,
+	.dev_close = std_serial_dev_close,
+	.dev_acquisition_start = dev_acquisition_start,
+	.dev_acquisition_stop = dev_acquisition_stop,
 	.priv = NULL,
 };

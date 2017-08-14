@@ -18,37 +18,44 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+/** @file
+  * Standard API helper functions.
+  * @internal
+  */
+
 #include <glib.h>
 #include "libsigrok.h"
 #include "libsigrok-internal.h"
 
+#define LOG_PREFIX "std"
+
 /**
  * Standard sr_driver_init() API helper.
  *
- * This function can be used to simplify most driver's hw_init() API callback.
+ * This function can be used to simplify most driver's init() API callback.
  *
  * It creates a new 'struct drv_context' (drvc), assigns sr_ctx to it, and
  * then 'drvc' is assigned to the 'struct sr_dev_driver' (di) that is passed.
  *
  * @param sr_ctx The libsigrok context to assign.
  * @param di The driver instance to use.
- * @param prefix A driver-specific prefix string used for log messages.
+ * @param[in] prefix A driver-specific prefix string used for log messages.
  *
  * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
  *         SR_ERR_MALLOC upon memory allocation errors.
  */
-SR_PRIV int std_hw_init(struct sr_context *sr_ctx, struct sr_dev_driver *di,
-			const char *prefix)
+SR_PRIV int std_init(struct sr_context *sr_ctx, struct sr_dev_driver *di,
+		     const char *prefix)
 {
 	struct drv_context *drvc;
 
 	if (!di) {
-		sr_err("%sInvalid driver, cannot initialize.", prefix);
+		sr_err("%s: Invalid driver, cannot initialize.", prefix);
 		return SR_ERR_ARG;
 	}
 
 	if (!(drvc = g_try_malloc(sizeof(struct drv_context)))) {
-		sr_err("%sDriver context malloc failed.", prefix);
+		sr_err("%s: Driver context malloc failed.", prefix);
 		return SR_ERR_MALLOC;
 	}
 
@@ -63,7 +70,7 @@ SR_PRIV int std_hw_init(struct sr_context *sr_ctx, struct sr_dev_driver *di,
  * Standard API helper for sending an SR_DF_HEADER packet.
  *
  * This function can be used to simplify most driver's
- * hw_dev_acquisition_start() API callback.
+ * dev_acquisition_start() API callback.
  *
  * @param sdi The device instance to use.
  * @param prefix A driver-specific prefix string used for log messages.
@@ -84,44 +91,98 @@ SR_PRIV int std_session_send_df_header(const struct sr_dev_inst *sdi,
 		return SR_ERR_ARG;
 	}
 
-	sr_dbg("%sStarting acquisition.", prefix);
+	sr_dbg("%s: Starting acquisition.", prefix);
 
 	/* Send header packet to the session bus. */
-	sr_dbg("%sSending SR_DF_HEADER packet.", prefix);
+	sr_dbg("%s: Sending SR_DF_HEADER packet.", prefix);
 	packet.type = SR_DF_HEADER;
 	packet.payload = (uint8_t *)&header;
 	header.feed_version = 1;
 	gettimeofday(&header.starttime, NULL);
 
 	if ((ret = sr_session_send(sdi, &packet)) < 0) {
-		sr_err("%sFailed to send header packet: %d.", prefix, ret);
+		sr_err("%s: Failed to send header packet: %d.", prefix, ret);
 		return ret;
 	}
 
 	return SR_OK;
 }
 
-/*
+#ifdef HAVE_LIBSERIALPORT
+
+/**
+ * Standard serial driver dev_open() helper.
+ *
+ * This function can be used to implement the dev_open() driver API
+ * callback in drivers that use a serial port. The port is opened
+ * with the SERIAL_RDWR and SERIAL_NONBLOCK flags.
+ *
+ * If the open succeeded, the status field of the given sdi is set
+ * to SR_ST_ACTIVE.
+ *
+ * @retval SR_OK Success.
+ * @retval SR_ERR Serial port open failed.
+ */
+SR_PRIV int std_serial_dev_open(struct sr_dev_inst *sdi)
+{
+	struct sr_serial_dev_inst *serial;
+
+	serial = sdi->conn;
+	if (serial_open(serial, SERIAL_RDWR | SERIAL_NONBLOCK) != SR_OK)
+		return SR_ERR;
+
+	sdi->status = SR_ST_ACTIVE;
+
+	return SR_OK;
+}
+
+/**
+ * Standard serial driver dev_close() helper.
+ *
+ * This function can be used to implement the dev_close() driver API
+ * callback in drivers that use a serial port.
+ *
+ * After closing the port, the status field of the given sdi is set
+ * to SR_ST_INACTIVE.
+ *
+ * @retval SR_OK Success.
+ */
+SR_PRIV int std_serial_dev_close(struct sr_dev_inst *sdi)
+{
+	struct sr_serial_dev_inst *serial;
+
+	serial = sdi->conn;
+	if (serial && sdi->status == SR_ST_ACTIVE) {
+		serial_close(serial);
+		sdi->status = SR_ST_INACTIVE;
+	}
+
+	return SR_OK;
+}
+
+/**
  * Standard sr_session_stop() API helper.
  *
  * This function can be used to simplify most (serial port based) driver's
- * hw_dev_acquisition_stop() API callback.
+ * dev_acquisition_stop() API callback.
  *
  * @param sdi The device instance for which acquisition should stop.
  *            Must not be NULL.
  * @param cb_data Opaque 'cb_data' pointer. Must not be NULL.
- * @param hw_dev_close_fn Function pointer to the driver's hw_dev_close().
+ * @param dev_close_fn Function pointer to the driver's dev_close().
  *               	  Must not be NULL.
  * @param serial The serial device instance (struct serial_dev_inst *).
  *               Must not be NULL.
- * @param prefix A driver-specific prefix string used for log messages.
+ * @param[in] prefix A driver-specific prefix string used for log messages.
  *               Must not be NULL. An empty string is allowed.
  *
- * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
- *         SR_ERR upon other errors.
+ * @retval SR_OK Success.
+ * @retval SR_ERR_ARG Invalid arguments.
+ * @retval SR_ERR_DEV_CLOSED Device is closed.
+ * @retval SR_ERR Other errors.
  */
-SR_PRIV int std_hw_dev_acquisition_stop_serial(struct sr_dev_inst *sdi,
-			void *cb_data, dev_close_t hw_dev_close_fn,
+SR_PRIV int std_serial_dev_acquisition_stop(struct sr_dev_inst *sdi,
+			void *cb_data, dev_close_callback dev_close_fn,
 			struct sr_serial_dev_inst *serial, const char *prefix)
 {
 	int ret;
@@ -133,36 +194,40 @@ SR_PRIV int std_hw_dev_acquisition_stop_serial(struct sr_dev_inst *sdi,
 	}
 
 	if (sdi->status != SR_ST_ACTIVE) {
-		sr_err("%sDevice inactive, can't stop acquisition.", prefix);
-		return SR_ERR;
+		sr_err("%s: Device inactive, can't stop acquisition.", prefix);
+		return SR_ERR_DEV_CLOSED;
 	}
 
-	sr_dbg("%sStopping acquisition.", prefix);
+	sr_dbg("%s: Stopping acquisition.", prefix);
 
-	if ((ret = sr_source_remove(serial->fd)) < 0) {
-		sr_err("%sFailed to remove source: %d.", prefix, ret);
+	if ((ret = serial_source_remove(serial)) < 0) {
+		sr_err("%s: Failed to remove source: %d.", prefix, ret);
 		return ret;
 	}
 
-	if ((ret = hw_dev_close_fn(sdi)) < 0) {
-		sr_err("%sFailed to close device: %d.", prefix, ret);
+	if ((ret = dev_close_fn(sdi)) < 0) {
+		sr_err("%s: Failed to close device: %d.", prefix, ret);
 		return ret;
 	}
 
 	/* Send SR_DF_END packet to the session bus. */
-	sr_dbg("%sSending SR_DF_END packet.", prefix);
+	sr_dbg("%s: Sending SR_DF_END packet.", prefix);
 	packet.type = SR_DF_END;
 	packet.payload = NULL;
 	if ((ret = sr_session_send(cb_data, &packet)) < 0) {
-		sr_err("%sFailed to send SR_DF_END packet: %d.", prefix, ret);
+		sr_err("%s: Failed to send SR_DF_END packet: %d.", prefix, ret);
 		return ret;
 	}
 
 	return SR_OK;
 }
 
-/*
+#endif
+
+/**
  * Standard driver dev_clear() helper.
+ *
+ * Clear driver, this means, close all instances.
  *
  * This function can be used to implement the dev_clear() driver API
  * callback. dev_close() is called before every sr_dev_inst is cleared.
@@ -172,15 +237,18 @@ SR_PRIV int std_hw_dev_acquisition_stop_serial(struct sr_dev_inst *sdi,
  * there cannot be freed.
  *
  * @param driver The driver which will have its instances released.
+ * @param clear_private If not NULL, this points to a function called
+ * with sdi->priv as argument. The function can then clear any device
+ * instance-specific resources kept there. It must also clear the struct
+ * pointed to by sdi->priv.
  *
  * @return SR_OK on success.
  */
 SR_PRIV int std_dev_clear(const struct sr_dev_driver *driver,
-		std_dev_clear_t clear_private)
+		std_dev_clear_callback clear_private)
 {
-	struct sr_dev_inst *sdi;
 	struct drv_context *drvc;
-	struct dev_context *devc;
+	struct sr_dev_inst *sdi;
 	GSList *l;
 	int ret;
 
@@ -190,12 +258,7 @@ SR_PRIV int std_dev_clear(const struct sr_dev_driver *driver,
 
 	ret = SR_OK;
 	for (l = drvc->instances; l; l = l->next) {
-		/* Log errors, but continue cleaning up the rest. */
 		if (!(sdi = l->data)) {
-			ret = SR_ERR_BUG;
-			continue;
-		}
-		if (!(devc = sdi->priv)) {
 			ret = SR_ERR_BUG;
 			continue;
 		}
@@ -203,18 +266,21 @@ SR_PRIV int std_dev_clear(const struct sr_dev_driver *driver,
 			driver->dev_close(sdi);
 
 		if (sdi->conn) {
-			if (sdi->inst_type == SR_INST_USB)
-#if HAVE_LIBUSB_1_0
-				sr_usb_dev_inst_free(sdi->conn);
-#else
-				;
-#endif
-			else if (sdi->inst_type == SR_INST_SERIAL)
+#ifdef HAVE_LIBSERIALPORT
+			if (sdi->inst_type == SR_INST_SERIAL)
 				sr_serial_dev_inst_free(sdi->conn);
+#endif
+#ifdef HAVE_LIBUSB_1_0
+			if (sdi->inst_type == SR_INST_USB)
+				sr_usb_dev_inst_free(sdi->conn);
+#endif
+			if (sdi->inst_type == SR_INST_SCPI)
+				sr_scpi_free(sdi->conn);
 		}
 		if (clear_private)
 			clear_private(sdi->priv);
-		sdi = l->data;
+		else
+			g_free(sdi->priv);
 		sr_dev_inst_free(sdi);
 	}
 

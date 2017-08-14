@@ -25,7 +25,6 @@
 #include <errno.h>
 #include <string.h>
 
-
 static void process_packet(const struct sr_dev_inst *sdi)
 {
 	struct dev_context *devc;
@@ -75,7 +74,7 @@ static void process_packet(const struct sr_dev_inst *sdi)
 	memset(&analog, 0, sizeof(struct sr_datafeed_analog));
 	analog.mq = SR_MQ_SOUND_PRESSURE_LEVEL;
 	analog.unit = SR_UNIT_DECIBEL_SPL;
-	analog.probes = sdi->probes;
+	analog.channels = sdi->channels;
 	analog.num_samples = 1;
 	analog.data = &fvalue;
 
@@ -232,4 +231,3 @@ SR_PRIV int colead_slm_receive_data(int fd, int revents, void *cb_data)
 
 	return TRUE;
 }
-
