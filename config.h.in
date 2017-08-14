@@ -18,7 +18,7 @@
 /* ALSA driver support */
 #undef HAVE_LA_ALSA
 
-/* ASIX Sigma support */
+/* ASIX SIGMA/SIGMA2 support */
 #undef HAVE_LA_ASIX_SIGMA
 
 /* ChronoVu LA8 support */
@@ -36,17 +36,11 @@
 /* OpenBench Logic Sniffer (OLS) support */
 #undef HAVE_LA_OLS
 
-/* Saleae Logic support */
-#undef HAVE_LA_SALEAE_LOGIC
-
-/* Zeroplus Logic Cube support */
+/* ZEROPLUS Logic Cube support */
 #undef HAVE_LA_ZEROPLUS_LOGIC_CUBE
 
 /* Define to 1 if you have the `usb-1.0' library (-lusb-1.0). */
 #undef HAVE_LIBUSB_1_0
-
-/* Define to 1 if you have the `z' library (-lz). */
-#undef HAVE_LIBZ
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H

@@ -41,8 +41,7 @@ host_triplet = @host@
 @LA_DEMO_TRUE@am__append_5 = demo/libsigrokhwdemo.la
 @LA_LINK_MSO19_TRUE@am__append_6 = link-mso19/libsigrokhwlinkmso19.la
 @LA_OLS_TRUE@am__append_7 = openbench-logic-sniffer/libsigrokhwols.la
-@LA_SALEAE_LOGIC_TRUE@am__append_8 = saleae-logic/libsigrokhwsaleaelogic.la
-@LA_ZEROPLUS_LOGIC_CUBE_TRUE@am__append_9 = zeroplus-logic-cube/libsigrokhwzeroplus.la
+@LA_ZEROPLUS_LOGIC_CUBE_TRUE@am__append_8 = zeroplus-logic-cube/libsigrokhwzeroplus.la
 subdir = hardware
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -57,7 +56,7 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 libsigrokhardware_la_DEPENDENCIES = common/libsigrokhwcommon.la \
 	$(am__append_1) $(am__append_2) $(am__append_3) \
 	$(am__append_4) $(am__append_5) $(am__append_6) \
-	$(am__append_7) $(am__append_8) $(am__append_9)
+	$(am__append_7) $(am__append_8)
 am_libsigrokhardware_la_OBJECTS =
 libsigrokhardware_la_OBJECTS = $(am_libsigrokhardware_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
@@ -161,6 +160,7 @@ EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 FIRMWARE_DIR = @FIRMWARE_DIR@
 GLIB_CFLAGS = @GLIB_CFLAGS@
+GLIB_COMPILE_RESOURCES = @GLIB_COMPILE_RESOURCES@
 GLIB_GENMARSHAL = @GLIB_GENMARSHAL@
 GLIB_LIBS = @GLIB_LIBS@
 GLIB_MKENUMS = @GLIB_MKENUMS@
@@ -281,8 +281,6 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-zlib_CFLAGS = @zlib_CFLAGS@
-zlib_LIBS = @zlib_LIBS@
 SUBDIRS = \
 	alsa \
 	asix-sigma \
@@ -292,7 +290,6 @@ SUBDIRS = \
 	fx2lafw \
 	link-mso19 \
 	openbench-logic-sniffer \
-	saleae-logic \
 	zeroplus-logic-cube
 
 noinst_LTLIBRARIES = libsigrokhardware.la
@@ -300,7 +297,7 @@ libsigrokhardware_la_SOURCES =
 libsigrokhardware_la_LIBADD = common/libsigrokhwcommon.la \
 	$(am__append_1) $(am__append_2) $(am__append_3) \
 	$(am__append_4) $(am__append_5) $(am__append_6) \
-	$(am__append_7) $(am__append_8) $(am__append_9)
+	$(am__append_7) $(am__append_8)
 all: all-recursive
 
 .SUFFIXES:

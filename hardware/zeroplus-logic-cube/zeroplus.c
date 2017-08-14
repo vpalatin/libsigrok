@@ -30,10 +30,12 @@
 #include "analyzer.h"
 
 #define USB_VENDOR			0x0c12
-#define USB_VENDOR_NAME			"Zeroplus"
-#define USB_MODEL_NAME			"Logic Cube"
-#define USB_MODEL_VERSION		""
 
+#define VENDOR_NAME			"ZEROPLUS"
+#define MODEL_NAME			"Logic Cube LAP-C"
+#define MODEL_VERSION			NULL
+
+#define NUM_PROBES			16
 #define USB_INTERFACE			0
 #define USB_CONFIGURATION		1
 #define NUM_TRIGGER_STAGES		4
@@ -78,7 +80,7 @@ static int hwcaps[] = {
  * ZEROPLUS LAP-C (16032) numbers the 16 probes A0-A7 and B0-B7.
  * We currently ignore other untested/unsupported devices here.
  */
-static const char *probe_names[] = {
+static const char *probe_names[NUM_PROBES + 1] = {
 	"A0",
 	"A1",
 	"A2",
@@ -200,7 +202,7 @@ static int opendev4(struct sr_dev_inst **sdi, libusb_device *dev,
 			if (!(des->idProduct == zeroplus_models[i].pid))
 				continue;
 
-			sr_info("zp: Found ZeroPlus device 0x%04x (%s)",
+			sr_info("zp: Found ZEROPLUS device 0x%04x (%s)",
 				des->idProduct, zeroplus_models[i].model_name);
 			ctx->num_channels = zeroplus_models[i].channels;
 			ctx->memory_size = zeroplus_models[i].sample_depth * 1024;
@@ -208,7 +210,7 @@ static int opendev4(struct sr_dev_inst **sdi, libusb_device *dev,
 		}
 
 		if (ctx->num_channels == 0) {
-			sr_err("zp: Unknown ZeroPlus device 0x%04x",
+			sr_err("zp: Unknown ZEROPLUS device 0x%04x",
 			       des->idProduct);
 			return -2;
 		}
@@ -345,7 +347,8 @@ static int hw_init(const char *devinfo)
 	/* Set some sane defaults. */
 	ctx->cur_samplerate = 0;
 	ctx->limit_samples = 0;
-	ctx->num_channels = 32; /* TODO: This isn't initialized before it's needed :( */
+	/* TODO: num_channels isn't initialized before it's needed :( */
+	ctx->num_channels = NUM_PROBES;
 	ctx->memory_size = 0;
 	ctx->probe_mask = 0;
 	memset(ctx->trigger_mask, 0, NUM_TRIGGER_STAGES);
@@ -357,7 +360,7 @@ static int hw_init(const char *devinfo)
 		return 0;
 	}
 
-	/* Find all ZeroPlus analyzers and add them to device list. */
+	/* Find all ZEROPLUS analyzers and add them to device list. */
 	devcnt = 0;
 	libusb_get_device_list(usb_context, &devlist); /* TODO: Errors. */
 
@@ -370,14 +373,14 @@ static int hw_init(const char *devinfo)
 
 		if (des.idVendor == USB_VENDOR) {
 			/*
-			 * Definitely a Zeroplus.
+			 * Definitely a ZEROPLUS.
 			 * TODO: Any way to detect specific model/version in
-			 * the zeroplus range?
+			 * the ZEROPLUS range?
 			 */
 			/* Register the device with libsigrok. */
 			if (!(sdi = sr_dev_inst_new(devcnt,
-					SR_ST_INACTIVE, USB_VENDOR_NAME,
-					USB_MODEL_NAME, USB_MODEL_VERSION))) {
+					SR_ST_INACTIVE, VENDOR_NAME,
+					MODEL_NAME, MODEL_VERSION))) {
 				sr_err("zp: %s: sr_dev_inst_new failed",
 				       __func__);
 				return 0;
@@ -512,24 +515,35 @@ static void *hw_dev_info_get(int dev_index, int dev_info_id)
 		return NULL;
 	}
 
+	sr_spew("zp: %s: dev_index %d, dev_info_id %d.", __func__,
+		dev_index, dev_info_id);
+
 	switch (dev_info_id) {
 	case SR_DI_INST:
 		info = sdi;
+		sr_spew("zp: %s: Returning sdi.", __func__);
 		break;
 	case SR_DI_NUM_PROBES:
 		info = GINT_TO_POINTER(ctx->num_channels);
+		sr_spew("zp: %s: Returning number of probes: %d.", __func__,
+			NUM_PROBES);
 		break;
 	case SR_DI_PROBE_NAMES:
 		info = probe_names;
+		sr_spew("zp: %s: Returning probenames.", __func__);
 		break;
 	case SR_DI_SAMPLERATES:
 		info = &samplerates;
+		sr_spew("zp: %s: Returning samplerates.", __func__);
 		break;
 	case SR_DI_TRIGGER_TYPES:
 		info = TRIGGER_TYPES;
+		sr_spew("zp: %s: Returning triggertypes: %s.", __func__, info);
 		break;
 	case SR_DI_CUR_SAMPLERATE:
 		info = &ctx->cur_samplerate;
+		sr_spew("zp: %s: Returning samplerate: %" PRIu64 "Hz.",
+			__func__, ctx->cur_samplerate);
 		break;
 	default:
 		/* Unknown device info ID, return NULL. */
@@ -716,7 +730,7 @@ static int hw_dev_acquisition_stop(int dev_index, void *cb_data)
 
 SR_PRIV struct sr_dev_driver zeroplus_logic_cube_driver_info = {
 	.name = "zeroplus-logic-cube",
-	.longname = "Zeroplus Logic Cube LAP-C series",
+	.longname = "ZEROPLUS Logic Cube LAP-C series",
 	.api_version = 1,
 	.init = hw_init,
 	.cleanup = hw_cleanup,

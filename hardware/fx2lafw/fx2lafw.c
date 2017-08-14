@@ -1,6 +1,7 @@
 /*
  * This file is part of the sigrok project.
  *
+ * Copyright (C) 2010-2012 Bert Vermeulen <bert@biot.com>
  * Copyright (C) 2012 Joel Holdsworth <joel@airwebreathe.org.uk>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,8 +20,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <inttypes.h>
-#include <glib.h>
 #include <libusb.h>
 #include "config.h"
 #include "sigrok.h"
@@ -32,6 +33,7 @@ static const struct fx2lafw_profile supported_fx2[] = {
 	/*
 	 * CWAV USBee AX
 	 * EE Electronics ESLA201A
+	 * ARMFLY AX-Pro
 	 */
 	{ 0x08a9, 0x0014, "CWAV", "USBee AX", NULL,
 		FIRMWARE_DIR "/fx2lafw-cwav-usbeeax.fw", 8 },
@@ -46,9 +48,24 @@ static const struct fx2lafw_profile supported_fx2[] = {
 	 * Saleae Logic
 	 * EE Electronics ESLA100
 	 * Robomotic MiniLogic
+	 * Robomotic BugLogic 3
 	 */
 	{ 0x0925, 0x3881, "Saleae", "Logic", NULL,
 		FIRMWARE_DIR "/fx2lafw-saleae-logic.fw", 8 },
+
+	/*
+	 * Default Cypress FX2 without EEPROM, e.g.:
+	 * Lcsoft Mini Board
+	 * Braintechnology USB Interface V2.x
+	 */
+	{ 0x04B4, 0x8613, "Cypress", "FX2", NULL,
+		FIRMWARE_DIR "/fx2lafw-cypress-fx2.fw", 8 },
+
+	/*
+	 * Braintechnology USB-LPS
+	 */
+	{ 0x16d0, 0x0498, "Braintechnology", "USB-LPS", NULL,
+		FIRMWARE_DIR "/fx2lafw-braintechnology-usb-lps.fw", 8 },
 
 	{ 0, 0, 0, 0, 0, 0, 0 }
 };
@@ -79,6 +96,13 @@ static const char *probe_names[] = {
 };
 
 static uint64_t supported_samplerates[] = {
+	SR_KHZ(20),
+	SR_KHZ(25),
+	SR_KHZ(50),
+	SR_KHZ(100),
+	SR_KHZ(200),
+	SR_KHZ(250),
+	SR_KHZ(500),
 	SR_MHZ(1),
 	SR_MHZ(2),
 	SR_MHZ(3),
@@ -88,6 +112,7 @@ static uint64_t supported_samplerates[] = {
 	SR_MHZ(12),
 	SR_MHZ(16),
 	SR_MHZ(24),
+	0,
 };
 
 static struct sr_samplerates samplerates = {
@@ -112,48 +137,37 @@ static int hw_dev_acquisition_stop(int dev_index, void *cb_data);
 static gboolean check_conf_profile(libusb_device *dev)
 {
 	struct libusb_device_descriptor des;
-	struct libusb_config_descriptor *conf_dsc = NULL;
-	const struct libusb_interface_descriptor *intf_dsc;
-	gboolean ret = FALSE;
+	struct libusb_device_handle *hdl;
+	gboolean ret;
+	unsigned char strdesc[64];
 
+	hdl = NULL;
+	ret = FALSE;
 	while (!ret) {
 		/* Assume the FW has not been loaded, unless proven wrong. */
-		ret = FALSE;
-
 		if (libusb_get_device_descriptor(dev, &des) != 0)
 			break;
 
-		/* Need exactly 1 configuration. */
-		if (des.bNumConfigurations != 1)
+		if (libusb_open(dev, &hdl) != 0)
 			break;
 
-		if (libusb_get_config_descriptor(dev, 0, &conf_dsc) != 0)
+		if (libusb_get_string_descriptor_ascii(hdl,
+				des.iManufacturer, strdesc, sizeof(strdesc)) < 0)
+			break;
+		if (strncmp((const char *)strdesc, "sigrok", 6))
 			break;
 
-		/* Need exactly 1 interface. */
-		if (conf_dsc->bNumInterfaces != 1)
+		if (libusb_get_string_descriptor_ascii(hdl,
+				des.iProduct, strdesc, sizeof(strdesc)) < 0)
 			break;
-
-		/* Need just one alternate setting. */
-		if (conf_dsc->interface[0].num_altsetting != 1)
-			break;
-
-		/* Need exactly 2 endpoints. */
-		intf_dsc = &(conf_dsc->interface[0].altsetting[0]);
-		if (intf_dsc->bNumEndpoints != 2)
-			break;
-
-		/* The first endpoint should be 2 (inbound). */
-		if ((intf_dsc->endpoint[0].bEndpointAddress & 0x8f) !=
-		    (2 | LIBUSB_ENDPOINT_IN))
+		if (strncmp((const char *)strdesc, "fx2lafw", 7))
 			break;
 
 		/* If we made it here, it must be an fx2lafw. */
 		ret = TRUE;
 	}
-
-	if (conf_dsc)
-		libusb_free_config_descriptor(conf_dsc);
+	if (hdl)
+		libusb_close(hdl);
 
 	return ret;
 }
@@ -166,6 +180,7 @@ static int fx2lafw_dev_open(int dev_index)
 	struct context *ctx;
 	struct version_info vi;
 	int ret, skip, i;
+	uint8_t revid;
 
 	if (!(sdi = sr_dev_inst_get(dev_insts, dev_index)))
 		return SR_ERR;
@@ -230,19 +245,29 @@ static int fx2lafw_dev_open(int dev_index)
 			break;
 		}
 
-		if (vi.major != FX2LAFW_VERSION_MAJOR ||
-		    vi.minor != FX2LAFW_VERSION_MINOR) {
-			sr_err("fx2lafw: Expected firmware version %d.%02d "
-			       "got %d.%02d.", FX2LAFW_VERSION_MAJOR,
-			       FX2LAFW_VERSION_MINOR, vi.major, vi.minor);
+		ret = command_get_revid_version(ctx->usb->devhdl, &revid);
+		if (ret != SR_OK) {
+			sr_err("fx2lafw: Failed to retrieve REVID.");
+			break;
+		}
+
+		/*
+		 * Changes in major version mean incompatible/API changes, so
+		 * bail out if we encounter an incompatible version.
+		 * Different minor versions are OK, they should be compatible.
+		 */
+		if (vi.major != FX2LAFW_REQUIRED_VERSION_MAJOR) {
+			sr_err("fx2lafw: Expected firmware version %d.x, "
+			       "got %d.%d.", FX2LAFW_REQUIRED_VERSION_MAJOR,
+			       vi.major, vi.minor);
 			break;
 		}
 
 		sdi->status = SR_ST_ACTIVE;
 		sr_info("fx2lafw: Opened device %d on %d.%d "
-			"interface %d, firmware version %d.%02d",
+			"interface %d, firmware %d.%d, REVID %d.",
 			sdi->index, ctx->usb->bus, ctx->usb->address,
-			USB_INTERFACE, vi.major, vi.minor);
+			USB_INTERFACE, vi.major, vi.minor, revid);
 
 		break;
 	}
@@ -352,7 +377,7 @@ static int hw_init(const char *devinfo)
 		return 0;
 	}
 
-	/* Find all fx2lafw compatible devices and upload firware to them. */
+	/* Find all fx2lafw compatible devices and upload firmware to them. */
 	libusb_get_device_list(usb_context, &devlist);
 	for (i = 0; devlist[i]; i++) {
 
@@ -395,7 +420,7 @@ static int hw_init(const char *devinfo)
 			if (ezusb_upload_firmware(devlist[i], USB_CONFIGURATION,
 				prof->firmware) == SR_OK)
 				/* Remember when the firmware on this device was updated */
-				g_get_current_time(&ctx->fw_updated);
+				ctx->fw_updated = g_get_monotonic_time();
 			else
 				sr_err("fx2lafw: Firmware upload failed for "
 				       "device %d.", devcnt);
@@ -412,33 +437,37 @@ static int hw_init(const char *devinfo)
 
 static int hw_dev_open(int dev_index)
 {
-	GTimeVal cur_time;
 	struct sr_dev_inst *sdi;
 	struct context *ctx;
-	int timediff, ret;
+	int ret;
+	int64_t timediff_us, timediff_ms;
 
 	if (!(sdi = sr_dev_inst_get(dev_insts, dev_index)))
 		return SR_ERR;
 	ctx = sdi->priv;
 
 	/*
-	 * If the firmware was recently uploaded, wait up to MAX_RENUM_DELAY ms
-	 * for the FX2 to renumerate.
+	 * If the firmware was recently uploaded, wait up to MAX_RENUM_DELAY_MS
+	 * milliseconds for the FX2 to renumerate.
 	 */
 	ret = 0;
-	if (GTV_TO_MSEC(ctx->fw_updated) > 0) {
+
+	if (ctx->fw_updated > 0) {
 		sr_info("fx2lafw: Waiting for device to reset.");
 		/* takes at least 300ms for the FX2 to be gone from the USB bus */
 		g_usleep(300 * 1000);
-		timediff = 0;
-		while (timediff < MAX_RENUM_DELAY) {
+		timediff_ms = 0;
+		while (timediff_ms < MAX_RENUM_DELAY_MS) {
 			if ((ret = fx2lafw_dev_open(dev_index)) == SR_OK)
 				break;
 			g_usleep(100 * 1000);
-			g_get_current_time(&cur_time);
-			timediff = GTV_TO_MSEC(cur_time) - GTV_TO_MSEC(ctx->fw_updated);
+
+			timediff_us = g_get_monotonic_time() - ctx->fw_updated;
+			timediff_ms = timediff_us / G_USEC_PER_SEC;
+			sr_spew("fx2lafw: timediff: %" PRIi64 " us.",
+				timediff_us);
 		}
-		sr_info("fx2lafw: Device came back after %d ms.", timediff);
+		sr_info("fx2lafw: Device came back after %d ms.", timediff_ms);
 	} else {
 		ret = fx2lafw_dev_open(dev_index);
 	}

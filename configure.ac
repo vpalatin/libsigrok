@@ -23,7 +23,7 @@ AC_PREREQ([2.63])
 # libsigrok package version number (NOT the same as shared lib version!).
 m4_define([sr_package_version_major], [0])
 m4_define([sr_package_version_minor], [1])
-m4_define([sr_package_version_micro], [0])
+m4_define([sr_package_version_micro], [1])
 m4_define([sr_package_version], [sr_package_version_major.sr_package_version_minor.sr_package_version_micro])
 
 AC_INIT([libsigrok], [sr_package_version], [sigrok-devel@lists.sourceforge.net],
@@ -35,6 +35,7 @@ AC_CONFIG_AUX_DIR([autostuff])
 # We require at least automake 1.11 (needed for 'silent rules').
 AM_INIT_AUTOMAKE([1.11 -Wall -Werror foreign std-options])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
 AH_TOP([#ifndef SR_CONFIG_H
 #define SR_CONFIG_H    /* To stop multiple inclusions. */])
@@ -86,12 +87,12 @@ if test "x$LA_ALSA" = "xyes"; then
 fi
 
 AC_ARG_ENABLE(asix-sigma, AC_HELP_STRING([--enable-asix-sigma],
-	      [enable ASIX Sigma support [default=yes]]),
+	      [enable ASIX SIGMA/SIGMA2 support [default=yes]]),
 	      [LA_ASIX_SIGMA="$enableval"],
 	      [LA_ASIX_SIGMA=yes])
 AM_CONDITIONAL(LA_ASIX_SIGMA, test x$LA_ASIX_SIGMA = xyes)
 if test "x$LA_ASIX_SIGMA" = "xyes"; then
-	AC_DEFINE(HAVE_LA_ASIX_SIGMA, 1, [ASIX Sigma support])
+	AC_DEFINE(HAVE_LA_ASIX_SIGMA, 1, [ASIX SIGMA/SIGMA2 support])
 fi
 
 AC_ARG_ENABLE(chronovu-la8, AC_HELP_STRING([--enable-chronovu-la8],
@@ -107,7 +108,7 @@ fi
 AC_ARG_ENABLE(fx2lafw, AC_HELP_STRING([--enable-fx2lafw],
 	      [enable fx2lafw support (for FX2 LAs). [default=no]]),
 	      [LA_FX2LAFW="$enableval"],
-	      [LA_FX2LAFW=no])
+	      [LA_FX2LAFW=yes])
 AM_CONDITIONAL(LA_FX2LAFW, test x$LA_FX2LAFW = xyes)
 if test "x$LA_FX2LAFW" = "xyes"; then
 	AC_DEFINE(HAVE_LA_FX2LAFW, 1, [fx2lafw support])
@@ -141,23 +142,14 @@ if test "x$LA_OLS" = "xyes"; then
 	AC_DEFINE(HAVE_LA_OLS, 1, [OpenBench Logic Sniffer (OLS) support])
 fi
 
-AC_ARG_ENABLE(saleae-logic, AC_HELP_STRING([--enable-saleae-logic],
-	      [enable Saleae Logic support [default=yes]]),
-	      [LA_SALEAE_LOGIC="$enableval"],
-	      [LA_SALEAE_LOGIC=yes])
-AM_CONDITIONAL(LA_SALEAE_LOGIC, test x$LA_SALEAE_LOGIC = xyes)
-if test "x$LA_SALEAE_LOGIC" = "xyes"; then
-	AC_DEFINE(HAVE_LA_SALEAE_LOGIC, 1, [Saleae Logic support])
-fi
-
 AC_ARG_ENABLE(zeroplus-logic-cube,
 	      AC_HELP_STRING([--enable-zeroplus-logic-cube],
-	      [enable Zeroplus Logic Cube support [default=yes]]),
+	      [enable ZEROPLUS Logic Cube support [default=yes]]),
 	      [LA_ZEROPLUS_LOGIC_CUBE="$enableval"],
 	      [LA_ZEROPLUS_LOGIC_CUBE=yes])
 AM_CONDITIONAL(LA_ZEROPLUS_LOGIC_CUBE, test x$LA_ZEROPLUS_LOGIC_CUBE = xyes)
 if test "x$LA_ZEROPLUS_LOGIC_CUBE" = "xyes"; then
-	AC_DEFINE(HAVE_LA_ZEROPLUS_LOGIC_CUBE, 1, [Zeroplus Logic Cube support])
+	AC_DEFINE(HAVE_LA_ZEROPLUS_LOGIC_CUBE, 1, [ZEROPLUS Logic Cube support])
 fi
 
 # Checks for libraries.
@@ -178,8 +170,7 @@ PKG_CHECK_MODULES([gthread], [gthread-2.0 >= 2.22.0],
 	SR_PKGLIBS="$SR_PKGLIBS gthread-2.0"])
 
 # libusb is only needed for some hardware drivers.
-if test "x$LA_SALEAE_LOGIC" != xno \
-   -o "x$LA_ASIX_SIGMA" != xno \
+if test "x$LA_ASIX_SIGMA" != xno \
    -o "x$LA_CHRONOVU_LA8" != xno \
    -o "x$LA_ZEROPLUS_LOGIC_CUBE" != xno \
    -o "x$LA_FX2LAFW" != xno; then
@@ -203,22 +194,6 @@ fi
 PKG_CHECK_MODULES([libzip], [libzip >= 0.8],
 	[CFLAGS="$CFLAGS $libzip_CFLAGS"; LIBS="$LIBS $libzip_LIBS";
 	SR_PKGLIBS="$SR_PKGLIBS libzip"])
-
-# zlib is only needed for some hardware drivers.
-if test "x$LA_ASIX_SIGMA" != xno; then
-	case "$build" in
-	*freebsd*)
-		# FreeBSD has zlib, but no pkg-config file for it.
-		# Check manually, and do NOT add it to SR_PKGLIBS.
-		AC_CHECK_LIB(z, uncompress)
-		;;
-	*)
-		PKG_CHECK_MODULES([zlib], [zlib >= 1.2.3.1],
-			[CFLAGS="$CFLAGS $zlib_CFLAGS"; LIBS="$LIBS $zlib_LIBS";
-			SR_PKGLIBS="$SR_PKGLIBS zlib"])
-		;;
-	esac
-fi
 
 # libftdi is only needed for some hardware drivers.
 if test "x$LA_ASIX_SIGMA" != xno \
@@ -264,7 +239,7 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 AC_CHECK_FUNCS([gettimeofday memset strchr strcspn strdup strerror strncasecmp strstr strtol strtoul strtoull])
 
-AC_SUBST(FIRMWARE_DIR, "$datadir/libsigrok/firmware")
+AC_SUBST(FIRMWARE_DIR, "$datadir/sigrok-firmware")
 AC_SUBST(MAKEFLAGS, '--no-print-directory')
 AC_SUBST(AM_LIBTOOLFLAGS, '--silent')
 
@@ -280,7 +255,6 @@ AC_SUBST(SR_PACKAGE_VERSION)
 
 AC_CONFIG_FILES([Makefile
 		 sigrok.h
-		 firmware/Makefile
 		 hardware/Makefile
 		 hardware/alsa/Makefile
 		 hardware/asix-sigma/Makefile
@@ -290,7 +264,6 @@ AC_CONFIG_FILES([Makefile
 		 hardware/fx2lafw/Makefile
 		 hardware/link-mso19/Makefile
 		 hardware/openbench-logic-sniffer/Makefile
-		 hardware/saleae-logic/Makefile
 		 hardware/zeroplus-logic-cube/Makefile
 		 input/Makefile
 		 output/Makefile
@@ -312,7 +285,7 @@ echo "Detected libraries:"
 echo
 
 # Note: This only works for libs with pkg-config integration.
-for lib in "glib-2.0" "gthread-2.0" "libusb-1.0" "libzip" "zlib" "libftdi" "libudev" "alsa"; do
+for lib in "glib-2.0" "gthread-2.0" "libusb-1.0" "libzip" "libftdi" "libudev" "alsa"; do
 	if `$PKG_CONFIG --exists $lib`; then
 		ver=`$PKG_CONFIG --modversion $lib`
 		answer="yes ($ver)"
@@ -325,13 +298,12 @@ done
 echo
 echo "Enabled hardware drivers:"
 echo
-echo "  - ASIX SIGMA...................... $LA_ASIX_SIGMA"
+echo "  - ASIX SIGMA/SIGMA2............... $LA_ASIX_SIGMA"
 echo "  - ChronoVu LA8.................... $LA_CHRONOVU_LA8"
 echo "  - Demo driver..................... $LA_DEMO"
 echo "  - fx2lafw (for FX2 LAs)........... $LA_FX2LAFW"
 echo "  - Link MSO-19..................... $LA_LINK_MSO19"
 echo "  - Openbench Logic Sniffer......... $LA_OLS"
-echo "  - Saleae Logic.................... $LA_SALEAE_LOGIC"
-echo "  - Zeroplus Logic Cube............. $LA_ZEROPLUS_LOGIC_CUBE"
+echo "  - ZEROPLUS Logic Cube............. $LA_ZEROPLUS_LOGIC_CUBE"
 echo
 
