@@ -10,7 +10,7 @@ Firmware
 --------
 
 Some devices supported by libsigrok need a firmware to be uploaded every time
-the device is connected to the PC (usually via USB), before it can be used. 
+the device is connected to the PC (usually via USB), before it can be used.
 
 The default location where libsigrok expects the firmware files is:
 
@@ -35,29 +35,52 @@ The following drivers/devices require a firmware upload upon connection:
 
  - fx2lafw: Logic analyzers based on the Cypress FX2(LP) chip need the
    firmware files from the 'sigrok-firmware-fx2lafw' repository/project.
-   The firmware is written from scratch and licensed under the GPLv2+.
+   The firmware is written from scratch and licensed under the GNU GPLv2+.
 
  - hantek-dso: The Hantek DSO-2090 (and other supported models of the same
    series of Hantek PC oscilloscopes) need firmware files.
    These can be extracted from the vendor's Windows drivers using a tool
    from our 'sigrok-util' repository/project.
 
+ - saleae-logic16: The Saleae Logic16 needs a firmware file for the
+   Cypress FX2 chip in the device, as well as two FPGA bitstream files.
+   These can be extracted from the vendor's Linux application using a tool
+   from our 'sigrok-util' repository/project.
+
+ - sysclk-lwla: The Sysclk LWLA1034 requires various bitstream files.
+   These files are available from our 'sigrok-firmware' repository/project
+   under a license which allows us to redistribute them.
+
 The following drivers/devices do not need any firmware upload:
 
  - agilent-dmm
- - alsa
+ - appa-55ii
+ - atten-pps3xxx
+ - brymen-bm86x
  - brymen-dmm
- - chronovu-la8
+ - cem-dt-885x
+ - center-3xx (including all subdrivers)
+ - chronovu-la
  - colead-slm
+ - conrad-digi-35-cpu
  - demo
  - fluke-dmm
+ - gmc-mh-1x-2x (including all subdrivers)
+ - hameg-hmo
+ - ikalogic-scanalogic2
+ - ikalogic-scanaplus
+ - kecheng-kc-330b
  - lascar-el-usb
- - mic-985xx
+ - link-mso19
+ - mic-985xx (including all subdrivers)
+ - norma-dmm
  - openbench-logic-sniffer
- - rigol-ds1xx2
- - serial-dmm
+ - rigol-ds
+ - serial-dmm (including all subdrivers)
+ - teleinfo
  - tondaj-sl-814
- - uni-t-dmm
+ - uni-t-dmm (including all subdrivers)
+ - uni-t-ut32x
  - victor-dmm
  - zeroplus-logic-cube
 
@@ -79,27 +102,57 @@ Example:
 The following drivers/devices require a serial port specification:
 
  - agilent-dmm
+ - appa-55ii
+ - atten-pps3xxx
  - brymen-dmm
+ - cem-dt-885x
+ - center-3xx (including all subdrivers)
  - colead-slm
+ - conrad-digi-35-cpu
  - fluke-dmm
- - mic-985xx
+ - gmc-mh-1x-2x (including all subdrivers)
+ - hameg-hmo
+ - link-mso19
+ - mic-985xx (including all subdrivers)
+ - norma-dmm
  - openbench-logic-sniffer
- - serial-dmm
+ - rigol-ds (for RS232; not required for USBTMC or TCP)
+ - serial-dmm (including all subdrivers)
+ - teleinfo
  - tondaj-sl-814
 
 The following drivers/devices do not require a serial port specification:
 
- - alsa
  - asix-sigma
- - chronovu-la8
+ - brymen-bm86x
+ - chronovu-la
  - demo
  - fx2lafw
  - hantek-dso
+ - ikalogic-scanalogic2
+ - ikalogic-scanaplus
+ - kecheng-kc-330b
  - lascar-el-usb
- - rigol-ds1xx2
- - uni-t-dmm
+ - rigol-ds (USBTMC or TCP)
+ - saleae-logic16
+ - sysclk-lwla
+ - uni-t-dmm (including all subdrivers)
+ - uni-t-ut32x
  - victor-dmm
  - zeroplus-logic-cube
+
+
+Specifiying serial port parameters
+----------------------------------
+
+Every serial device's driver has default serial port parameters like baud
+rate, number of data bits, stop bits and handshake status. If a device requires
+different parameters, pass them as option "serialcomm" with the driver name.
+See libsigrok docs for the function serial_set_paramstr() for complete specs.
+
+Example:
+
+ $ sigrok-cli --driver <somedriver>:conn=<someconn>:serialcomm=9600/7n1/dtr=1
 
 
 Permissions of serial port based devices
@@ -194,6 +247,10 @@ When using any of the UT-D04 USB/HID cables you have to use the respective
 driver _without_ the '-ser' drivername suffix (internally all of these models
 are handled by the 'uni-t-dmm' driver).
 
+You also need to specify the USB vendor/device IDs of the cable.
+Autodetection is not possible here, since various other products use the
+USB VID/PID of those cables too, and there is no way to distinguish them.
+
 Since the UT-D04 cables are USB based (but don't use a USB-to-serial chip)
 there is no need to specify a serial port via 'conn', of course.
 However, the user running the frontend does also need to have permissions
@@ -201,8 +258,8 @@ to access the respective USB device (see above).
 
 Examples (sigrok-cli):
 
- $ sigrok-cli --driver uni-t-ut61e ...
- $ sigrok-cli --driver voltcraft-vc820 ...
+ $ sigrok-cli --driver uni-t-ut61e:conn=1a86.e008 ...
+ $ sigrok-cli --driver voltcraft-vc820:conn=04fa.2490 ...
 
 
 UNI-T UT-D04 cable issue on Linux
@@ -236,54 +293,58 @@ unless a certain action has been performed by the user beforehand. This is
 usually mentioned in the vendor manual of the respective device, but here's
 a short list for convenience:
 
+ - BBC Goertz Metrawatt M2110: Briefly press the "Start/Reset" button on the
+   interface panel on top.
  - Digitek DT4000ZC: Briefly press the "RS232" button.
+ - Gossen Metrawatt Metrahit 1x/2x devices, driver gmc-mh-1x-2x-rs232:
+   - Power on the device with the "DATA" button pressed.
+   - Metrahit 2x devices must be configured for the respective interface type.
+ - Gossen Metrawatt Metrahit 2x devices, driver gmc-mh-2x-bd232:
+   - 'BD232' interface:
+      The multimeter must be configured for the respective interface type.
+   - 'SI232-II' interface ("PC Mode"):
+      The multimeter must be configured for interface type 'BD232' (all),
+      'SI232 online' (28-29S) or 'SI232 store' (22-26x). The interface must
+      be configured to the same baud rate as the host (default 9600).
+      Multimeter and interface must be configured to the same address.
+ - Norma DM950: If the interface doesn't work (e.g. USB-RS232 converter), power
+   on the device with "FUNC" pressed (to power the interface from the DMM).
  - PCE PCE-DM32: Briefly press the "RS232" button.
  - RadioShack 22-812: Press and hold "SELECT" and "RANGE" together.
  - TekPower TP4000ZC: Briefly press the "RS232" button.
- - UNI-T UT61D: Press the "REL/RS232/USB" button for roughly 1 second.
- - V&A VA18B: Keep the "Hz/DUTY" key pressed while powering on the device.
- - Victor 70C: Press the "REL/RS232" button for roughly 1 second.
- - Victor 86C: Press the "REL/RS232" button for roughly 1 second.
+ - Tenma 72-7750: Briefly press the "RS232C" button.
+ - UNI-T UT60G: Briefly press the "RS232C" button.
+ - UNI-T UT61B/C/D: Press the "REL/RS232/USB" button for roughly 1 second.
+ - UNI-T UT325: Briefly press the "SEND" button (as per manual). However, it
+   appears that in practice you don't have to press the button (at least on
+   some versions of the device), simply connect the device via USB.
+ - V&A VA18B/VA40B: Keep the "Hz/DUTY" key pressed while powering on the DMM.
+ - Victor 70C/86C: Press the "REL/RS232" button for roughly 1 second.
+ - Voltcraft VC-830: Press the "REL/PC" button for roughly 2 seconds.
 
 
-ALSA driver
------------
+ChronoVu LA8/LA16 USB VID/PIDs
+------------------------------
 
-The 'alsa' driver can be used to sample analog data using a PC's soundcard.
-I.e. the sound card can act as a simple oscilloscope (with some limitations)
-using commercial or DIY "sound card scope probe" cables.
-
-Since ALSA is a Linux-specific sound system, this driver will inherently
-only compile and work on Linux.
-
-We might write additional drivers to make a similar functionality available
-on other OSes at some point.
-
-
-ChronoVu LA8 USB VID/PIDs
--------------------------
-
-The ChronoVu LA8 logic analyzer is available in two revisions. Previously,
-the LA8 shipped with a USB VID/PID of 0403:6001, which is the standard ID
+The ChronoVu LA8/LA16 logic analyzer is available in two revisions. Previously,
+the device shipped with a USB VID/PID of 0403:6001, which is the standard ID
 for FTDI FT232 USB chips.
 
-Since this made it hard to distinguish the LA8 from any other device
+Since this made it hard to distinguish the LA8/LA16 from any other device
 with this FTDI chip connected to the PC, the vendor later shipped the
-LA8 with a USB VID/PID of 0403:8867.
+device with a USB VID/PID of 0403:8867.
 
-The 'chronovu-la8' driver in libsigrok supports both VID/PID pairs and
-automatically finds devices with either VID/PID pair. However, currently
-the driver will assume any device with VID/PID 0403:6001 is a ChronoVu LA8.
+The 'chronovu-la' driver in libsigrok supports both VID/PID pairs and
+automatically finds devices with either VID/PID pair.
 
 
 OLS
 ---
 
-The Dangerous Prototypes Openbench Logic Sniffer (OLS) logic analyzer is
-supported by the 'ols' driver in libsigrok. This driver assumes a somewhat
-recent firmware has been flashed onto the OLS (it doesn't need a firmware
-upload every time it's attached via USB, since the firmware is stored in the
-device permanently).
+The Dangerous Prototypes Openbench Logic Sniffer (OLS) logic analyzer
+driver in libsigrok assumes a somewhat recent firmware has been flashed onto
+the OLS (it doesn't need a firmware upload every time it's attached via USB,
+since the firmware is stored in the device permanently).
 
 The most recent firmware version that is tested is 3.07.
 
@@ -300,22 +361,4 @@ permissions to access the serial port (see above).
 Example:
 
  $ sigrok-cli --driver ols:conn=/dev/ttyACM0 ...
-
-
-Rigol DS1xx2 oscilloscopes
---------------------------
-
-The 'rigol-ds1xx2' driver (for the Rigol DS1052E and some other, similar DSOs)
-currently uses the Linux usbtmc kernel driver. This means it can currently
-only be built and used on Linux (i.e., it's non-portable).
-
-The use of a kernel module also means it is dependent on the kernel version
-used, as well as on whether this specific module is available in the kernel.
-Additionally, the usbtmc kernel module has been known to have various bugs
-in some versions. These are some (but not all) drawbacks of using a kernel
-module as opposed to a libusb-based driver that works in user-space.
-
-We plan to change the driver to use the 'librevisa' user-space shared
-library (which uses libusb) soon, which will fix all these issues and make
-the driver portable at the same time.
 

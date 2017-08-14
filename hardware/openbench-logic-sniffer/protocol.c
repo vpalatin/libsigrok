@@ -18,6 +18,7 @@
  */
 
 #include "protocol.h"
+#include <libserialport.h>
 
 extern SR_PRIV struct sr_dev_driver ols_driver_info;
 static struct sr_dev_driver *di = &ols_driver_info;
@@ -29,104 +30,83 @@ SR_PRIV int send_shortcommand(struct sr_serial_dev_inst *serial,
 
 	sr_dbg("Sending cmd 0x%.2x.", command);
 	buf[0] = command;
-	if (serial_write(serial, buf, 1) != 1)
+	if (serial_write_blocking(serial, buf, 1) != 1)
 		return SR_ERR;
 
 	return SR_OK;
 }
 
 SR_PRIV int send_longcommand(struct sr_serial_dev_inst *serial,
-		uint8_t command, uint32_t data)
+		uint8_t command, uint8_t *data)
 {
 	char buf[5];
 
-	sr_dbg("Sending cmd 0x%.2x data 0x%.8x.", command, data);
+	sr_dbg("Sending cmd 0x%.2x data 0x%.2x%.2x%.2x%.2x.", command,
+			data[0], data[1], data[2], data[3]);
 	buf[0] = command;
-	buf[1] = (data & 0xff000000) >> 24;
-	buf[2] = (data & 0xff0000) >> 16;
-	buf[3] = (data & 0xff00) >> 8;
-	buf[4] = data & 0xff;
-	if (serial_write(serial, buf, 5) != 5)
+	buf[1] = data[0];
+	buf[2] = data[1];
+	buf[3] = data[2];
+	buf[4] = data[3];
+	if (serial_write_blocking(serial, buf, 5) != 5)
 		return SR_ERR;
 
 	return SR_OK;
 }
 
-SR_PRIV int ols_configure_probes(const struct sr_dev_inst *sdi)
+SR_PRIV int ols_configure_channels(const struct sr_dev_inst *sdi)
 {
 	struct dev_context *devc;
-	const struct sr_probe *probe;
+	const struct sr_channel *ch;
 	const GSList *l;
-	int probe_bit, stage, i;
+	int channel_bit, stage, i;
 	char *tc;
 
 	devc = sdi->priv;
 
-	devc->probe_mask = 0;
+	devc->channel_mask = 0;
 	for (i = 0; i < NUM_TRIGGER_STAGES; i++) {
 		devc->trigger_mask[i] = 0;
 		devc->trigger_value[i] = 0;
 	}
 
 	devc->num_stages = 0;
-	for (l = sdi->probes; l; l = l->next) {
-		probe = (const struct sr_probe *)l->data;
-		if (!probe->enabled)
+	for (l = sdi->channels; l; l = l->next) {
+		ch = (const struct sr_channel *)l->data;
+		if (!ch->enabled)
 			continue;
 
+		if (ch->index >= devc->max_channels) {
+			sr_err("Channels over the limit of %d\n", devc->max_channels);
+			return SR_ERR;
+		}
+
 		/*
-		 * Set up the probe mask for later configuration into the
+		 * Set up the channel mask for later configuration into the
 		 * flag register.
 		 */
-		probe_bit = 1 << (probe->index);
-		devc->probe_mask |= probe_bit;
+		channel_bit = 1 << (ch->index);
+		devc->channel_mask |= channel_bit;
 
-		if (!probe->trigger)
+		if (!ch->trigger)
 			continue;
 
 		/* Configure trigger mask and value. */
 		stage = 0;
-		for (tc = probe->trigger; tc && *tc; tc++) {
-			devc->trigger_mask[stage] |= probe_bit;
+		for (tc = ch->trigger; tc && *tc; tc++) {
+			devc->trigger_mask[stage] |= channel_bit;
 			if (*tc == '1')
-				devc->trigger_value[stage] |= probe_bit;
+				devc->trigger_value[stage] |= channel_bit;
 			stage++;
-			if (stage > 3)
-				/*
-				 * TODO: Only supporting parallel mode, with
-				 * up to 4 stages.
-				 */
+			/* Only supporting parallel mode, with up to 4 stages. */
+			if (stage > 4)
 				return SR_ERR;
 		}
 		if (stage > devc->num_stages)
-			devc->num_stages = stage;
+			devc->num_stages = stage - 1;
 	}
 
 	return SR_OK;
-}
-
-SR_PRIV uint32_t reverse16(uint32_t in)
-{
-	uint32_t out;
-
-	out = (in & 0xff) << 8;
-	out |= (in & 0xff00) >> 8;
-	out |= (in & 0xff0000) << 8;
-	out |= (in & 0xff000000) >> 8;
-
-	return out;
-}
-
-SR_PRIV uint32_t reverse32(uint32_t in)
-{
-	uint32_t out;
-
-	out = (in & 0xff) << 24;
-	out |= (in & 0xff00) << 8;
-	out |= (in & 0xff0000) >> 8;
-	out |= (in & 0xff000000) >> 24;
-
-	return out;
 }
 
 SR_PRIV struct dev_context *ols_dev_new(void)
@@ -144,7 +124,7 @@ SR_PRIV struct dev_context *ols_dev_new(void)
 	/* Acquisition settings */
 	devc->limit_samples = devc->capture_ratio = 0;
 	devc->trigger_at = -1;
-	devc->probe_mask = 0xffffffff;
+	devc->channel_mask = 0xffffffff;
 	devc->flag_reg = 0;
 
 	return devc;
@@ -154,7 +134,7 @@ SR_PRIV struct sr_dev_inst *get_metadata(struct sr_serial_dev_inst *serial)
 {
 	struct sr_dev_inst *sdi;
 	struct dev_context *devc;
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	uint32_t tmp_int, ui;
 	uint8_t key, type, token;
 	GString *tmp_str, *devname, *version;
@@ -170,15 +150,19 @@ SR_PRIV struct sr_dev_inst *get_metadata(struct sr_serial_dev_inst *serial)
 
 	key = 0xff;
 	while (key) {
-		if (serial_read(serial, &key, 1) != 1 || key == 0x00)
+		if (serial_read_blocking(serial, &key, 1) != 1)
 			break;
+		if (key == 0x00) {
+			sr_dbg("Got metadata key 0x00, metadata ends.");
+			break;
+		}
 		type = key >> 5;
 		token = key & 0x1f;
 		switch (type) {
 		case 0:
 			/* NULL-terminated string */
 			tmp_str = g_string_new("");
-			while (serial_read(serial, &tmp_c, 1) == 1 && tmp_c != '\0')
+			while (serial_read_blocking(serial, &tmp_c, 1) == 1 && tmp_c != '\0')
 				g_string_append_c(tmp_str, tmp_c);
 			sr_dbg("Got metadata key 0x%.2x value '%s'.",
 			       key, tmp_str->str);
@@ -210,19 +194,19 @@ SR_PRIV struct sr_dev_inst *get_metadata(struct sr_serial_dev_inst *serial)
 			break;
 		case 1:
 			/* 32-bit unsigned integer */
-			if (serial_read(serial, &tmp_int, 4) != 4)
+			if (serial_read_blocking(serial, &tmp_int, 4) != 4)
 				break;
-			tmp_int = reverse32(tmp_int);
+			tmp_int = RB32(&tmp_int);
 			sr_dbg("Got metadata key 0x%.2x value 0x%.8x.",
 			       key, tmp_int);
 			switch (token) {
 			case 0x00:
-				/* Number of usable probes */
+				/* Number of usable channels */
 				for (ui = 0; ui < tmp_int; ui++) {
-					if (!(probe = sr_probe_new(ui, SR_PROBE_LOGIC, TRUE,
-							ols_probe_names[ui])))
+					if (!(ch = sr_channel_new(ui, SR_CHANNEL_LOGIC, TRUE,
+							ols_channel_names[ui])))
 						return 0;
-					sdi->probes = g_slist_append(sdi->probes, probe);
+					sdi->channels = g_slist_append(sdi->channels, ch);
 				}
 				break;
 			case 0x01:
@@ -249,18 +233,18 @@ SR_PRIV struct sr_dev_inst *get_metadata(struct sr_serial_dev_inst *serial)
 			break;
 		case 2:
 			/* 8-bit unsigned integer */
-			if (serial_read(serial, &tmp_c, 1) != 1)
+			if (serial_read_blocking(serial, &tmp_c, 1) != 1)
 				break;
 			sr_dbg("Got metadata key 0x%.2x value 0x%.2x.",
 			       key, tmp_c);
 			switch (token) {
 			case 0x00:
-				/* Number of usable probes */
+				/* Number of usable channels */
 				for (ui = 0; ui < tmp_c; ui++) {
-					if (!(probe = sr_probe_new(ui, SR_PROBE_LOGIC, TRUE,
-							ols_probe_names[ui])))
+					if (!(ch = sr_channel_new(ui, SR_CHANNEL_LOGIC, TRUE,
+							ols_channel_names[ui])))
 						return 0;
-					sdi->probes = g_slist_append(sdi->probes, probe);
+					sdi->channels = g_slist_append(sdi->channels, ch);
 				}
 				break;
 			case 0x01:
@@ -297,10 +281,16 @@ SR_PRIV int ols_set_samplerate(const struct sr_dev_inst *sdi,
 		return SR_ERR_SAMPLERATE;
 
 	if (samplerate > CLOCK_RATE) {
+		sr_info("Enabling demux mode.");
 		devc->flag_reg |= FLAG_DEMUX;
+		devc->flag_reg &= ~FLAG_FILTER;
+		devc->max_channels = NUM_CHANNELS / 2;
 		devc->cur_samplerate_divider = (CLOCK_RATE * 2 / samplerate) - 1;
 	} else {
+		sr_info("Disabling demux mode.");
 		devc->flag_reg &= ~FLAG_DEMUX;
+		devc->flag_reg |= FLAG_FILTER;
+		devc->max_channels = NUM_CHANNELS;
 		devc->cur_samplerate_divider = (CLOCK_RATE / samplerate) - 1;
 	}
 
@@ -323,7 +313,7 @@ SR_PRIV void abort_acquisition(const struct sr_dev_inst *sdi)
 	struct sr_serial_dev_inst *serial;
 
 	serial = sdi->conn;
-	sr_source_remove(serial->fd);
+	serial_source_remove(serial);
 
 	/* Terminate session */
 	packet.type = SR_DF_END;
@@ -332,32 +322,21 @@ SR_PRIV void abort_acquisition(const struct sr_dev_inst *sdi)
 
 SR_PRIV int ols_receive_data(int fd, int revents, void *cb_data)
 {
-	struct drv_context *drvc;
 	struct dev_context *devc;
+	struct sr_dev_inst *sdi;
 	struct sr_serial_dev_inst *serial;
 	struct sr_datafeed_packet packet;
 	struct sr_datafeed_logic logic;
-	struct sr_dev_inst *sdi;
-	GSList *l;
 	uint32_t sample;
-	int num_channels, offset, i, j;
+	int num_channels, offset, j;
+	unsigned int i;
 	unsigned char byte;
 
-	drvc = di->priv;
+	(void)fd;
 
-	/* Find this device's devc struct by its fd. */
-	devc = NULL;
-	for (l = drvc->instances; l; l = l->next) {
-		sdi = l->data;
-		devc = sdi->priv;
-		serial = sdi->conn;
-		if (serial->fd == fd)
-			break;
-		devc = NULL;
-	}
-	if (!devc)
-		/* Shouldn't happen. */
-		return TRUE;
+	sdi = cb_data;
+	serial = sdi->conn;
+	devc = sdi->priv;
 
 	if (devc->num_transfers++ == 0) {
 		/*
@@ -366,8 +345,8 @@ SR_PRIV int ols_receive_data(int fd, int revents, void *cb_data)
 		 * longer than it takes to send a byte, that means it's
 		 * finished. We'll double that to 30ms to be sure...
 		 */
-		sr_source_remove(fd);
-		sr_source_add(fd, G_IO_IN, 30, ols_receive_data, cb_data);
+		serial_source_remove(serial);
+		serial_source_add(serial, G_IO_IN, 30, ols_receive_data, cb_data);
 		devc->raw_sample_buf = g_try_malloc(devc->limit_samples * 4);
 		if (!devc->raw_sample_buf) {
 			sr_err("Sample buffer malloc failed.");
@@ -378,39 +357,45 @@ SR_PRIV int ols_receive_data(int fd, int revents, void *cb_data)
 	}
 
 	num_channels = 0;
-	for (i = 0x20; i > 0x02; i /= 2) {
-		if ((devc->flag_reg & i) == 0)
+	for (i = NUM_CHANNELS; i > 0x02; i /= 2) {
+		if ((devc->flag_reg & i) == 0) {
 			num_channels++;
+		}
 	}
 
-	if (revents == G_IO_IN) {
-		if (serial_read(serial, &byte, 1) != 1)
+	if (revents == G_IO_IN && devc->num_samples < devc->limit_samples) {
+		if (serial_read_nonblocking(serial, &byte, 1) != 1)
 			return FALSE;
+		devc->cnt_bytes++;
 
 		/* Ignore it if we've read enough. */
 		if (devc->num_samples >= devc->limit_samples)
 			return TRUE;
 
 		devc->sample[devc->num_bytes++] = byte;
-		sr_dbg("Received byte 0x%.2x.", byte);
+		sr_spew("Received byte 0x%.2x.", byte);
 		if (devc->num_bytes == num_channels) {
-			/* Got a full sample. */
+			devc->cnt_samples++;
+			devc->cnt_samples_rle++;
+			/*
+			 * Got a full sample. Convert from the OLS's little-endian
+			 * sample to the local format.
+			 */
 			sample = devc->sample[0] | (devc->sample[1] << 8) \
 					| (devc->sample[2] << 16) | (devc->sample[3] << 24);
 			sr_dbg("Received sample 0x%.*x.", devc->num_bytes * 2, sample);
 			if (devc->flag_reg & FLAG_RLE) {
 				/*
-				 * In RLE mode -1 should never come in as a
-				 * sample, because bit 31 is the "count" flag.
+				 * In RLE mode the high bit of the sample is the
+				 * "count" flag, meaning this sample is the number
+				 * of times the previous sample occurred.
 				 */
 				if (devc->sample[devc->num_bytes - 1] & 0x80) {
-					devc->sample[devc->num_bytes - 1] &= 0x7f;
-					/*
-					 * FIXME: This will only work on
-					 * little-endian systems.
-					 */
+					/* Clear the high bit. */
+					sample &= ~(0x80 << (devc->num_bytes - 1) * 8);
 					devc->rle_count = sample;
-					sr_dbg("RLE count: %d.", devc->rle_count);
+					devc->cnt_samples_rle += devc->rle_count;
+					sr_dbg("RLE count: %u.", devc->rle_count);
 					devc->num_bytes = 0;
 					return TRUE;
 				}
@@ -430,7 +415,7 @@ SR_PRIV int ols_receive_data(int fd, int revents, void *cb_data)
 				 * submitting it over the session bus --
 				 * whatever is listening on the bus will be
 				 * expecting a full 32-bit sample, based on
-				 * the number of probes.
+				 * the number of channels.
 				 */
 				j = 0;
 				memset(devc->tmp_sample, 0, 4);
@@ -442,13 +427,17 @@ SR_PRIV int ols_receive_data(int fd, int revents, void *cb_data)
 						 * sample.
 						 */
 						devc->tmp_sample[i] = devc->sample[j++];
+					} else if (devc->flag_reg & FLAG_DEMUX && (i > 2)) {
+						/* group 2 & 3 get added to 0 & 1 */
+						devc->tmp_sample[i - 2] = devc->sample[j++];
 					}
 				}
 				memcpy(devc->sample, devc->tmp_sample, 4);
-				sr_dbg("Full sample: 0x%.8x.", sample);
+				sr_spew("Expanded sample: 0x%.8x.", sample);
 			}
 
-			/* the OLS sends its sample buffer backwards.
+			/*
+			 * the OLS sends its sample buffer backwards.
 			 * store it in reverse order here, so we can dump
 			 * this on the session bus later.
 			 */
@@ -467,12 +456,16 @@ SR_PRIV int ols_receive_data(int fd, int revents, void *cb_data)
 		 * we've acquired all the samples we asked for -- we're done.
 		 * Send the (properly-ordered) buffer to the frontend.
 		 */
+		sr_dbg("Received %d bytes, %d samples, %d decompressed samples.",
+				devc->cnt_bytes, devc->cnt_samples,
+				devc->cnt_samples_rle);
 		if (devc->trigger_at != -1) {
-			/* a trigger was set up, so we need to tell the frontend
+			/*
+			 * A trigger was set up, so we need to tell the frontend
 			 * about it.
 			 */
 			if (devc->trigger_at > 0) {
-				/* there are pre-trigger samples, send those first */
+				/* There are pre-trigger samples, send those first. */
 				packet.type = SR_DF_LOGIC;
 				packet.payload = &logic;
 				logic.length = devc->trigger_at * 4;
@@ -482,11 +475,11 @@ SR_PRIV int ols_receive_data(int fd, int revents, void *cb_data)
 				sr_session_send(cb_data, &packet);
 			}
 
-			/* send the trigger */
+			/* Send the trigger. */
 			packet.type = SR_DF_TRIGGER;
 			sr_session_send(cb_data, &packet);
 
-			/* send post-trigger samples */
+			/* Send post-trigger samples. */
 			packet.type = SR_DF_LOGIC;
 			packet.payload = &logic;
 			logic.length = (devc->num_samples * 4) - (devc->trigger_at * 4);

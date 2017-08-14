@@ -48,7 +48,7 @@ static void handle_packet(const uint8_t *buf, struct sr_dev_inst *sdi,
 
 	memset(&analog, 0, sizeof(struct sr_datafeed_analog));
 
-	analog.probes = sdi->probes;
+	analog.channels = sdi->channels;
 	analog.num_samples = 1;
 	analog.mq = -1;
 
@@ -80,7 +80,9 @@ static void handle_new_data(struct sr_dev_inst *sdi, int dmm, void *info)
 	/* Try to get as much data as the buffer can hold. */
 	len = DMM_BUFSIZE - devc->buflen;
 	len = serial_read(serial, devc->buf + devc->buflen, len);
-	if (len < 1) {
+	if (len == 0)
+		return; /* No new bytes, nothing to do. */
+	if (len < 0) {
 		sr_err("Serial port read error: %d.", len);
 		return;
 	}
@@ -158,21 +160,36 @@ SR_PRIV int receive_data_##ID_UPPER(int fd, int revents, void *cb_data) { \
 	return receive_data(fd, revents, ID_UPPER, &info, cb_data); }
 
 /* Driver-specific receive_data() wrappers */
+RECEIVE_DATA(BBCGM_M2110, metex14) /* metex14_info used as a dummy. */
 RECEIVE_DATA(DIGITEK_DT4000ZC, fs9721)
 RECEIVE_DATA(TEKPOWER_TP4000ZC, fs9721)
 RECEIVE_DATA(METEX_ME31, metex14)
 RECEIVE_DATA(PEAKTECH_3410, metex14)
 RECEIVE_DATA(MASTECH_MAS345, metex14)
 RECEIVE_DATA(VA_VA18B, fs9721)
+RECEIVE_DATA(VA_VA40B, fs9721)
 RECEIVE_DATA(METEX_M3640D, metex14)
+RECEIVE_DATA(METEX_M4650CR, metex14)
 RECEIVE_DATA(PEAKTECH_4370, metex14)
 RECEIVE_DATA(PCE_PCE_DM32, fs9721)
 RECEIVE_DATA(RADIOSHACK_22_168, metex14)
 RECEIVE_DATA(RADIOSHACK_22_805, metex14)
 RECEIVE_DATA(RADIOSHACK_22_812, rs9lcd)
-RECEIVE_DATA(TECPEL_DMM_8060_SER, fs9721)
 RECEIVE_DATA(TECPEL_DMM_8061_SER, fs9721)
+RECEIVE_DATA(VOLTCRAFT_M3650CR, metex14)
+RECEIVE_DATA(VOLTCRAFT_M3650D, metex14)
+RECEIVE_DATA(VOLTCRAFT_M4650CR, metex14)
+RECEIVE_DATA(VOLTCRAFT_ME42, metex14)
 RECEIVE_DATA(VOLTCRAFT_VC820_SER, fs9721)
+RECEIVE_DATA(VOLTCRAFT_VC830_SER, fs9922)
 RECEIVE_DATA(VOLTCRAFT_VC840_SER, fs9721)
+RECEIVE_DATA(UNI_T_UT60A_SER, fs9721)
+RECEIVE_DATA(UNI_T_UT60E_SER, fs9721)
+RECEIVE_DATA(UNI_T_UT60G_SER, es519xx)
+RECEIVE_DATA(UNI_T_UT61B_SER, fs9922)
+RECEIVE_DATA(UNI_T_UT61C_SER, fs9922)
 RECEIVE_DATA(UNI_T_UT61D_SER, fs9922)
-RECEIVE_DATA(UNI_T_UT61E_SER, es51922)
+RECEIVE_DATA(UNI_T_UT61E_SER, es519xx)
+RECEIVE_DATA(ISO_TECH_IDM103N, es519xx)
+RECEIVE_DATA(TENMA_72_7745_SER, fs9721)
+RECEIVE_DATA(TENMA_72_7750_SER, es519xx)

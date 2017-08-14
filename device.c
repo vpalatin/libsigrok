@@ -23,14 +23,9 @@
 #include "libsigrok.h"
 #include "libsigrok-internal.h"
 
-/* Message logging helpers with subsystem-specific prefix string. */
-#define LOG_PREFIX "device: "
-#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
-#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
-#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
-#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
-#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
-#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+/** @cond PRIVATE */
+#define LOG_PREFIX "device"
+/** @endcond */
 
 /**
  * @file
@@ -46,47 +41,55 @@
  * @{
  */
 
-/** @private */
-SR_PRIV struct sr_probe *sr_probe_new(int index, int type,
+/** @private
+ *  Allocate and initialize new struct sr_channel
+ *  @param[in]  index @copydoc sr_channel::index
+ *  @param[in]  type @copydoc sr_channel::type
+ *  @param[in]  enabled @copydoc sr_channel::enabled
+ *  @param[in]  name @copydoc sr_channel::name
+ *
+ *  @return NULL (failure) or new struct sr_channel*.
+ */
+SR_PRIV struct sr_channel *sr_channel_new(int index, int type,
 		gboolean enabled, const char *name)
 {
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 
-	if (!(probe = g_try_malloc0(sizeof(struct sr_probe)))) {
-		sr_err("Probe malloc failed.");
+	if (!(ch = g_try_malloc0(sizeof(struct sr_channel)))) {
+		sr_err("Channel malloc failed.");
 		return NULL;
 	}
 
-	probe->index = index;
-	probe->type = type;
-	probe->enabled = enabled;
+	ch->index = index;
+	ch->type = type;
+	ch->enabled = enabled;
 	if (name)
-		probe->name = g_strdup(name);
+		ch->name = g_strdup(name);
 
-	return probe;
+	return ch;
 }
 
 /**
- * Set the name of the specified probe in the specified device.
+ * Set the name of the specified channel in the specified device.
  *
- * If the probe already has a different name assigned to it, it will be
+ * If the channel already has a different name assigned to it, it will be
  * removed, and the new name will be saved instead.
  *
- * @param sdi The device instance the probe is connected to.
- * @param probenum The number of the probe whose name to set.
- *                 Note that the probe numbers start at 0.
- * @param name The new name that the specified probe should get. A copy
+ * @param sdi The device instance the channel is connected to.
+ * @param[in] channelnum The number of the channel whose name to set.
+ *                 Note that the channel numbers start at 0.
+ * @param[in] name The new name that the specified channel should get. A copy
  *             of the string is made.
  *
  * @return SR_OK on success, or SR_ERR_ARG on invalid arguments.
  *
- * @since 0.1.0 (but the API changed in 0.2.0)
+ * @since 0.3.0
  */
-SR_API int sr_dev_probe_name_set(const struct sr_dev_inst *sdi,
-		int probenum, const char *name)
+SR_API int sr_dev_channel_name_set(const struct sr_dev_inst *sdi,
+		int channelnum, const char *name)
 {
 	GSList *l;
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	int ret;
 
 	if (!sdi) {
@@ -95,11 +98,11 @@ SR_API int sr_dev_probe_name_set(const struct sr_dev_inst *sdi,
 	}
 
 	ret = SR_ERR_ARG;
-	for (l = sdi->probes; l; l = l->next) {
-		probe = l->data;
-		if (probe->index == probenum) {
-			g_free(probe->name);
-			probe->name = g_strdup(name);
+	for (l = sdi->channels; l; l = l->next) {
+		ch = l->data;
+		if (ch->index == channelnum) {
+			g_free(ch->name);
+			ch->name = g_strdup(name);
 			ret = SR_OK;
 			break;
 		}
@@ -109,32 +112,44 @@ SR_API int sr_dev_probe_name_set(const struct sr_dev_inst *sdi,
 }
 
 /**
- * Enable or disable a probe on the specified device.
+ * Enable or disable a channel on the specified device.
  *
- * @param sdi The device instance the probe is connected to.
- * @param probenum The probe number, starting from 0.
- * @param state TRUE to enable the probe, FALSE to disable.
+ * @param sdi The device instance the channel is connected to.
+ * @param channelnum The channel number, starting from 0.
+ * @param state TRUE to enable the channel, FALSE to disable.
  *
- * @return SR_OK on success, or SR_ERR_ARG on invalid arguments.
+ * @return SR_OK on success or SR_ERR on failure.  In case of invalid
+ *         arguments, SR_ERR_ARG is returned and the channel enabled state
+ *         remains unchanged.
  *
- * @since 0.2.0
+ * @since 0.3.0
  */
-SR_API int sr_dev_probe_enable(const struct sr_dev_inst *sdi, int probenum,
+SR_API int sr_dev_channel_enable(const struct sr_dev_inst *sdi, int channelnum,
 		gboolean state)
 {
 	GSList *l;
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	int ret;
+	gboolean was_enabled;
 
 	if (!sdi)
 		return SR_ERR_ARG;
 
 	ret = SR_ERR_ARG;
-	for (l = sdi->probes; l; l = l->next) {
-		probe = l->data;
-		if (probe->index == probenum) {
-			probe->enabled = state;
+	for (l = sdi->channels; l; l = l->next) {
+		ch = l->data;
+		if (ch->index == channelnum) {
+			was_enabled = ch->enabled;
+			ch->enabled = state;
 			ret = SR_OK;
+			if (!state != !was_enabled && sdi->driver
+					&& sdi->driver->config_channel_set) {
+				ret = sdi->driver->config_channel_set(
+					sdi, ch, SR_CHANNEL_SET_ENABLED);
+				/* Roll back change if it wasn't applicable. */
+				if (ret == SR_ERR_ARG)
+					ch->enabled = was_enabled;
+			}
 			break;
 		}
 	}
@@ -143,37 +158,54 @@ SR_API int sr_dev_probe_enable(const struct sr_dev_inst *sdi, int probenum,
 }
 
 /**
- * Add a trigger to the specified device (and the specified probe).
+ * Add a trigger to the specified device (and the specified channel).
  *
- * If the specified probe of this device already has a trigger, it will
+ * If the specified channel of this device already has a trigger, it will
  * be silently replaced.
  *
- * @param sdi Must not be NULL.
- * @param probenum The probe number, starting from 0.
- * @param trigger Trigger string, in the format used by sigrok-cli
+ * @param[in,out] sdi Pointer to the device instance; must not be NULL.
+ * @param[in] channelnum Number of channel, starting at 0.
+ * @param[in] trigger Trigger string, in the format used by sigrok-cli
  *
- * @return SR_OK on success, or SR_ERR_ARG on invalid arguments.
+ * @return SR_OK on success or SR_ERR on failure.  In case of invalid
+ *         arguments, SR_ERR_ARG is returned and the trigger settings
+ *         remain unchanged.
  *
- * @since 0.1.0 (but the API changed in 0.2.0)
+ * @since 0.2.0
  */
-SR_API int sr_dev_trigger_set(const struct sr_dev_inst *sdi, int probenum,
+SR_API int sr_dev_trigger_set(const struct sr_dev_inst *sdi, int channelnum,
 		const char *trigger)
 {
 	GSList *l;
-	struct sr_probe *probe;
+	struct sr_channel *ch;
+	char *old_trigger;
 	int ret;
 
 	if (!sdi)
 		return SR_ERR_ARG;
 
 	ret = SR_ERR_ARG;
-	for (l = sdi->probes; l; l = l->next) {
-		probe = l->data;
-		if (probe->index == probenum) {
-			/* If the probe already has a trigger, kill it first. */
-			g_free(probe->trigger);
-			probe->trigger = g_strdup(trigger);
+	for (l = sdi->channels; l; l = l->next) {
+		ch = l->data;
+		if (ch->index == channelnum) {
+			old_trigger = ch->trigger;
 			ret = SR_OK;
+			if (g_strcmp0(trigger, old_trigger) == 0)
+				break;
+			/* Set new trigger if it has changed. */
+			ch->trigger = g_strdup(trigger);
+
+			if (sdi->driver && sdi->driver->config_channel_set) {
+				ret = sdi->driver->config_channel_set(
+					sdi, ch, SR_CHANNEL_SET_TRIGGER);
+				/* Roll back change if it wasn't applicable. */
+				if (ret == SR_ERR_ARG) {
+					g_free(ch->trigger);
+					ch->trigger = old_trigger;
+					break;
+				}
+			}
+			g_free(old_trigger);
 			break;
 		}
 	}
@@ -189,14 +221,14 @@ SR_API int sr_dev_trigger_set(const struct sr_dev_inst *sdi, int probenum,
  *            If the device's 'driver' field is NULL (virtual device), this
  *            function will always return FALSE (virtual devices don't have
  *            a hardware capabilities list).
- * @param key The option that should be checked for support on the
+ * @param[in] key The option that should be checked for is supported by the
  *            specified device.
  *
- * @return TRUE if the device has the specified option, FALSE otherwise.
- *         FALSE is also returned on invalid input parameters or other
- *         error conditions.
+ * @retval TRUE Device has the specified option
+ * @retval FALSE Device does not have the specified option, invalid input
+ *         parameters or other error conditions.
  *
- * @since 0.1.0 (but the API changed in 0.2.0)
+ * @since 0.2.0
  */
 SR_API gboolean sr_dev_has_option(const struct sr_dev_inst *sdi, int key)
 {
@@ -208,7 +240,8 @@ SR_API gboolean sr_dev_has_option(const struct sr_dev_inst *sdi, int key)
 	if (!sdi || !sdi->driver || !sdi->driver->config_list)
 		return FALSE;
 
-	if (sdi->driver->config_list(SR_CONF_DEVICE_OPTIONS, &gvar, NULL) != SR_OK)
+	if (sdi->driver->config_list(SR_CONF_DEVICE_OPTIONS,
+				&gvar, sdi, NULL) != SR_OK)
 		return FALSE;
 
 	ret = FALSE;
@@ -224,7 +257,18 @@ SR_API gboolean sr_dev_has_option(const struct sr_dev_inst *sdi, int key)
 	return ret;
 }
 
-/** @private */
+/** @private
+ *  Allocate and init new device instance struct.
+ *  @param[in]  index   @copydoc sr_dev_inst::index
+ *  @param[in]  status  @copydoc sr_dev_inst::status
+ *  @param[in]  vendor  @copydoc sr_dev_inst::vendor
+ *  @param[in]  model   @copydoc sr_dev_inst::model
+ *  @param[in]  version @copydoc sr_dev_inst::version
+ *
+ *  @retval NULL Error
+ *  @retval struct sr_dev_inst *. Dynamically allocated, free using
+ *              sr_dev_inst_free().
+ */
 SR_PRIV struct sr_dev_inst *sr_dev_inst_new(int index, int status,
 		const char *vendor, const char *model, const char *version)
 {
@@ -242,26 +286,34 @@ SR_PRIV struct sr_dev_inst *sr_dev_inst_new(int index, int status,
 	sdi->vendor = vendor ? g_strdup(vendor) : NULL;
 	sdi->model = model ? g_strdup(model) : NULL;
 	sdi->version = version ? g_strdup(version) : NULL;
-	sdi->probes = NULL;
+	sdi->channels = NULL;
+	sdi->channel_groups = NULL;
 	sdi->conn = NULL;
 	sdi->priv = NULL;
 
 	return sdi;
 }
 
-/** @private */
+/** @private
+ *  Free device instance struct created by sr_dev_inst().
+ *  @param sdi  struct* to free.
+ */
 SR_PRIV void sr_dev_inst_free(struct sr_dev_inst *sdi)
 {
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	GSList *l;
 
-	for (l = sdi->probes; l; l = l->next) {
-		probe = l->data;
-		g_free(probe->name);
-		g_free(probe);
+	for (l = sdi->channels; l; l = l->next) {
+		ch = l->data;
+		g_free(ch->name);
+		g_free(ch->trigger);
+		g_free(ch);
 	}
+	g_slist_free(sdi->channels);
 
-	g_free(sdi->priv);
+	if (sdi->channel_groups)
+		g_slist_free(sdi->channel_groups);
+
 	g_free(sdi->vendor);
 	g_free(sdi->model);
 	g_free(sdi->version);
@@ -270,7 +322,15 @@ SR_PRIV void sr_dev_inst_free(struct sr_dev_inst *sdi)
 
 #ifdef HAVE_LIBUSB_1_0
 
-/** @private */
+/** @private
+ *  Allocate and init struct for USB device instance.
+ *  @param[in]  bus @copydoc sr_usb_dev_inst::bus
+ *  @param[in]  address @copydoc sr_usb_dev_inst::address
+ *  @param[in]  hdl @copydoc sr_usb_dev_inst::devhdl
+ *
+ *  @retval NULL Error
+ *  @retval other struct sr_usb_dev_inst * for USB device instance.
+ */
 SR_PRIV struct sr_usb_dev_inst *sr_usb_dev_inst_new(uint8_t bus,
 			uint8_t address, struct libusb_device_handle *hdl)
 {
@@ -288,15 +348,18 @@ SR_PRIV struct sr_usb_dev_inst *sr_usb_dev_inst_new(uint8_t bus,
 	return udi;
 }
 
-/** @private */
+/** @private
+ *  Free struct * allocated by sr_usb_dev_inst().
+ *  @param usb  struct* to free. Must not be NULL.
+ */
 SR_PRIV void sr_usb_dev_inst_free(struct sr_usb_dev_inst *usb)
 {
-	(void)usb;
-
-	/* Nothing to do for this device instance type. */
+	g_free(usb);
 }
 
 #endif
+
+#ifdef HAVE_LIBSERIALPORT
 
 /**
  * @private
@@ -304,12 +367,12 @@ SR_PRIV void sr_usb_dev_inst_free(struct sr_usb_dev_inst *usb)
  * Both parameters are copied to newly allocated strings, and freed
  * automatically by sr_serial_dev_inst_free().
  *
- * @param pathname OS-specific serial port specification. Examples:
+ * @param[in] port OS-specific serial port specification. Examples:
  *                 "/dev/ttyUSB0", "/dev/ttyACM1", "/dev/tty.Modem-0", "COM1".
- * @param serialcomm A serial communication parameters string, in the form
- *                   of <speed>/<data bits><parity><stopbits>, for example
- *                   "9600/8n1" or "600/7o2". This is an optional parameter;
- *                   it may be filled in later.
+ * @param[in] serialcomm A serial communication parameters string, in the form
+ *              of \<speed\>/\<data bits\>\<parity\>\<stopbits\>, for example
+ *              "9600/8n1" or "600/7o2". This is an optional parameter;
+ *              it may be filled in later.
  *
  * @return A pointer to a newly initialized struct sr_serial_dev_inst,
  *         or NULL on error.
@@ -332,19 +395,60 @@ SR_PRIV struct sr_serial_dev_inst *sr_serial_dev_inst_new(const char *port,
 	serial->port = g_strdup(port);
 	if (serialcomm)
 		serial->serialcomm = g_strdup(serialcomm);
-	serial->fd = -1;
 
 	return serial;
 }
 
-/** @private */
+/** @private
+ *  Free struct sr_serial_dev_inst * allocated by sr_serial_dev_inst().
+ *  @param serial   struct sr_serial_dev_inst * to free. Must not be NULL.
+ */
 SR_PRIV void sr_serial_dev_inst_free(struct sr_serial_dev_inst *serial)
 {
 	g_free(serial->port);
 	g_free(serial->serialcomm);
 	g_free(serial);
 }
+#endif
 
+/** @private */
+SR_PRIV struct sr_usbtmc_dev_inst *sr_usbtmc_dev_inst_new(const char *device)
+{
+	struct sr_usbtmc_dev_inst *usbtmc;
+
+	if (!device) {
+		sr_err("Device name required.");
+		return NULL;
+	}
+
+	if (!(usbtmc = g_try_malloc0(sizeof(struct sr_usbtmc_dev_inst)))) {
+		sr_err("USBTMC device instance malloc failed.");
+		return NULL;
+	}
+
+	usbtmc->device = g_strdup(device);
+	usbtmc->fd = -1;
+
+	return usbtmc;
+}
+
+/** @private */
+SR_PRIV void sr_usbtmc_dev_inst_free(struct sr_usbtmc_dev_inst *usbtmc)
+{
+	g_free(usbtmc->device);
+	g_free(usbtmc);
+}
+
+/**
+ * Get the list of devices/instances of the specified driver.
+ *
+ * @param driver The driver to use. Must not be NULL.
+ *
+ * @return The list of devices/instances of this driver, or NULL upon errors
+ *         or if the list is empty.
+ *
+ * @since 0.2.0
+ */
 SR_API GSList *sr_dev_list(const struct sr_dev_driver *driver)
 {
 	if (driver && driver->dev_list)
@@ -353,14 +457,43 @@ SR_API GSList *sr_dev_list(const struct sr_dev_driver *driver)
 		return NULL;
 }
 
+/**
+ * Clear the list of device instances a driver knows about.
+ *
+ * @param driver The driver to use. This must be a pointer to one of
+ *               the entries returned by sr_driver_list(). Must not be NULL.
+ *
+ * @retval SR_OK Success
+ * @retval SR_ERR_ARG Invalid driver
+ *
+ * @since 0.2.0
+ */
 SR_API int sr_dev_clear(const struct sr_dev_driver *driver)
 {
-	if (driver && driver->dev_clear)
-		return driver->dev_clear();
+	int ret;
+
+	if (!driver) {
+		sr_err("Invalid driver.");
+		return SR_ERR_ARG;
+	}
+
+	if (driver->dev_clear)
+		ret = driver->dev_clear();
 	else
-		return SR_OK;
+		ret = std_dev_clear(driver, NULL);
+
+	return ret;
 }
 
+/**
+ * Open the specified device.
+ *
+ * @param sdi Device instance to use. Must not be NULL.
+ *
+ * @return SR_OK upon success, a negative error code upon errors.
+ *
+ * @since 0.2.0
+ */
 SR_API int sr_dev_open(struct sr_dev_inst *sdi)
 {
 	int ret;
@@ -373,6 +506,15 @@ SR_API int sr_dev_open(struct sr_dev_inst *sdi)
 	return ret;
 }
 
+/**
+ * Close the specified device.
+ *
+ * @param sdi Device instance to use. Must not be NULL.
+ *
+ * @return SR_OK upon success, a negative error code upon errors.
+ *
+ * @since 0.2.0
+ */
 SR_API int sr_dev_close(struct sr_dev_inst *sdi)
 {
 	int ret;

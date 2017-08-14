@@ -21,6 +21,9 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include "libsigrok.h"
+/** @cond PRIVATE */
+#define NO_LOG_WRAPPERS
+/** @endcond */
 #include "libsigrok-internal.h"
 
 /**
@@ -38,20 +41,20 @@
  */
 
 /* Currently selected libsigrok loglevel. Default: SR_LOG_WARN. */
-static int sr_loglevel = SR_LOG_WARN; /* Show errors+warnings per default. */
+static int cur_loglevel = SR_LOG_WARN; /* Show errors+warnings per default. */
 
 /* Function prototype. */
 static int sr_logv(void *cb_data, int loglevel, const char *format,
 		   va_list args);
 
 /* Pointer to the currently selected log callback. Default: sr_logv(). */
-static sr_log_callback_t sr_log_callback = sr_logv;
+static sr_log_callback sr_log_cb = sr_logv;
 
 /*
  * Pointer to private data that can be passed to the log callback.
  * This can be used (for example) by C++ GUIs to pass a "this" pointer.
  */
-static void *sr_log_callback_data = NULL;
+static void *sr_log_cb_data = NULL;
 
 /* Log domain (a short string that is used as prefix for all messages). */
 /** @cond PRIVATE */
@@ -84,7 +87,7 @@ SR_API int sr_log_loglevel_set(int loglevel)
 		return SR_ERR_ARG;
 	}
 
-	sr_loglevel = loglevel;
+	cur_loglevel = loglevel;
 
 	sr_dbg("libsigrok loglevel set to %d.", loglevel);
 
@@ -100,7 +103,7 @@ SR_API int sr_log_loglevel_set(int loglevel)
  */
 SR_API int sr_log_loglevel_get(void)
 {
-	return sr_loglevel;
+	return cur_loglevel;
 }
 
 /**
@@ -161,9 +164,9 @@ SR_API char *sr_log_logdomain_get(void)
  *
  * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments.
  *
- * @since 0.1.0
+ * @since 0.3.0
  */
-SR_API int sr_log_callback_set(sr_log_callback_t cb, void *cb_data)
+SR_API int sr_log_callback_set(sr_log_callback cb, void *cb_data)
 {
 	if (!cb) {
 		sr_err("log: %s: cb was NULL", __func__);
@@ -172,8 +175,8 @@ SR_API int sr_log_callback_set(sr_log_callback_t cb, void *cb_data)
 
 	/* Note: 'cb_data' is allowed to be NULL. */
 
-	sr_log_callback = cb;
-	sr_log_callback_data = cb_data;
+	sr_log_cb = cb;
+	sr_log_cb_data = cb_data;
 
 	return SR_OK;
 }
@@ -181,7 +184,7 @@ SR_API int sr_log_callback_set(sr_log_callback_t cb, void *cb_data)
 /**
  * Set the libsigrok log callback to the default built-in one.
  *
- * Additionally, the internal 'sr_log_callback_data' pointer is set to NULL.
+ * Additionally, the internal 'sr_log_cb_data' pointer is set to NULL.
  *
  * @return SR_OK upon success, a negative error code otherwise.
  *
@@ -193,8 +196,8 @@ SR_API int sr_log_callback_set_default(void)
 	 * Note: No log output in this function, as it should safely work
 	 * even if the currently set log callback is buggy/broken.
 	 */
-	sr_log_callback = sr_logv;
-	sr_log_callback_data = NULL;
+	sr_log_cb = sr_logv;
+	sr_log_cb_data = NULL;
 
 	return SR_OK;
 }
@@ -207,7 +210,7 @@ static int sr_logv(void *cb_data, int loglevel, const char *format, va_list args
 	(void)cb_data;
 
 	/* Only output messages of at least the selected loglevel(s). */
-	if (loglevel > sr_loglevel)
+	if (loglevel > cur_loglevel)
 		return SR_OK; /* TODO? */
 
 	if (sr_log_domain[0] != '\0')
@@ -225,7 +228,7 @@ SR_PRIV int sr_log(int loglevel, const char *format, ...)
 	va_list args;
 
 	va_start(args, format);
-	ret = sr_log_callback(sr_log_callback_data, loglevel, format, args);
+	ret = sr_log_cb(sr_log_cb_data, loglevel, format, args);
 	va_end(args);
 
 	return ret;
@@ -238,7 +241,7 @@ SR_PRIV int sr_spew(const char *format, ...)
 	va_list args;
 
 	va_start(args, format);
-	ret = sr_log_callback(sr_log_callback_data, SR_LOG_SPEW, format, args);
+	ret = sr_log_cb(sr_log_cb_data, SR_LOG_SPEW, format, args);
 	va_end(args);
 
 	return ret;
@@ -251,7 +254,7 @@ SR_PRIV int sr_dbg(const char *format, ...)
 	va_list args;
 
 	va_start(args, format);
-	ret = sr_log_callback(sr_log_callback_data, SR_LOG_DBG, format, args);
+	ret = sr_log_cb(sr_log_cb_data, SR_LOG_DBG, format, args);
 	va_end(args);
 
 	return ret;
@@ -264,7 +267,7 @@ SR_PRIV int sr_info(const char *format, ...)
 	va_list args;
 
 	va_start(args, format);
-	ret = sr_log_callback(sr_log_callback_data, SR_LOG_INFO, format, args);
+	ret = sr_log_cb(sr_log_cb_data, SR_LOG_INFO, format, args);
 	va_end(args);
 
 	return ret;
@@ -277,7 +280,7 @@ SR_PRIV int sr_warn(const char *format, ...)
 	va_list args;
 
 	va_start(args, format);
-	ret = sr_log_callback(sr_log_callback_data, SR_LOG_WARN, format, args);
+	ret = sr_log_cb(sr_log_cb_data, SR_LOG_WARN, format, args);
 	va_end(args);
 
 	return ret;
@@ -290,7 +293,7 @@ SR_PRIV int sr_err(const char *format, ...)
 	va_list args;
 
 	va_start(args, format);
-	ret = sr_log_callback(sr_log_callback_data, SR_LOG_ERR, format, args);
+	ret = sr_log_cb(sr_log_cb_data, SR_LOG_ERR, format, args);
 	va_end(args);
 
 	return ret;

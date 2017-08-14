@@ -38,14 +38,7 @@
 #include "libsigrok.h"
 #include "libsigrok-internal.h"
 
-/* Message logging helpers with subsystem-specific prefix string. */
-#define LOG_PREFIX "fs9721: "
-#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
-#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
-#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
-#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
-#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
-#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+#define LOG_PREFIX "fs9721"
 
 static int parse_digit(uint8_t b)
 {
@@ -71,7 +64,7 @@ static int parse_digit(uint8_t b)
 	case 0x3f:
 		return 9;
 	default:
-		sr_err("Invalid digit byte: 0x%02x.", b);
+		sr_dbg("Invalid digit byte: 0x%02x.", b);
 		return -1;
 	}
 }
@@ -83,7 +76,7 @@ static gboolean sync_nibbles_valid(const uint8_t *buf)
 	/* Check the synchronization nibbles, and make sure they all match. */
 	for (i = 0; i < FS9721_PACKET_SIZE; i++) {
 		if (((buf[i] >> 4) & 0x0f) != (i + 1)) {
-			sr_err("Sync nibble in byte %d (0x%02x) is invalid.",
+			sr_dbg("Sync nibble in byte %d (0x%02x) is invalid.",
 			       i, buf[i]);
 			return FALSE;
 		}
@@ -104,7 +97,7 @@ static gboolean flags_valid(const struct fs9721_info *info)
 	count += (info->is_kilo) ? 1 : 0;
 	count += (info->is_mega) ? 1 : 0;
 	if (count > 1) {
-		sr_err("More than one multiplier detected in packet.");
+		sr_dbg("More than one multiplier detected in packet.");
 		return FALSE;
 	}
 
@@ -117,19 +110,19 @@ static gboolean flags_valid(const struct fs9721_info *info)
 	count += (info->is_volt) ? 1 : 0;
 	count += (info->is_percent) ? 1 : 0;
 	if (count > 1) {
-		sr_err("More than one measurement type detected in packet.");
+		sr_dbg("More than one measurement type detected in packet.");
 		return FALSE;
 	}
 
 	/* Both AC and DC set? */
 	if (info->is_ac && info->is_dc) {
-		sr_err("Both AC and DC flags detected in packet.");
+		sr_dbg("Both AC and DC flags detected in packet.");
 		return FALSE;
 	}
 
 	/* RS232 flag not set? */
 	if (!info->is_rs232) {
-		sr_err("No RS232 flag detected in packet.");
+		sr_dbg("No RS232 flag detected in packet.");
 		return FALSE;
 	}
 
@@ -306,6 +299,8 @@ static void handle_flags(struct sr_datafeed_analog *analog, float *floatval,
 		analog->mqflags |= SR_MQFLAG_DC;
 	if (info->is_auto)
 		analog->mqflags |= SR_MQFLAG_AUTORANGE;
+	if (info->is_diode)
+		analog->mqflags |= SR_MQFLAG_DIODE;
 	if (info->is_hold)
 		analog->mqflags |= SR_MQFLAG_HOLD;
 	if (info->is_rel)
@@ -359,7 +354,7 @@ SR_PRIV int sr_fs9721_parse(const uint8_t *buf, float *floatval,
 	info_local = (struct fs9721_info *)info;
 
 	if ((ret = parse_value(buf, floatval)) != SR_OK) {
-		sr_err("Error parsing value: %d.", ret);
+		sr_dbg("Error parsing value: %d.", ret);
 		return ret;
 	}
 
@@ -425,4 +420,26 @@ SR_PRIV void sr_fs9721_01_10_temp_f_c(struct sr_datafeed_analog *analog, void *i
 		analog->mq = SR_MQ_TEMPERATURE;
 		analog->unit = SR_UNIT_CELSIUS;
 	}
+}
+
+SR_PRIV void sr_fs9721_max_c_min(struct sr_datafeed_analog *analog, void *info)
+{
+	struct fs9721_info *info_local;
+
+	info_local = (struct fs9721_info *)info;
+
+	/* User-defined FS9721_LP3 flag 'c2c1_00' means MAX. */
+	if (info_local->is_c2c1_00)
+		analog->mqflags |= SR_MQFLAG_MAX;
+
+	/* User-defined FS9721_LP3 flag 'c2c1_01' means temperature (C). */
+	if (info_local->is_c2c1_01) {
+		analog->mq = SR_MQ_TEMPERATURE;
+		analog->unit = SR_UNIT_CELSIUS;
+	}
+
+	/* User-defined FS9721_LP3 flag 'c2c1_11' means MIN. */
+	if (info_local->is_c2c1_11)
+		analog->mqflags |= SR_MQFLAG_MIN;
+
 }

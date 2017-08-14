@@ -25,14 +25,7 @@
 #include "libsigrok.h"
 #include "libsigrok-internal.h"
 
-/* Message logging helpers with subsystem-specific prefix string. */
-#define LOG_PREFIX "input/wav: "
-#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
-#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
-#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
-#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
-#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
-#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+#define LOG_PREFIX "input/wav"
 
 #define CHUNK_SIZE 4096
 
@@ -92,9 +85,9 @@ static int format_match(const char *filename)
 
 static int init(struct sr_input *in, const char *filename)
 {
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	struct context *ctx;
-	char buf[40], probename[8];
+	char buf[40], channelname[8];
 	int i;
 
 	if (get_wav_header(filename, buf) != SR_OK)
@@ -120,10 +113,10 @@ static int init(struct sr_input *in, const char *filename)
 	}
 
 	for (i = 0; i < ctx->num_channels; i++) {
-		snprintf(probename, 8, "CH%d", i + 1);
-		if (!(probe = sr_probe_new(0, SR_PROBE_ANALOG, TRUE, probename)))
+		snprintf(channelname, 8, "CH%d", i + 1);
+		if (!(ch = sr_channel_new(0, SR_CHANNEL_ANALOG, TRUE, channelname)))
 			return SR_ERR;
-		in->sdi->probes = g_slist_append(in->sdi->probes, probe);
+		in->sdi->channels = g_slist_append(in->sdi->channels, ch);
 	}
 
 	return SR_OK;
@@ -185,7 +178,7 @@ static int loadfile(struct sr_input *in, const char *filename)
 		}
 		packet.type = SR_DF_ANALOG;
 		packet.payload = &analog;
-		analog.probes = in->sdi->probes;
+		analog.channels = in->sdi->channels;
 		analog.num_samples = chunk_samples;
 		analog.mq = 0;
 		analog.unit = 0;

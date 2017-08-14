@@ -23,10 +23,8 @@
 #include "libsigrok-internal.h"
 #include "protocol.h"
 
-SR_PRIV struct sr_dev_inst *lascar_scan(int bus, int address);
 SR_PRIV struct sr_dev_driver lascar_el_usb_driver_info;
 static struct sr_dev_driver *di = &lascar_el_usb_driver_info;
-static int hw_dev_close(struct sr_dev_inst *sdi);
 
 static const int32_t hwopts[] = {
 	SR_CONF_CONN,
@@ -39,40 +37,12 @@ static const int32_t hwcaps[] = {
 	SR_CONF_LIMIT_SAMPLES,
 };
 
-/* Properly close and free all devices. */
-static int clear_instances(void)
+static int init(struct sr_context *sr_ctx)
 {
-	struct sr_dev_inst *sdi;
-	struct drv_context *drvc;
-	struct dev_context *devc;
-	GSList *l;
-
-	if (!(drvc = di->priv))
-		return SR_OK;
-
-	for (l = drvc->instances; l; l = l->next) {
-		if (!(sdi = l->data))
-			continue;
-		if (!(devc = sdi->priv))
-			continue;
-
-		hw_dev_close(sdi);
-		sr_usb_dev_inst_free(sdi->conn);
-		sr_dev_inst_free(sdi);
-	}
-
-	g_slist_free(drvc->instances);
-	drvc->instances = NULL;
-
-	return SR_OK;
+	return std_init(sr_ctx, di, LOG_PREFIX);
 }
 
-static int hw_init(struct sr_context *sr_ctx)
-{
-	return std_hw_init(sr_ctx, di, LOG_PREFIX);
-}
-
-static GSList *hw_scan(GSList *options)
+static GSList *scan(GSList *options)
 {
 	struct drv_context *drvc;
 	struct sr_dev_inst *sdi;
@@ -80,8 +50,6 @@ static GSList *hw_scan(GSList *options)
 	struct sr_config *src;
 	GSList *usb_devices, *devices, *l;
 	const char *conn;
-
-	(void)options;
 
 	drvc = di->priv;
 
@@ -120,12 +88,12 @@ static GSList *hw_scan(GSList *options)
 	return devices;
 }
 
-static GSList *hw_dev_list(void)
+static GSList *dev_list(void)
 {
 	return ((struct drv_context *)(di->priv))->instances;
 }
 
-static int hw_dev_open(struct sr_dev_inst *sdi)
+static int dev_open(struct sr_dev_inst *sdi)
 {
 	struct drv_context *drvc;
 	struct sr_usb_dev_inst *usb;
@@ -150,7 +118,7 @@ static int hw_dev_open(struct sr_dev_inst *sdi)
 	return ret;
 }
 
-static int hw_dev_close(struct sr_dev_inst *sdi)
+static int dev_close(struct sr_dev_inst *sdi)
 {
 	struct sr_usb_dev_inst *usb;
 
@@ -173,27 +141,32 @@ static int hw_dev_close(struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int hw_cleanup(void)
+static int cleanup(void)
 {
+	int ret;
 	struct drv_context *drvc;
 
 	if (!(drvc = di->priv))
 		/* Can get called on an unused driver, doesn't matter. */
 		return SR_OK;
 
-	clear_instances();
+
+	ret = std_dev_clear(di, NULL);
 	g_free(drvc);
 	di->priv = NULL;
 
-	return SR_OK;
+	return ret;
 }
 
-static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi)
+static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
 	struct dev_context *devc;
 	struct sr_usb_dev_inst *usb;
 	int ret;
 	char str[128];
+
+	(void)cg;
 
 	devc = sdi->priv;
 	switch (id) {
@@ -221,10 +194,13 @@ static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
+static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
 	struct dev_context *devc;
 	int ret;
+
+	(void)cg;
 
 	if (sdi->status != SR_ST_ACTIVE)
 		return SR_ERR_DEV_CLOSED;
@@ -258,10 +234,11 @@ static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
 	return ret;
 }
 
-static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
+static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
-
 	(void)sdi;
+	(void)cg;
 
 	switch (key) {
 	case SR_CONF_SCAN_OPTIONS:
@@ -349,8 +326,7 @@ static int lascar_proc_config(const struct sr_dev_inst *sdi)
 	return ret;
 }
 
-static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
-		void *cb_data)
+static int dev_acquisition_start(const struct sr_dev_inst *sdi, void *cb_data)
 {
 	struct sr_datafeed_packet packet;
 	struct sr_datafeed_meta meta;
@@ -359,10 +335,9 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 	struct drv_context *drvc;
 	struct sr_usb_dev_inst *usb;
 	struct libusb_transfer *xfer_in, *xfer_out;
-	const struct libusb_pollfd **pfd;
 	struct timeval tv;
 	uint64_t interval;
-	int ret, i;
+	int ret;
 	unsigned char cmd[3], resp[4], *buf;
 
 	if (sdi->status != SR_ST_ACTIVE)
@@ -459,15 +434,7 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 	devc->log_size = xfer_in->buffer[1] + (xfer_in->buffer[2] << 8);
 	libusb_free_transfer(xfer_out);
 
-	pfd = libusb_get_pollfds(drvc->sr_ctx->libusb_ctx);
-	for (i = 0; pfd[i]; i++) {
-		/* Handle USB events every 100ms, for decent latency. */
-		sr_source_add(pfd[i]->fd, pfd[i]->events, 100,
-				lascar_el_usb_handle_events, (void *)sdi);
-		/* We'll need to remove this fd later. */
-		devc->usbfd[i] = pfd[i]->fd;
-	}
-	devc->usbfd[i] = -1;
+	usb_source_add(drvc->sr_ctx, 100, lascar_el_usb_handle_events, (void *)sdi);
 
 	buf = g_try_malloc(4096);
 	libusb_fill_bulk_transfer(xfer_in, usb->devhdl, LASCAR_EP_IN,
@@ -482,7 +449,7 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 	return SR_OK;
 }
 
-SR_PRIV int hw_dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
+SR_PRIV int dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
 {
 	(void)cb_data;
 
@@ -506,17 +473,17 @@ SR_PRIV struct sr_dev_driver lascar_el_usb_driver_info = {
 	.name = "lascar-el-usb",
 	.longname = "Lascar EL-USB",
 	.api_version = 1,
-	.init = hw_init,
-	.cleanup = hw_cleanup,
-	.scan = hw_scan,
-	.dev_list = hw_dev_list,
-	.dev_clear = clear_instances,
+	.init = init,
+	.cleanup = cleanup,
+	.scan = scan,
+	.dev_list = dev_list,
+	.dev_clear = NULL,
 	.config_get = config_get,
 	.config_set = config_set,
 	.config_list = config_list,
-	.dev_open = hw_dev_open,
-	.dev_close = hw_dev_close,
-	.dev_acquisition_start = hw_dev_acquisition_start,
-	.dev_acquisition_stop = hw_dev_acquisition_stop,
+	.dev_open = dev_open,
+	.dev_close = dev_close,
+	.dev_acquisition_start = dev_acquisition_start,
+	.dev_acquisition_stop = dev_acquisition_stop,
 	.priv = NULL,
 };

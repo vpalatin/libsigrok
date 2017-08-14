@@ -29,14 +29,7 @@
 #include "libsigrok.h"
 #include "libsigrok-internal.h"
 
-/* Message logging helpers with subsystem-specific prefix string. */
-#define LOG_PREFIX "fs9922: "
-#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
-#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
-#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
-#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
-#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
-#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+#define LOG_PREFIX "fs9922"
 
 static gboolean flags_valid(const struct fs9922_info *info)
 {
@@ -50,7 +43,7 @@ static gboolean flags_valid(const struct fs9922_info *info)
 	count += (info->is_kilo) ? 1 : 0;
 	count += (info->is_mega) ? 1 : 0;
 	if (count > 1) {
-		sr_err("More than one multiplier detected in packet.");
+		sr_dbg("More than one multiplier detected in packet.");
 		return FALSE;
 	}
 
@@ -73,19 +66,19 @@ static gboolean flags_valid(const struct fs9922_info *info)
 	count += (info->is_celsius) ? 1 : 0;
 	count += (info->is_fahrenheit) ? 1 : 0;
 	if (count > 1) {
-		sr_err("More than one measurement type detected in packet.");
+		sr_dbg("More than one measurement type detected in packet.");
 		return FALSE;
 	}
 
 	/* Both AC and DC set? */
 	if (info->is_ac && info->is_dc) {
-		sr_err("Both AC and DC flags detected in packet.");
+		sr_dbg("Both AC and DC flags detected in packet.");
 		return FALSE;
 	}
 
 	/* Both Celsius and Fahrenheit set? */
 	if (info->is_celsius && info->is_fahrenheit) {
-		sr_err("Both Celsius and Fahrenheit flags detected in packet.");
+		sr_dbg("Both Celsius and Fahrenheit flags detected in packet.");
 		return FALSE;
 	}
 
@@ -103,7 +96,7 @@ static int parse_value(const uint8_t *buf, float *result)
 	} else if (buf[0] == '-') {
 		sign = -1;
 	} else {
-		sr_err("Invalid sign byte: 0x%02x.", buf[0]);
+		sr_dbg("Invalid sign byte: 0x%02x.", buf[0]);
 		return SR_ERR;
 	}
 
@@ -118,7 +111,7 @@ static int parse_value(const uint8_t *buf, float *result)
 		return SR_OK;
 	} else if (!isdigit(buf[1]) || !isdigit(buf[2]) ||
 		   !isdigit(buf[3]) || !isdigit(buf[4])) {
-		sr_err("Value contained invalid digits: %02x %02x %02x %02x ("
+		sr_dbg("Value contained invalid digits: %02x %02x %02x %02x ("
 		       "%c %c %c %c).", buf[1], buf[2], buf[3], buf[4]);
 		return SR_ERR;
 	}
@@ -140,7 +133,7 @@ static int parse_value(const uint8_t *buf, float *result)
 	 * used, but '0'/'1'/'2'/'4' is actually correct.
 	 */
 	if (buf[6] != '0' && buf[6] != '1' && buf[6] != '2' && buf[6] != '4') {
-		sr_err("Invalid decimal point value: 0x%02x.", buf[6]);
+		sr_dbg("Invalid decimal point value: 0x%02x.", buf[6]);
 		return SR_ERR;
 	}
 	if (buf[6] == '0')
@@ -194,7 +187,7 @@ static void parse_flags(const uint8_t *buf, struct fs9922_info *info)
 	info->is_beep       = (buf[9] & (1 << 3)) != 0;
 	info->is_diode      = (buf[9] & (1 << 2)) != 0;
 	info->is_percent    = (buf[9] & (1 << 1)) != 0;
-	info->is_z4         = (buf[8] & (1 << 0)) != 0; /* User symbol 4 */
+	info->is_z4         = (buf[9] & (1 << 0)) != 0; /* User symbol 4 */
 
 	/* Byte 10 */
 	info->is_volt       = (buf[10] & (1 << 7)) != 0;
@@ -293,6 +286,8 @@ static void handle_flags(struct sr_datafeed_analog *analog, float *floatval,
 		analog->mqflags |= SR_MQFLAG_DC;
 	if (info->is_auto)
 		analog->mqflags |= SR_MQFLAG_AUTORANGE;
+	if (info->is_diode)
+		analog->mqflags |= SR_MQFLAG_DIODE;
 	if (info->is_hold)
 		analog->mqflags |= SR_MQFLAG_HOLD;
 	if (info->is_max)
@@ -364,7 +359,7 @@ SR_PRIV int sr_fs9922_parse(const uint8_t *buf, float *floatval,
 	info_local = (struct fs9922_info *)info;
 
 	if ((ret = parse_value(buf, floatval)) != SR_OK) {
-		sr_err("Error parsing value: %d.", ret);
+		sr_dbg("Error parsing value: %d.", ret);
 		return ret;
 	}
 
@@ -372,4 +367,18 @@ SR_PRIV int sr_fs9922_parse(const uint8_t *buf, float *floatval,
 	handle_flags(analog, floatval, info_local);
 
 	return SR_OK;
+}
+
+SR_PRIV void sr_fs9922_z1_diode(struct sr_datafeed_analog *analog, void *info)
+{
+	struct fs9922_info *info_local;
+
+	info_local = (struct fs9922_info *)info;
+
+	/* User-defined z1 flag means "diode mode". */
+	if (info_local->is_z1) {
+		analog->mq = SR_MQ_VOLTAGE;
+		analog->unit = SR_UNIT_VOLT;
+		analog->mqflags |= SR_MQFLAG_DIODE;
+	}
 }

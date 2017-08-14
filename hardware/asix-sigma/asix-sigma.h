@@ -22,14 +22,7 @@
 #ifndef LIBSIGROK_HARDWARE_ASIX_SIGMA_ASIX_SIGMA_H
 #define LIBSIGROK_HARDWARE_ASIX_SIGMA_ASIX_SIGMA_H
 
-/* Message logging helpers with subsystem-specific prefix string. */
-#define LOG_PREFIX "asix-sigma: "
-#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
-#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
-#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
-#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
-#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
-#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+#define LOG_PREFIX "asix-sigma"
 
 enum sigma_write_register {
 	WRITE_CLOCK_SELECT	= 0,
@@ -62,17 +55,17 @@ enum sigma_read_register {
 	READ_TEST		= 15,
 };
 
-#define REG_ADDR_LOW		(0 << 4)
-#define REG_ADDR_HIGH		(1 << 4)
-#define REG_DATA_LOW		(2 << 4)
-#define REG_DATA_HIGH_WRITE	(3 << 4)
-#define REG_READ_ADDR		(4 << 4)
-#define REG_DRAM_WAIT_ACK	(5 << 4)
+#define REG_ADDR_LOW		(0x0 << 4)
+#define REG_ADDR_HIGH		(0x1 << 4)
+#define REG_DATA_LOW		(0x2 << 4)
+#define REG_DATA_HIGH_WRITE	(0x3 << 4)
+#define REG_READ_ADDR		(0x4 << 4)
+#define REG_DRAM_WAIT_ACK	(0x5 << 4)
 
 /* Bit (1 << 4) can be low or high (double buffer / cache) */
-#define REG_DRAM_BLOCK		(6 << 4)
-#define REG_DRAM_BLOCK_BEGIN	(8 << 4)
-#define REG_DRAM_BLOCK_DATA	(10 << 4)
+#define REG_DRAM_BLOCK		(0x6 << 4)
+#define REG_DRAM_BLOCK_BEGIN	(0x8 << 4)
+#define REG_DRAM_BLOCK_DATA	(0xa << 4)
 
 #define LEDSEL0			6
 #define LEDSEL1			7
@@ -83,10 +76,29 @@ enum sigma_read_register {
 
 #define CHUNK_SIZE		1024
 
+/*
+ * The entire ASIX Sigma DRAM is an array of struct sigma_dram_line[1024];
+ */
+
+/* One "DRAM cluster" contains a timestamp and 7 samples, 16b total. */
+struct sigma_dram_cluster {
+	uint8_t		timestamp_lo;
+	uint8_t		timestamp_hi;
+	struct {
+		uint8_t	sample_hi;
+		uint8_t	sample_lo;
+	}		samples[7];
+};
+
+/* One "DRAM line" contains 64 "DRAM clusters", 1024b total. */
+struct sigma_dram_line {
+	struct sigma_dram_cluster	cluster[64];
+};
+
 struct clockselect_50 {
 	uint8_t async;
 	uint8_t fraction;
-	uint16_t disabled_probes;
+	uint16_t disabled_channels;
 };
 
 /* The effect of all these are still a bit unclear. */
@@ -133,7 +145,7 @@ struct triggerlut {
 
 /* Trigger configuration */
 struct sigma_trigger {
-	/* Only two probes can be used in mask. */
+	/* Only two channels can be used in mask. */
 	uint16_t risingmask;
 	uint16_t fallingmask;
 
@@ -174,12 +186,8 @@ struct sigma_state {
 		SIGMA_DOWNLOAD,
 	} state;
 
-	uint32_t stoppos, triggerpos;
 	uint16_t lastts;
 	uint16_t lastsample;
-
-	int triggerchunk;
-	int chunks_downloaded;
 };
 
 /* Private, per-device-instance driver context. */
@@ -190,7 +198,8 @@ struct dev_context {
 	uint64_t limit_msec;
 	struct timeval start_tv;
 	int cur_firmware;
-	int num_probes;
+	int num_channels;
+	int cur_channels;
 	int samples_per_event;
 	int capture_ratio;
 	struct sigma_trigger trigger;

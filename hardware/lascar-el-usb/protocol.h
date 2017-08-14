@@ -24,14 +24,7 @@
 #include "libsigrok.h"
 #include "libsigrok-internal.h"
 
-/* Message logging helpers with subsystem-specific prefix string. */
-#define LOG_PREFIX "lascar-el-usb: "
-#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
-#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
-#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
-#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
-#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
-#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+#define LOG_PREFIX "lascar-el-usb"
 
 #define LASCAR_VENDOR "Lascar"
 #define LASCAR_INTERFACE 0
@@ -45,7 +38,6 @@
 struct dev_context {
 	void *cb_data;
 	const struct elusb_profile *profile;
-	int usbfd[10];
 	/* Generic EL-USB */
 	unsigned char config[MAX_CONFIGBLOCK_SIZE];
 	unsigned int log_size;
@@ -77,11 +69,12 @@ struct elusb_profile {
 
 SR_PRIV int lascar_get_config(libusb_device_handle *dev_hdl,
 		unsigned char *configblock, int *configlen);
+SR_PRIV struct sr_dev_inst *lascar_scan(int bus, int address);
 SR_PRIV int lascar_el_usb_handle_events(int fd, int revents, void *cb_data);
 SR_PRIV void lascar_el_usb_receive_transfer(struct libusb_transfer *transfer);
 SR_PRIV int lascar_start_logging(const struct sr_dev_inst *sdi);
 SR_PRIV int lascar_stop_logging(const struct sr_dev_inst *sdi);
 SR_PRIV int lascar_is_logging(const struct sr_dev_inst *sdi);
-SR_PRIV int hw_dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data);
+SR_PRIV int dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data);
 
 #endif

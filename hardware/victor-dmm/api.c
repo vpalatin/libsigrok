@@ -33,8 +33,7 @@
 
 SR_PRIV struct sr_dev_driver victor_dmm_driver_info;
 static struct sr_dev_driver *di = &victor_dmm_driver_info;
-static int hw_dev_close(struct sr_dev_inst *sdi);
-static int hw_dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data);
+static int dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data);
 
 static const int32_t hwopts[] = {
 	SR_CONF_CONN,
@@ -47,45 +46,17 @@ static const int32_t hwcaps[] = {
 	SR_CONF_CONTINUOUS,
 };
 
-/* Properly close and free all devices. */
-static int clear_instances(void)
+static int init(struct sr_context *sr_ctx)
 {
-	struct sr_dev_inst *sdi;
-	struct drv_context *drvc;
-	struct dev_context *devc;
-	GSList *l;
-
-	if (!(drvc = di->priv))
-		/* Can get called on an unused driver, doesn't matter. */
-		return SR_OK;
-
-	for (l = drvc->instances; l; l = l->next) {
-		if (!(sdi = l->data))
-			continue;
-		if (!(devc = sdi->priv))
-			continue;
-		hw_dev_close(sdi);
-		sr_usb_dev_inst_free(sdi->conn);
-		sr_dev_inst_free(sdi);
-	}
-
-	g_slist_free(drvc->instances);
-	drvc->instances = NULL;
-
-	return SR_OK;
+	return std_init(sr_ctx, di, LOG_PREFIX);
 }
 
-static int hw_init(struct sr_context *sr_ctx)
-{
-	return std_hw_init(sr_ctx, di, LOG_PREFIX);
-}
-
-static GSList *hw_scan(GSList *options)
+static GSList *scan(GSList *options)
 {
 	struct drv_context *drvc;
 	struct dev_context *devc;
 	struct sr_dev_inst *sdi;
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	struct libusb_device_descriptor des;
 	libusb_device **devlist;
 	GSList *devices;
@@ -117,9 +88,9 @@ static GSList *hw_scan(GSList *options)
 			return NULL;
 		sdi->priv = devc;
 
-		if (!(probe = sr_probe_new(0, SR_PROBE_ANALOG, TRUE, "P1")))
+		if (!(ch = sr_channel_new(0, SR_CHANNEL_ANALOG, TRUE, "P1")))
 			return NULL;
-		sdi->probes = g_slist_append(NULL, probe);
+		sdi->channels = g_slist_append(NULL, ch);
 
 		if (!(sdi->conn = sr_usb_dev_inst_new(libusb_get_bus_number(devlist[i]),
 				libusb_get_device_address(devlist[i]), NULL)))
@@ -134,12 +105,12 @@ static GSList *hw_scan(GSList *options)
 	return devices;
 }
 
-static GSList *hw_dev_list(void)
+static GSList *dev_list(void)
 {
 	return ((struct drv_context *)(di->priv))->instances;
 }
 
-static int hw_dev_open(struct sr_dev_inst *sdi)
+static int dev_open(struct sr_dev_inst *sdi)
 {
 	struct drv_context *drvc = di->priv;
 	struct sr_usb_dev_inst *usb;
@@ -190,7 +161,7 @@ static int hw_dev_open(struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int hw_dev_close(struct sr_dev_inst *sdi)
+static int dev_close(struct sr_dev_inst *sdi)
 {
 	struct sr_usb_dev_inst *usb;
 
@@ -213,25 +184,30 @@ static int hw_dev_close(struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int hw_cleanup(void)
+static int cleanup(void)
 {
+	int ret;
 	struct drv_context *drvc;
 
 	if (!(drvc = di->priv))
 		/* Can get called on an unused driver, doesn't matter. */
 		return SR_OK;
 
-	clear_instances();
+
+	ret = std_dev_clear(di, NULL);
 	g_free(drvc);
 	di->priv = NULL;
 
-	return SR_OK;
+	return ret;
 }
 
-static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi)
+static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
 	struct sr_usb_dev_inst *usb;
 	char str[128];
+
+	(void)cg;
 
 	switch (id) {
 	case SR_CONF_CONN:
@@ -248,11 +224,14 @@ static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
+static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
 	struct dev_context *devc;
 	gint64 now;
 	int ret;
+
+	(void)cg;
 
 	if (sdi->status != SR_ST_ACTIVE)
 		return SR_ERR_DEV_CLOSED;
@@ -284,10 +263,11 @@ static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
 	return ret;
 }
 
-static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
+static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
-
 	(void)sdi;
+	(void)cg;
 
 	switch (key) {
 	case SR_CONF_SCAN_OPTIONS:
@@ -315,14 +295,14 @@ static void receive_transfer(struct libusb_transfer *transfer)
 	devc = sdi->priv;
 	if (transfer->status == LIBUSB_TRANSFER_NO_DEVICE) {
 		/* USB device was unplugged. */
-		hw_dev_acquisition_stop(sdi, sdi);
+		dev_acquisition_stop(sdi, sdi);
 	} else if (transfer->status == LIBUSB_TRANSFER_COMPLETED) {
 		sr_dbg("Got %d-byte packet.", transfer->actual_length);
 		if (transfer->actual_length == DMM_DATA_SIZE) {
 			victor_dmm_receive_data(sdi, transfer->buffer);
 			if (devc->limit_samples) {
 				if (devc->num_samples >= devc->limit_samples)
-					hw_dev_acquisition_stop(sdi, sdi);
+					dev_acquisition_stop(sdi, sdi);
 			}
 		}
 	}
@@ -336,7 +316,7 @@ static void receive_transfer(struct libusb_transfer *transfer)
 			       libusb_error_name(ret));
 			g_free(transfer->buffer);
 			libusb_free_transfer(transfer);
-			hw_dev_acquisition_stop(sdi, sdi);
+			dev_acquisition_stop(sdi, sdi);
 		}
 	} else {
 		/* This was the last transfer we're going to receive, so
@@ -354,7 +334,6 @@ static int handle_events(int fd, int revents, void *cb_data)
 	struct sr_dev_inst *sdi;
 	struct timeval tv;
 	gint64 now;
-	int i;
 
 	(void)fd;
 	(void)revents;
@@ -365,14 +344,13 @@ static int handle_events(int fd, int revents, void *cb_data)
 	if (devc->limit_msec) {
 		now = g_get_monotonic_time() / 1000;
 		if (now > devc->end_time)
-			hw_dev_acquisition_stop(sdi, sdi);
+			dev_acquisition_stop(sdi, sdi);
 	}
 
 	if (sdi->status == SR_ST_STOPPING) {
-		for (i = 0; devc->usbfd[i] != -1; i++)
-			sr_source_remove(devc->usbfd[i]);
+		usb_source_remove(drvc->sr_ctx);
 
-		hw_dev_close(sdi);
+		dev_close(sdi);
 
 		packet.type = SR_DF_END;
 		sr_session_send(cb_data, &packet);
@@ -385,15 +363,13 @@ static int handle_events(int fd, int revents, void *cb_data)
 	return TRUE;
 }
 
-static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
-				    void *cb_data)
+static int dev_acquisition_start(const struct sr_dev_inst *sdi, void *cb_data)
 {
 	struct dev_context *devc;
 	struct drv_context *drvc = di->priv;
-	const struct libusb_pollfd **pfd;
 	struct sr_usb_dev_inst *usb;
 	struct libusb_transfer *transfer;
-	int ret, i;
+	int ret;
 	unsigned char *buf;
 
 	if (sdi->status != SR_ST_ACTIVE)
@@ -411,15 +387,7 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 	/* Send header packet to the session bus. */
 	std_session_send_df_header(cb_data, LOG_PREFIX);
 
-	pfd = libusb_get_pollfds(drvc->sr_ctx->libusb_ctx);
-	for (i = 0; pfd[i]; i++) {
-		/* Handle USB events every 100ms, for decent latency. */
-		sr_source_add(pfd[i]->fd, pfd[i]->events, 100,
-				handle_events, (void *)sdi);
-		/* We'll need to remove this fd later. */
-		devc->usbfd[i] = pfd[i]->fd;
-	}
-	devc->usbfd[i] = -1;
+	usb_source_add(drvc->sr_ctx, 100, handle_events, (void *)sdi);
 
 	buf = g_try_malloc(DMM_DATA_SIZE);
 	transfer = libusb_alloc_transfer(0);
@@ -440,7 +408,7 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 	return SR_OK;
 }
 
-static int hw_dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
+static int dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
 {
 	(void)cb_data;
 
@@ -463,17 +431,17 @@ SR_PRIV struct sr_dev_driver victor_dmm_driver_info = {
 	.name = "victor-dmm",
 	.longname = "Victor DMMs",
 	.api_version = 1,
-	.init = hw_init,
-	.cleanup = hw_cleanup,
-	.scan = hw_scan,
-	.dev_list = hw_dev_list,
-	.dev_clear = clear_instances,
+	.init = init,
+	.cleanup = cleanup,
+	.scan = scan,
+	.dev_list = dev_list,
+	.dev_clear = NULL,
 	.config_get = config_get,
 	.config_set = config_set,
 	.config_list = config_list,
-	.dev_open = hw_dev_open,
-	.dev_close = hw_dev_close,
-	.dev_acquisition_start = hw_dev_acquisition_start,
-	.dev_acquisition_stop = hw_dev_acquisition_stop,
+	.dev_open = dev_open,
+	.dev_close = dev_close,
+	.dev_acquisition_start = dev_acquisition_start,
+	.dev_acquisition_stop = dev_acquisition_stop,
 	.priv = NULL,
 };

@@ -28,14 +28,7 @@
 #include "libsigrok.h"
 #include "libsigrok-internal.h"
 
-/* Message logging helpers with subsystem-specific prefix string. */
-#define LOG_PREFIX "brymen-dmm: "
-#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
-#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
-#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
-#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
-#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
-#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+#define LOG_PREFIX "brymen-dmm"
 
 #define DMM_BUFSIZE 256
 
@@ -83,10 +76,13 @@ SR_PRIV int brymen_packet_request(struct sr_serial_dev_inst *serial);
 SR_PRIV int brymen_packet_length(const uint8_t *buf, int *len);
 SR_PRIV gboolean brymen_packet_is_valid(const uint8_t *buf);
 
+SR_PRIV int brymen_parse(const uint8_t *buf, float *floatval,
+		struct sr_datafeed_analog *analog, void *info);
+
 SR_PRIV int brymen_stream_detect(struct sr_serial_dev_inst *serial,
 				 uint8_t *buf, size_t *buflen,
 				 packet_length_t get_packet_size,
-				 packet_valid_t is_valid,
+				 packet_valid_callback is_valid,
 				 uint64_t timeout_ms, int baudrate);
 
 #endif

@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <math.h>
 #ifdef _WIN32
 #include <io.h>
 #include <fcntl.h>
@@ -31,85 +32,57 @@
 #include "libsigrok.h"
 #include "libsigrok-internal.h"
 
-/* Message logging helpers with subsystem-specific prefix string. */
-#define LOG_PREFIX "demo: "
-#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
-#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
-#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
-#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
-#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
-#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+#define LOG_PREFIX "demo"
 
-/* TODO: Number of probes should be configurable. */
-#define NUM_PROBES             8
+#define DEFAULT_NUM_LOGIC_CHANNELS     8
+#define DEFAULT_NUM_ANALOG_CHANNELS    4
 
-#define DEMONAME               "Demo device"
+/* The size in bytes of chunks to send through the session bus. */
+#define LOGIC_BUFSIZE        4096
+/* Size of the analog pattern space per channel. */
+#define ANALOG_BUFSIZE       4096
 
-/* The size of chunks to send through the session bus. */
-/* TODO: Should be configurable. */
-#define BUFSIZE                4096
+#define ANALOG_AMPLITUDE 25
+#define ANALOG_SAMPLES_PER_PERIOD 20
 
-#define STR_PATTERN_SIGROK   "sigrok"
-#define STR_PATTERN_RANDOM   "random"
-#define STR_PATTERN_INC      "incremental"
-#define STR_PATTERN_ALL_LOW  "all-low"
-#define STR_PATTERN_ALL_HIGH "all-high"
-
-/* Supported patterns which we can generate */
+/* Logic patterns we can generate. */
 enum {
 	/**
-	 * Pattern which spells "sigrok" using '0's (with '1's as "background")
-	 * when displayed using the 'bits' output format.
+	 * Spells "sigrok" across 8 channels using '0's (with '1's as
+	 * "background") when displayed using the 'bits' output format.
+	 * The pattern is repeated every 8 channels, shifted to the right
+	 * in time by one bit.
 	 */
 	PATTERN_SIGROK,
 
-	/** Pattern which consists of (pseudo-)random values on all probes. */
+	/** Pseudo-random values on all channels. */
 	PATTERN_RANDOM,
 
 	/**
-	 * Pattern which consists of incrementing numbers.
-	 * TODO: Better description.
+	 * Incrementing number across 8 channels. The pattern is repeated
+	 * every 8 channels, shifted to the right in time by one bit.
 	 */
 	PATTERN_INC,
 
-	/** Pattern where all probes have a low logic state. */
+	/** All channels have a low logic state. */
 	PATTERN_ALL_LOW,
 
-	/** Pattern where all probes have a high logic state. */
+	/** All channels have a high logic state. */
 	PATTERN_ALL_HIGH,
 };
 
-/* Private, per-device-instance driver context. */
-struct dev_context {
-	struct sr_dev_inst *sdi;
-	int pipe_fds[2];
-	GIOChannel *channel;
-	uint64_t cur_samplerate;
-	uint64_t limit_samples;
-	uint64_t limit_msec;
-	uint8_t sample_generator;
-	uint64_t samples_counter;
-	void *cb_data;
-	int64_t starttime;
+/* Analog patterns we can generate. */
+enum {
+	/**
+	 * Square wave.
+	 */
+	PATTERN_SQUARE,
+	PATTERN_SINE,
+	PATTERN_TRIANGLE,
+	PATTERN_SAWTOOTH,
 };
 
-static const int hwcaps[] = {
-	SR_CONF_LOGIC_ANALYZER,
-	SR_CONF_DEMO_DEV,
-	SR_CONF_SAMPLERATE,
-	SR_CONF_PATTERN_MODE,
-	SR_CONF_LIMIT_SAMPLES,
-	SR_CONF_LIMIT_MSEC,
-	SR_CONF_CONTINUOUS,
-};
-
-static const uint64_t samplerates[] = {
-	SR_HZ(1),
-	SR_GHZ(1),
-	SR_HZ(1),
-};
-
-static const char *pattern_strings[] = {
+static const char *logic_pattern_str[] = {
 	"sigrok",
 	"random",
 	"incremental",
@@ -117,10 +90,63 @@ static const char *pattern_strings[] = {
 	"all-high",
 };
 
-/* We name the probes 0-7 on our demo driver. */
-static const char *probe_names[NUM_PROBES + 1] = {
-	"0", "1", "2", "3", "4", "5", "6", "7",
-	NULL,
+static const char *analog_pattern_str[] = {
+	"square",
+	"sine",
+	"triangle",
+	"sawtooth",
+};
+
+struct analog_gen {
+	int pattern;
+	float pattern_data[ANALOG_BUFSIZE];
+	unsigned int num_samples;
+	struct sr_datafeed_analog packet;
+};
+
+/* Private, per-device-instance driver context. */
+struct dev_context {
+	int pipe_fds[2];
+	GIOChannel *channel;
+	uint64_t cur_samplerate;
+	uint64_t limit_samples;
+	uint64_t limit_msec;
+	uint64_t logic_counter;
+	uint64_t analog_counter;
+	int64_t starttime;
+	uint64_t step;
+	/* Logic */
+	int32_t num_logic_channels;
+	unsigned int logic_unitsize;
+	/* There is only ever one logic channel group, so its pattern goes here. */
+	uint8_t logic_pattern;
+	unsigned char logic_data[LOGIC_BUFSIZE];
+	/* Analog */
+	int32_t num_analog_channels;
+	GSList *analog_channel_groups;
+};
+
+static const int32_t scanopts[] = {
+	SR_CONF_NUM_LOGIC_CHANNELS,
+	SR_CONF_NUM_ANALOG_CHANNELS,
+};
+
+static const int devopts[] = {
+	SR_CONF_LOGIC_ANALYZER,
+	SR_CONF_DEMO_DEV,
+	SR_CONF_SAMPLERATE,
+	SR_CONF_LIMIT_SAMPLES,
+	SR_CONF_LIMIT_MSEC,
+};
+
+static const int devopts_cg[] = {
+	SR_CONF_PATTERN_MODE,
+};
+
+static const uint64_t samplerates[] = {
+	SR_HZ(1),
+	SR_GHZ(1),
+	SR_HZ(1),
 };
 
 static uint8_t pattern_sigrok[] = {
@@ -134,128 +160,239 @@ static uint8_t pattern_sigrok[] = {
 	0xbe, 0xbe, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
-/* Private, per-device-instance driver context. */
-/* TODO: struct context as with the other drivers. */
-
-/* List of struct sr_dev_inst, maintained by dev_open()/dev_close(). */
 SR_PRIV struct sr_dev_driver demo_driver_info;
 static struct sr_dev_driver *di = &demo_driver_info;
 
-static int hw_dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data);
+static int dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data);
 
-static int clear_instances(void)
+
+static int init(struct sr_context *sr_ctx)
 {
-	/* Nothing needed so far. */
-
-	return SR_OK;
+	return std_init(sr_ctx, di, LOG_PREFIX);
 }
 
-static int hw_init(struct sr_context *sr_ctx)
+static void generate_analog_pattern(const struct sr_channel_group *cg, uint64_t sample_rate)
 {
-	return std_hw_init(sr_ctx, di, LOG_PREFIX);
+	struct analog_gen *ag;
+	double t, frequency;
+	float value;
+	unsigned int num_samples, i;
+	int last_end;
+
+	ag = cg->priv;
+	num_samples = ANALOG_BUFSIZE / sizeof(float);
+
+	sr_dbg("Generating %s pattern for channel group %s",
+	       analog_pattern_str[ag->pattern], cg->name);
+
+	switch (ag->pattern) {
+	case PATTERN_SQUARE:
+		value = ANALOG_AMPLITUDE;
+		last_end = 0;
+		for (i = 0; i < num_samples; i++) {
+			if (i % 5 == 0)
+				value = -value;
+			if (i % 10 == 0)
+				last_end = i - 1;
+			ag->pattern_data[i] = value;
+		}
+		ag->num_samples = last_end;
+		break;
+
+	case PATTERN_SINE:
+		frequency = (double) sample_rate / ANALOG_SAMPLES_PER_PERIOD;
+
+		/* Make sure the number of samples we put out is an integer
+		 * multiple of our period size */
+		/* FIXME we actually need only one period. A ringbuffer would be
+		 * usefull here.*/
+		while (num_samples % ANALOG_SAMPLES_PER_PERIOD != 0)
+			num_samples--;
+
+		for (i = 0; i < num_samples; i++) {
+			t = (double) i / (double) sample_rate;
+			ag->pattern_data[i] = ANALOG_AMPLITUDE *
+						sin(2 * M_PI * frequency * t);
+		}
+
+		ag->num_samples = num_samples;
+		break;
+
+	case PATTERN_TRIANGLE:
+		frequency = (double) sample_rate / ANALOG_SAMPLES_PER_PERIOD;
+
+		while (num_samples % ANALOG_SAMPLES_PER_PERIOD != 0)
+			num_samples--;
+
+		for (i = 0; i < num_samples; i++) {
+			t = (double) i / (double) sample_rate;
+			ag->pattern_data[i] = (2 * ANALOG_AMPLITUDE / M_PI) *
+						asin(sin(2 * M_PI * frequency * t));
+		}
+
+		ag->num_samples = num_samples;
+		break;
+
+	case PATTERN_SAWTOOTH:
+		frequency = (double) sample_rate / ANALOG_SAMPLES_PER_PERIOD;
+
+		while (num_samples % ANALOG_SAMPLES_PER_PERIOD != 0)
+			num_samples--;
+
+		for (i = 0; i < num_samples; i++) {
+			t = (double) i / (double) sample_rate;
+			ag->pattern_data[i] = 2 * ANALOG_AMPLITUDE *
+						((t * frequency) - floor(0.5f + t * frequency));
+		}
+
+		ag->num_samples = num_samples;
+		break;
+	}
 }
 
-static GSList *hw_scan(GSList *options)
+static GSList *scan(GSList *options)
 {
-	struct sr_dev_inst *sdi;
-	struct sr_probe *probe;
 	struct drv_context *drvc;
 	struct dev_context *devc;
-	GSList *devices;
-	int i;
-
-	(void)options;
+	struct sr_dev_inst *sdi;
+	struct sr_channel *ch;
+	struct sr_channel_group *cg;
+	struct sr_config *src;
+	struct analog_gen *ag;
+	GSList *devices, *l;
+	int num_logic_channels, num_analog_channels, pattern, i;
+	char channel_name[16];
 
 	drvc = di->priv;
 
-	devices = NULL;
+	num_logic_channels = DEFAULT_NUM_LOGIC_CHANNELS;
+	num_analog_channels = DEFAULT_NUM_ANALOG_CHANNELS;
+	for (l = options; l; l = l->next) {
+		src = l->data;
+		switch (src->key) {
+		case SR_CONF_NUM_LOGIC_CHANNELS:
+			num_logic_channels = g_variant_get_int32(src->data);
+			break;
+		case SR_CONF_NUM_ANALOG_CHANNELS:
+			num_analog_channels = g_variant_get_int32(src->data);
+			break;
+		}
+	}
 
-	sdi = sr_dev_inst_new(0, SR_ST_ACTIVE, DEMONAME, NULL, NULL);
+	devices = NULL;
+	sdi = sr_dev_inst_new(0, SR_ST_ACTIVE, "Demo device", NULL, NULL);
 	if (!sdi) {
 		sr_err("Device instance creation failed.");
 		return NULL;
 	}
 	sdi->driver = di;
 
-	for (i = 0; probe_names[i]; i++) {
-		if (!(probe = sr_probe_new(i, SR_PROBE_LOGIC, TRUE,
-				probe_names[i])))
-			return NULL;
-		sdi->probes = g_slist_append(sdi->probes, probe);
-	}
-
-	devices = g_slist_append(devices, sdi);
-	drvc->instances = g_slist_append(drvc->instances, sdi);
-
 	if (!(devc = g_try_malloc(sizeof(struct dev_context)))) {
 		sr_err("Device context malloc failed.");
 		return NULL;
 	}
-
-	devc->sdi = sdi;
 	devc->cur_samplerate = SR_KHZ(200);
 	devc->limit_samples = 0;
 	devc->limit_msec = 0;
-	devc->sample_generator = PATTERN_SIGROK;
+	devc->step = 0;
+	devc->num_logic_channels = num_logic_channels;
+	devc->logic_unitsize = (devc->num_logic_channels + 7) / 8;
+	devc->logic_pattern = PATTERN_SIGROK;
+	devc->num_analog_channels = num_analog_channels;
+	devc->analog_channel_groups = NULL;
+
+	/* Logic channels, all in one channel group. */
+	if (!(cg = g_try_malloc(sizeof(struct sr_channel_group))))
+		return NULL;
+	cg->name = g_strdup("Logic");
+	cg->channels = NULL;
+	cg->priv = NULL;
+	for (i = 0; i < num_logic_channels; i++) {
+		sprintf(channel_name, "D%d", i);
+		if (!(ch = sr_channel_new(i, SR_CHANNEL_LOGIC, TRUE, channel_name)))
+			return NULL;
+		sdi->channels = g_slist_append(sdi->channels, ch);
+		cg->channels = g_slist_append(cg->channels, ch);
+	}
+	sdi->channel_groups = g_slist_append(NULL, cg);
+
+	/* Analog channels, channel groups and pattern generators. */
+
+	pattern = 0;
+	for (i = 0; i < num_analog_channels; i++) {
+		sprintf(channel_name, "A%d", i);
+		if (!(ch = sr_channel_new(i + num_logic_channels,
+				SR_CHANNEL_ANALOG, TRUE, channel_name)))
+			return NULL;
+		sdi->channels = g_slist_append(sdi->channels, ch);
+
+		/* Every analog channel gets its own channel group. */
+		if (!(cg = g_try_malloc(sizeof(struct sr_channel_group))))
+			return NULL;
+		cg->name = g_strdup(channel_name);
+		cg->channels = g_slist_append(NULL, ch);
+
+		/* Every channel group gets a generator struct. */
+		if (!(ag = g_try_malloc(sizeof(struct analog_gen))))
+			return NULL;
+		ag->packet.channels = cg->channels;
+		ag->packet.mq = 0;
+		ag->packet.mqflags = 0;
+		ag->packet.unit = SR_UNIT_VOLT;
+		ag->packet.data = ag->pattern_data;
+		ag->pattern = pattern;
+		cg->priv = ag;
+
+		sdi->channel_groups = g_slist_append(sdi->channel_groups, cg);
+		devc->analog_channel_groups = g_slist_append(devc->analog_channel_groups, cg);
+
+		if (++pattern == ARRAY_SIZE(analog_pattern_str))
+			pattern = 0;
+	}
 
 	sdi->priv = devc;
+	devices = g_slist_append(devices, sdi);
+	drvc->instances = g_slist_append(drvc->instances, sdi);
 
 	return devices;
 }
 
-static GSList *hw_dev_list(void)
+static GSList *dev_list(void)
 {
 	return ((struct drv_context *)(di->priv))->instances;
 }
 
-static int hw_dev_open(struct sr_dev_inst *sdi)
+static int dev_open(struct sr_dev_inst *sdi)
 {
-	(void)sdi;
-
 	sdi->status = SR_ST_ACTIVE;
 
 	return SR_OK;
 }
 
-static int hw_dev_close(struct sr_dev_inst *sdi)
+static int dev_close(struct sr_dev_inst *sdi)
 {
-	(void)sdi;
-
-    sdi->status = SR_ST_INACTIVE;
+	sdi->status = SR_ST_INACTIVE;
 
 	return SR_OK;
 }
 
-static int hw_cleanup(void)
+static int cleanup(void)
 {
-	GSList *l;
-	struct sr_dev_inst *sdi;
-	struct drv_context *drvc;
-	int ret = SR_OK;
-
-	if (!(drvc = di->priv))
-		return SR_OK;
-
-	/* Properly close and free all devices. */
-	for (l = drvc->instances; l; l = l->next) {
-		if (!(sdi = l->data)) {
-			/* Log error, but continue cleaning up the rest. */
-			sr_err("%s: sdi was NULL, continuing", __func__);
-			ret = SR_ERR_BUG;
-			continue;
-		}
-		sr_dev_inst_free(sdi);
-	}
-	g_slist_free(drvc->instances);
-	drvc->instances = NULL;
-
-	return ret;
+	return std_dev_clear(di, NULL);
 }
 
-static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi)
+static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
-	struct dev_context *const devc = sdi->priv;
+	struct dev_context *devc;
+	struct sr_channel *ch;
+	struct analog_gen *ag;
+	int pattern;
 
+	if (!sdi)
+		return SR_ERR_ARG;
+
+	devc = sdi->priv;
 	switch (id) {
 	case SR_CONF_SAMPLERATE:
 		*data = g_variant_new_uint64(devc->cur_samplerate);
@@ -267,23 +404,24 @@ static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi)
 		*data = g_variant_new_uint64(devc->limit_msec);
 		break;
 	case SR_CONF_PATTERN_MODE:
-		switch (devc->sample_generator) {
-		case PATTERN_SIGROK:
-			*data = g_variant_new_string(STR_PATTERN_SIGROK);
-			break;
-		case PATTERN_RANDOM:
-			*data = g_variant_new_string(STR_PATTERN_RANDOM);
-			break;
-		case PATTERN_INC:
-			*data = g_variant_new_string(STR_PATTERN_INC);
-			break;
-		case PATTERN_ALL_LOW:
-			*data = g_variant_new_string(STR_PATTERN_ALL_LOW);
-			break;
-		case PATTERN_ALL_HIGH:
-			*data = g_variant_new_string(STR_PATTERN_ALL_HIGH);
-			break;
-		}
+		if (!cg)
+			return SR_ERR_CHANNEL_GROUP;
+		ch = cg->channels->data;
+		if (ch->type == SR_CHANNEL_LOGIC) {
+			pattern = devc->logic_pattern;
+			*data = g_variant_new_string(logic_pattern_str[pattern]);
+		} else if (ch->type == SR_CHANNEL_ANALOG) {
+			ag = cg->priv;
+			pattern = ag->pattern;
+			*data = g_variant_new_string(analog_pattern_str[pattern]);
+		} else
+			return SR_ERR_BUG;
+		break;
+	case SR_CONF_NUM_LOGIC_CHANNELS:
+		*data = g_variant_new_int32(devc->num_logic_channels);
+		break;
+	case SR_CONF_NUM_ANALOG_CHANNELS:
+		*data = g_variant_new_int32(devc->num_analog_channels);
 		break;
 	default:
 		return SR_ERR_NA;
@@ -292,182 +430,275 @@ static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
+static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
-	int ret;
+	struct dev_context *devc;
+	struct analog_gen *ag;
+	struct sr_channel *ch;
+	int pattern, ret;
+	unsigned int i;
 	const char *stropt;
 
-	struct dev_context *const devc = sdi->priv;
+	devc = sdi->priv;
 
 	if (sdi->status != SR_ST_ACTIVE)
 		return SR_ERR_DEV_CLOSED;
 
-	if (id == SR_CONF_SAMPLERATE) {
+	ret = SR_OK;
+	switch (id) {
+	case SR_CONF_SAMPLERATE:
 		devc->cur_samplerate = g_variant_get_uint64(data);
-		sr_dbg("%s: setting samplerate to %" PRIu64, __func__,
-		       devc->cur_samplerate);
-		ret = SR_OK;
-	} else if (id == SR_CONF_LIMIT_SAMPLES) {
+		sr_dbg("Setting samplerate to %" PRIu64, devc->cur_samplerate);
+		break;
+	case SR_CONF_LIMIT_SAMPLES:
 		devc->limit_msec = 0;
 		devc->limit_samples = g_variant_get_uint64(data);
-		sr_dbg("%s: setting limit_samples to %" PRIu64, __func__,
-		       devc->limit_samples);
-		ret = SR_OK;
-	} else if (id == SR_CONF_LIMIT_MSEC) {
+		sr_dbg("Setting sample limit to %" PRIu64, devc->limit_samples);
+		break;
+	case SR_CONF_LIMIT_MSEC:
 		devc->limit_msec = g_variant_get_uint64(data);
 		devc->limit_samples = 0;
-		sr_dbg("%s: setting limit_msec to %" PRIu64, __func__,
-		       devc->limit_msec);
-		ret = SR_OK;
-	} else if (id == SR_CONF_PATTERN_MODE) {
+		sr_dbg("Setting time limit to %" PRIu64"ms", devc->limit_msec);
+		break;
+	case SR_CONF_PATTERN_MODE:
+		if (!cg)
+			return SR_ERR_CHANNEL_GROUP;
 		stropt = g_variant_get_string(data, NULL);
-		ret = SR_OK;
-		if (!strcmp(stropt, STR_PATTERN_SIGROK)) {
-			devc->sample_generator = PATTERN_SIGROK;
-		} else if (!strcmp(stropt, STR_PATTERN_RANDOM)) {
-			devc->sample_generator = PATTERN_RANDOM;
-		} else if (!strcmp(stropt, STR_PATTERN_INC)) {
-			devc->sample_generator = PATTERN_INC;
-		} else if (!strcmp(stropt, STR_PATTERN_ALL_LOW)) {
-			devc->sample_generator = PATTERN_ALL_LOW;
-		} else if (!strcmp(stropt, STR_PATTERN_ALL_HIGH)) {
-			devc->sample_generator = PATTERN_ALL_HIGH;
-		} else {
-			ret = SR_ERR;
-		}
-		sr_dbg("%s: setting pattern to %d",
-			__func__, devc->sample_generator);
-	} else {
+		ch = cg->channels->data;
+		pattern = -1;
+		if (ch->type == SR_CHANNEL_LOGIC) {
+			for (i = 0; i < ARRAY_SIZE(logic_pattern_str); i++) {
+				if (!strcmp(stropt, logic_pattern_str[i])) {
+					pattern = i;
+					break;
+				}
+			}
+			if (pattern == -1)
+				return SR_ERR_ARG;
+			devc->logic_pattern = pattern;
+
+			/* Might as well do this now, these are static. */
+			if (pattern == PATTERN_ALL_LOW)
+				memset(devc->logic_data, 0x00, LOGIC_BUFSIZE);
+			else if (pattern == PATTERN_ALL_HIGH)
+				memset(devc->logic_data, 0xff, LOGIC_BUFSIZE);
+			sr_dbg("Setting logic pattern to %s",
+					logic_pattern_str[pattern]);
+		} else if (ch->type == SR_CHANNEL_ANALOG) {
+			for (i = 0; i < ARRAY_SIZE(analog_pattern_str); i++) {
+				if (!strcmp(stropt, analog_pattern_str[i])) {
+					pattern = i;
+					break;
+				}
+			}
+			if (pattern == -1)
+				return SR_ERR_ARG;
+			sr_dbg("Setting analog pattern for channel group %s to %s",
+					cg->name, analog_pattern_str[pattern]);
+			ag = cg->priv;
+			ag->pattern = pattern;
+		} else
+			return SR_ERR_BUG;
+		break;
+	default:
 		ret = SR_ERR_NA;
 	}
 
 	return ret;
 }
 
-static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
+static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
+	struct sr_channel *ch;
 	GVariant *gvar;
 	GVariantBuilder gvb;
 
 	(void)sdi;
 
-	switch (key) {
-	case SR_CONF_DEVICE_OPTIONS:
+	if (key == SR_CONF_SCAN_OPTIONS) {
 		*data = g_variant_new_fixed_array(G_VARIANT_TYPE_INT32,
-				hwcaps, ARRAY_SIZE(hwcaps), sizeof(int32_t));
-		break;
-	case SR_CONF_SAMPLERATE:
-		g_variant_builder_init(&gvb, G_VARIANT_TYPE("a{sv}"));
-		gvar = g_variant_new_fixed_array(G_VARIANT_TYPE("t"), samplerates,
-				ARRAY_SIZE(samplerates), sizeof(uint64_t));
-		g_variant_builder_add(&gvb, "{sv}", "samplerate-steps", gvar);
-		*data = g_variant_builder_end(&gvb);
-		break;
-	case SR_CONF_PATTERN_MODE:
-		*data = g_variant_new_strv(pattern_strings, ARRAY_SIZE(pattern_strings));
-		break;
-	default:
-		return SR_ERR_NA;
+				scanopts, ARRAY_SIZE(scanopts), sizeof(int32_t));
+		return SR_OK;
+	}
+
+	if (!sdi)
+		return SR_ERR_ARG;
+
+	if (!cg) {
+		switch (key) {
+		case SR_CONF_DEVICE_OPTIONS:
+			*data = g_variant_new_fixed_array(G_VARIANT_TYPE_INT32,
+					devopts, ARRAY_SIZE(devopts), sizeof(int32_t));
+			break;
+		case SR_CONF_SAMPLERATE:
+			g_variant_builder_init(&gvb, G_VARIANT_TYPE("a{sv}"));
+			gvar = g_variant_new_fixed_array(G_VARIANT_TYPE("t"), samplerates,
+					ARRAY_SIZE(samplerates), sizeof(uint64_t));
+			g_variant_builder_add(&gvb, "{sv}", "samplerate-steps", gvar);
+			*data = g_variant_builder_end(&gvb);
+			break;
+		default:
+			return SR_ERR_NA;
+		}
+	} else {
+		ch = cg->channels->data;
+		switch (key) {
+		case SR_CONF_DEVICE_OPTIONS:
+			*data = g_variant_new_fixed_array(G_VARIANT_TYPE_INT32,
+					devopts_cg, ARRAY_SIZE(devopts_cg), sizeof(int32_t));
+			break;
+		case SR_CONF_PATTERN_MODE:
+			if (ch->type == SR_CHANNEL_LOGIC)
+				*data = g_variant_new_strv(logic_pattern_str,
+						ARRAY_SIZE(logic_pattern_str));
+			else if (ch->type == SR_CHANNEL_ANALOG)
+				*data = g_variant_new_strv(analog_pattern_str,
+						ARRAY_SIZE(analog_pattern_str));
+			else
+				return SR_ERR_BUG;
+			break;
+		default:
+			return SR_ERR_NA;
+		}
 	}
 
 	return SR_OK;
 }
 
-static void samples_generator(uint8_t *buf, uint64_t size,
-			      struct dev_context *devc)
+static void logic_generator(struct sr_dev_inst *sdi, uint64_t size)
 {
-	static uint64_t p = 0;
-	uint64_t i;
+	struct dev_context *devc;
+	uint64_t i, j;
+	uint8_t pat;
 
-	/* TODO: Needed? */
-	memset(buf, 0, size);
+	devc = sdi->priv;
 
-	switch (devc->sample_generator) {
-	case PATTERN_SIGROK: /* sigrok pattern */
-		for (i = 0; i < size; i++) {
-			*(buf + i) = ~(pattern_sigrok[
-				p++ % sizeof(pattern_sigrok)] >> 1);
+	switch (devc->logic_pattern) {
+	case PATTERN_SIGROK:
+		memset(devc->logic_data, 0x00, size);
+		for (i = 0; i < size; i += devc->logic_unitsize) {
+			for (j = 0; j < devc->logic_unitsize; j++) {
+				pat = pattern_sigrok[(devc->step + j) % sizeof(pattern_sigrok)] >> 1;
+				devc->logic_data[i + j] = ~pat;
+			}
+			devc->step++;
 		}
 		break;
-	case PATTERN_RANDOM: /* Random */
+	case PATTERN_RANDOM:
 		for (i = 0; i < size; i++)
-			*(buf + i) = (uint8_t)(rand() & 0xff);
+			devc->logic_data[i] = (uint8_t)(rand() & 0xff);
 		break;
-	case PATTERN_INC: /* Simple increment */
-		for (i = 0; i < size; i++)
-			*(buf + i) = p++;
+	case PATTERN_INC:
+		for (i = 0; i < size; i++) {
+			for (j = 0; j < devc->logic_unitsize; j++) {
+				devc->logic_data[i + j] = devc->step;
+			}
+			devc->step++;
+		}
 		break;
-	case PATTERN_ALL_LOW: /* All probes are low */
-		memset(buf, 0x00, size);
-		break;
-	case PATTERN_ALL_HIGH: /* All probes are high */
-		memset(buf, 0xff, size);
+	case PATTERN_ALL_LOW:
+	case PATTERN_ALL_HIGH:
+		/* These were set when the pattern mode was selected. */
 		break;
 	default:
-		sr_err("Unknown pattern: %d.", devc->sample_generator);
+		sr_err("Unknown pattern: %d.", devc->logic_pattern);
 		break;
 	}
 }
 
 /* Callback handling data */
-static int receive_data(int fd, int revents, void *cb_data)
+static int prepare_data(int fd, int revents, void *cb_data)
 {
-	struct dev_context *devc = cb_data;
+	struct sr_dev_inst *sdi;
+	struct dev_context *devc;
 	struct sr_datafeed_packet packet;
 	struct sr_datafeed_logic logic;
-	uint8_t buf[BUFSIZE];
-	static uint64_t samples_to_send, expected_samplenum, sending_now;
+	struct sr_channel_group *cg;
+	struct analog_gen *ag;
+	GSList *l;
+	uint64_t logic_todo, analog_todo, expected_samplenum, analog_samples, sending_now;
 	int64_t time, elapsed;
 
 	(void)fd;
 	(void)revents;
 
+	sdi = cb_data;
+	devc = sdi->priv;
+
 	/* How many "virtual" samples should we have collected by now? */
 	time = g_get_monotonic_time();
 	elapsed = time - devc->starttime;
 	expected_samplenum = elapsed * devc->cur_samplerate / 1000000;
+
 	/* Of those, how many do we still have to send? */
-	samples_to_send = expected_samplenum - devc->samples_counter;
+	logic_todo = MIN(expected_samplenum, devc->limit_samples) - devc->logic_counter;
+	analog_todo = MIN(expected_samplenum, devc->limit_samples) - devc->analog_counter;
 
-	if (devc->limit_samples) {
-		samples_to_send = MIN(samples_to_send,
-				 devc->limit_samples - devc->samples_counter);
+	while (logic_todo || analog_todo) {
+		/* Logic */
+		if (devc->num_logic_channels > 0 && logic_todo > 0) {
+			sending_now = MIN(logic_todo,
+					LOGIC_BUFSIZE / devc->logic_unitsize);
+			logic_generator(sdi, sending_now * devc->logic_unitsize);
+			packet.type = SR_DF_LOGIC;
+			packet.payload = &logic;
+			logic.length = sending_now * devc->logic_unitsize;
+			logic.unitsize = devc->logic_unitsize;
+			logic.data = devc->logic_data;
+			sr_session_send(sdi, &packet);
+			logic_todo -= sending_now;
+			devc->logic_counter += sending_now;
+		}
+
+		/* Analog, one channel at a time */
+		if (devc->num_analog_channels > 0 && analog_todo > 0) {
+			sending_now = 0;
+			for (l = devc->analog_channel_groups; l; l = l->next) {
+				cg = l->data;
+				ag = cg->priv;
+				packet.type = SR_DF_ANALOG;
+				packet.payload = &ag->packet;
+
+				/* FIXME we should make sure we output a whole
+				 * period of data before we send out again the
+				 * beginning of our buffer. A ring buffer would
+				 * help here as well */
+
+				analog_samples = MIN(analog_todo, ag->num_samples);
+				/* Whichever channel group gets there first. */
+				sending_now = MAX(sending_now, analog_samples);
+				ag->packet.num_samples = analog_samples;
+				sr_session_send(sdi, &packet);
+			}
+			analog_todo -= sending_now;
+			devc->analog_counter += sending_now;
+		}
 	}
 
-	while (samples_to_send > 0) {
-		sending_now = MIN(samples_to_send, sizeof(buf));
-		samples_to_send -= sending_now;
-		samples_generator(buf, sending_now, devc);
-
-		packet.type = SR_DF_LOGIC;
-		packet.payload = &logic;
-		logic.length = sending_now;
-		logic.unitsize = 1;
-		logic.data = buf;
-		sr_session_send(devc->cb_data, &packet);
-		devc->samples_counter += sending_now;
-	}
-
-	if (devc->limit_samples &&
-		devc->samples_counter >= devc->limit_samples) {
-		sr_info("Requested number of samples reached.");
-		hw_dev_acquisition_stop(devc->sdi, cb_data);
+	if (devc->logic_counter >= devc->limit_samples &&
+			devc->analog_counter >= devc->limit_samples) {
+		sr_dbg("Requested number of samples reached.");
+		dev_acquisition_stop(sdi, cb_data);
 		return TRUE;
 	}
 
 	return TRUE;
 }
 
-static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
-		void *cb_data)
+static int dev_acquisition_start(const struct sr_dev_inst *sdi, void *cb_data)
 {
-	struct dev_context *const devc = sdi->priv;
+	GSList *l;
+	struct dev_context *devc;
 
 	if (sdi->status != SR_ST_ACTIVE)
 		return SR_ERR_DEV_CLOSED;
 
-	devc->cb_data = cb_data;
-	devc->samples_counter = 0;
+	devc = sdi->priv;
+	if (devc->limit_samples == 0)
+		return SR_ERR;
+	devc->logic_counter = devc->analog_counter = 0;
 
 	/*
 	 * Setting two channels connected by a pipe is a remnant from when the
@@ -477,9 +708,12 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 	 * up a timeout-based polling mechanism.
 	 */
 	if (pipe(devc->pipe_fds)) {
-		/* TODO: Better error message. */
 		sr_err("%s: pipe() failed", __func__);
 		return SR_ERR;
+	}
+
+	for (l = devc->analog_channel_groups; l; l = l->next) {
+		generate_analog_pattern(l->data, devc->cur_samplerate);
 	}
 
 	devc->channel = g_io_channel_unix_new(devc->pipe_fds[0]);
@@ -493,7 +727,7 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 	g_io_channel_set_buffered(devc->channel, FALSE);
 
 	sr_session_source_add_channel(devc->channel, G_IO_IN | G_IO_ERR,
-		    40, receive_data, devc);
+			40, prepare_data, (void *)sdi);
 
 	/* Send header packet to the session bus. */
 	std_session_send_df_header(cb_data, LOG_PREFIX);
@@ -504,14 +738,15 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 	return SR_OK;
 }
 
-static int hw_dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
+static int dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
 {
-	struct dev_context *const devc = sdi->priv;
+	struct dev_context *devc;
 	struct sr_datafeed_packet packet;
 
 	(void)cb_data;
 
-	sr_dbg("Stopping aquisition.");
+	devc = sdi->priv;
+	sr_dbg("Stopping acquisition.");
 
 	sr_session_source_remove_channel(devc->channel);
 	g_io_channel_shutdown(devc->channel, FALSE, NULL);
@@ -520,7 +755,7 @@ static int hw_dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
 
 	/* Send last packet. */
 	packet.type = SR_DF_END;
-	sr_session_send(devc->cb_data, &packet);
+	sr_session_send(sdi, &packet);
 
 	return SR_OK;
 }
@@ -529,17 +764,17 @@ SR_PRIV struct sr_dev_driver demo_driver_info = {
 	.name = "demo",
 	.longname = "Demo driver and pattern generator",
 	.api_version = 1,
-	.init = hw_init,
-	.cleanup = hw_cleanup,
-	.scan = hw_scan,
-	.dev_list = hw_dev_list,
-	.dev_clear = clear_instances,
+	.init = init,
+	.cleanup = cleanup,
+	.scan = scan,
+	.dev_list = dev_list,
+	.dev_clear = NULL,
 	.config_get = config_get,
 	.config_set = config_set,
 	.config_list = config_list,
-	.dev_open = hw_dev_open,
-	.dev_close = hw_dev_close,
-	.dev_acquisition_start = hw_dev_acquisition_start,
-	.dev_acquisition_stop = hw_dev_acquisition_stop,
+	.dev_open = dev_open,
+	.dev_close = dev_close,
+	.dev_acquisition_start = dev_acquisition_start,
+	.dev_acquisition_stop = dev_acquisition_stop,
 	.priv = NULL,
 };

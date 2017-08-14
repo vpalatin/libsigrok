@@ -45,11 +45,9 @@ static const struct zp_model zeroplus_models[] = {
 	{0x0c12, 0x7002, "LAP-16128U",    16, 128,  200},
 	{0x0c12, 0x7009, "LAP-C(16064)",  16, 64,   100},
 	{0x0c12, 0x700a, "LAP-C(16128)",  16, 128,  200},
-	/* TODO: We don't know anything about these.
 	{0x0c12, 0x700b, "LAP-C(32128)",  32, 128,  200},
 	{0x0c12, 0x700c, "LAP-C(321000)", 32, 1024, 200},
 	{0x0c12, 0x700d, "LAP-C(322000)", 32, 2048, 200},
-	*/
 	{0x0c12, 0x700e, "LAP-C(16032)",  16, 32,   100},
 	{0x0c12, 0x7016, "LAP-C(162000)", 16, 2048, 200},
 	{ 0, 0, 0, 0, 0, 0 }
@@ -58,17 +56,21 @@ static const struct zp_model zeroplus_models[] = {
 static const int32_t hwcaps[] = {
 	SR_CONF_LOGIC_ANALYZER,
 	SR_CONF_SAMPLERATE,
+	SR_CONF_TRIGGER_TYPE,
 	SR_CONF_CAPTURE_RATIO,
+	SR_CONF_VOLTAGE_THRESHOLD,
 	SR_CONF_LIMIT_SAMPLES,
 };
 
 /*
- * ZEROPLUS LAP-C (16032) numbers the 16 probes A0-A7 and B0-B7.
+ * ZEROPLUS LAP-C (16032) numbers the 16 channels A0-A7 and B0-B7.
  * We currently ignore other untested/unsupported devices here.
  */
-static const char *probe_names[] = {
+static const char *channel_names[] = {
 	"A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7",
 	"B0", "B1", "B2", "B3", "B4", "B5", "B6", "B7",
+	"C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7",
+	"D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7",
 	NULL,
 };
 
@@ -120,40 +122,40 @@ const uint64_t samplerates_200[] = {
 	SR_MHZ(200),
 };
 
-static int hw_dev_close(struct sr_dev_inst *sdi);
+static int dev_close(struct sr_dev_inst *sdi);
 
 #if 0
-static int configure_probes(const struct sr_dev_inst *sdi)
+static int configure_channels(const struct sr_dev_inst *sdi)
 {
 	struct dev_context *devc;
-	const struct sr_probe *probe;
+	const struct sr_channel *ch;
 	const GSList *l;
-	int probe_bit, stage, i;
+	int channel_bit, stage, i;
 	char *tc;
 
 	/* Note: sdi and sdi->priv are non-NULL, the caller checked this. */
 	devc = sdi->priv;
 
-	devc->probe_mask = 0;
+	devc->channel_mask = 0;
 	for (i = 0; i < NUM_TRIGGER_STAGES; i++) {
 		devc->trigger_mask[i] = 0;
 		devc->trigger_value[i] = 0;
 	}
 
 	stage = -1;
-	for (l = sdi->probes; l; l = l->next) {
-		probe = (struct sr_probe *)l->data;
-		if (probe->enabled == FALSE)
+	for (l = sdi->channels; l; l = l->next) {
+		ch = (struct sr_channel *)l->data;
+		if (ch->enabled == FALSE)
 			continue;
-		probe_bit = 1 << (probe->index);
-		devc->probe_mask |= probe_bit;
+		channel_bit = 1 << (ch->index);
+		devc->channel_mask |= channel_bit;
 
-		if (probe->trigger) {
+		if (ch->trigger) {
 			stage = 0;
-			for (tc = probe->trigger; *tc; tc++) {
-				devc->trigger_mask[stage] |= probe_bit;
+			for (tc = ch->trigger; *tc; tc++) {
+				devc->trigger_mask[stage] |= channel_bit;
 				if (*tc == '1')
-					devc->trigger_value[stage] |= probe_bit;
+					devc->trigger_value[stage] |= channel_bit;
 				stage++;
 				if (stage > NUM_TRIGGER_STAGES)
 					return SR_ERR;
@@ -165,23 +167,23 @@ static int configure_probes(const struct sr_dev_inst *sdi)
 }
 #endif
 
-static int configure_probes(const struct sr_dev_inst *sdi)
+static int configure_channels(const struct sr_dev_inst *sdi)
 {
 	struct dev_context *devc;
 	const GSList *l;
-	const struct sr_probe *probe;
+	const struct sr_channel *ch;
 	char *tc;
 	int type;
 
 	/* Note: sdi and sdi->priv are non-NULL, the caller checked this. */
 	devc = sdi->priv;
 
-	for (l = sdi->probes; l; l = l->next) {
-		probe = (struct sr_probe *)l->data;
-		if (probe->enabled == FALSE)
+	for (l = sdi->channels; l; l = l->next) {
+		ch = (struct sr_channel *)l->data;
+		if (ch->enabled == FALSE)
 			continue;
 
-		if ((tc = probe->trigger)) {
+		if ((tc = ch->trigger)) {
 			switch (*tc) {
 			case '1':
 				type = TRIGGER_HIGH;
@@ -203,7 +205,7 @@ static int configure_probes(const struct sr_dev_inst *sdi)
 			default:
 				return SR_ERR;
 			}
-			analyzer_add_trigger(probe->index, type);
+			analyzer_add_trigger(ch->index, type);
 			devc->trigger = 1;
 		}
 	}
@@ -238,44 +240,15 @@ SR_PRIV int zp_set_samplerate(struct dev_context *devc, uint64_t samplerate)
 	return SR_OK;
 }
 
-static int clear_instances(void)
+static int init(struct sr_context *sr_ctx)
 {
-	GSList *l;
-	struct sr_dev_inst *sdi;
-	struct drv_context *drvc;
-	struct dev_context *devc;
-	struct sr_usb_dev_inst *usb;
-
-	drvc = di->priv;
-	for (l = drvc->instances; l; l = l->next) {
-		sdi = l->data;
-		if (!(devc = sdi->priv)) {
-			/* Log error, but continue cleaning up the rest. */
-			sr_err("%s: sdi->priv was NULL, continuing", __func__);
-			continue;
-		}
-		usb = sdi->conn;
-		sr_usb_dev_inst_free(usb);
-		/* Properly close all devices... */
-		hw_dev_close(sdi);
-		/* ...and free all their memory. */
-		sr_dev_inst_free(sdi);
-	}
-	g_slist_free(drvc->instances);
-	drvc->instances = NULL;
-
-	return SR_OK;
+	return std_init(sr_ctx, di, LOG_PREFIX);
 }
 
-static int hw_init(struct sr_context *sr_ctx)
-{
-	return std_hw_init(sr_ctx, di, "zeroplus: ");
-}
-
-static GSList *hw_scan(GSList *options)
+static GSList *scan(GSList *options)
 {
 	struct sr_dev_inst *sdi;
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	struct drv_context *drvc;
 	struct dev_context *devc;
 	const struct zp_model *prof;
@@ -332,26 +305,27 @@ static GSList *hw_scan(GSList *options)
 		devc->prof = prof;
 		devc->num_channels = prof->channels;
 #ifdef ZP_EXPERIMENTAL
-		devc->max_memory_size = 128 * 1024;
+		devc->max_sample_depth = 128 * 1024;
 		devc->max_samplerate = 200;
 #else
-		devc->max_memory_size = prof->sample_depth * 1024;
+		devc->max_sample_depth = prof->sample_depth * 1024;
 		devc->max_samplerate = prof->max_sampling_freq;
 #endif
 		devc->max_samplerate *= SR_MHZ(1);
 		devc->memory_size = MEMORY_SIZE_8K;
 		// memset(devc->trigger_buffer, 0, NUM_TRIGGER_STAGES);
 
-		/* Fill in probelist according to this device's profile. */
+		/* Fill in channellist according to this device's profile. */
 		for (j = 0; j < devc->num_channels; j++) {
-			if (!(probe = sr_probe_new(j, SR_PROBE_LOGIC, TRUE,
-					probe_names[j])))
+			if (!(ch = sr_channel_new(j, SR_CHANNEL_LOGIC, TRUE,
+					channel_names[j])))
 				return NULL;
-			sdi->probes = g_slist_append(sdi->probes, probe);
+			sdi->channels = g_slist_append(sdi->channels, ch);
 		}
 
 		devices = g_slist_append(devices, sdi);
 		drvc->instances = g_slist_append(drvc->instances, sdi);
+		sdi->inst_type = SR_INST_USB;
 		sdi->conn = sr_usb_dev_inst_new(
 			libusb_get_bus_number(devlist[i]),
 			libusb_get_device_address(devlist[i]), NULL);
@@ -363,12 +337,12 @@ static GSList *hw_scan(GSList *options)
 	return devices;
 }
 
-static GSList *hw_dev_list(void)
+static GSList *dev_list(void)
 {
 	return ((struct drv_context *)(di->priv))->instances;
 }
 
-static int hw_dev_open(struct sr_dev_inst *sdi)
+static int dev_open(struct sr_dev_inst *sdi)
 {
 	struct dev_context *devc;
 	struct drv_context *drvc;
@@ -462,10 +436,13 @@ static int hw_dev_open(struct sr_dev_inst *sdi)
 		devc->cur_samplerate = SR_MHZ(1);
 	}
 
+	if (devc->cur_threshold == 0)
+		set_voltage_threshold(devc, 1.5);
+
 	return SR_OK;
 }
 
-static int hw_dev_close(struct sr_dev_inst *sdi)
+static int dev_close(struct sr_dev_inst *sdi)
 {
 	struct sr_usb_dev_inst *usb;
 
@@ -485,21 +462,17 @@ static int hw_dev_close(struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int hw_cleanup(void)
+static int cleanup(void)
 {
-	struct drv_context *drvc;
-
-	if (!(drvc = di->priv))
-		return SR_OK;
-
-	clear_instances();
-
-	return SR_OK;
+	return std_dev_clear(di, NULL);
 }
 
-static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi)
+static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
 	struct dev_context *devc;
+
+	(void)cg;
 
 	switch (id) {
 	case SR_CONF_SAMPLERATE:
@@ -509,7 +482,24 @@ static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi)
 			sr_spew("Returning samplerate: %" PRIu64 "Hz.",
 				devc->cur_samplerate);
 		} else
-			return SR_ERR;
+			return SR_ERR_ARG;
+		break;
+	case SR_CONF_CAPTURE_RATIO:
+		if (sdi) {
+			devc = sdi->priv;
+			*data = g_variant_new_uint64(devc->capture_ratio);
+		} else
+			return SR_ERR_ARG;
+		break;
+	case SR_CONF_VOLTAGE_THRESHOLD:
+		if (sdi) {
+			GVariant *range[2];
+			devc = sdi->priv;
+			range[0] = g_variant_new_double(devc->cur_threshold);
+			range[1] = g_variant_new_double(devc->cur_threshold);
+			*data = g_variant_new_tuple(range, 2);
+		} else
+			return SR_ERR_ARG;
 		break;
 	default:
 		return SR_ERR_NA;
@@ -518,9 +508,13 @@ static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
+static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
 	struct dev_context *devc;
+	gdouble low, high;
+
+	(void)cg;
 
 	if (sdi->status != SR_ST_ACTIVE)
 		return SR_ERR_DEV_CLOSED;
@@ -537,6 +531,9 @@ static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
 		return set_limit_samples(devc, g_variant_get_uint64(data));
 	case SR_CONF_CAPTURE_RATIO:
 		return set_capture_ratio(devc, g_variant_get_uint64(data));
+	case SR_CONF_VOLTAGE_THRESHOLD:
+		g_variant_get(data, "(dd)", &low, &high);
+		return set_voltage_threshold(devc, (low + high) / 2.0);
 	default:
 		return SR_ERR_NA;
 	}
@@ -544,11 +541,16 @@ static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
+static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
 	struct dev_context *devc;
-	GVariant *gvar;
+	GVariant *gvar, *grange[2];
 	GVariantBuilder gvb;
+	double v;
+	GVariant *range[2];
+
+	(void)cg;
 
 	switch (key) {
 	case SR_CONF_DEVICE_OPTIONS:
@@ -577,6 +579,24 @@ static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
 	case SR_CONF_TRIGGER_TYPE:
 		*data = g_variant_new_string(TRIGGER_TYPE);
 		break;
+	case SR_CONF_VOLTAGE_THRESHOLD:
+		g_variant_builder_init(&gvb, G_VARIANT_TYPE_ARRAY);
+		for (v = -6.0; v <= 6.0; v += 0.1) {
+			range[0] = g_variant_new_double(v);
+			range[1] = g_variant_new_double(v);
+			gvar = g_variant_new_tuple(range, 2);
+			g_variant_builder_add_value(&gvb, gvar);
+		}
+		*data = g_variant_builder_end(&gvb);
+		break;
+	case SR_CONF_LIMIT_SAMPLES:
+		if (!sdi)
+			return SR_ERR_ARG;
+		devc = sdi->priv;
+		grange[0] = g_variant_new_uint64(0);
+		grange[1] = g_variant_new_uint64(devc->max_sample_depth);
+		*data = g_variant_new_tuple(grange, 2);
+		break;
 	default:
 		return SR_ERR_NA;
 	}
@@ -584,17 +604,28 @@ static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
+static int dev_acquisition_start(const struct sr_dev_inst *sdi,
 		void *cb_data)
 {
 	struct dev_context *devc;
 	struct sr_usb_dev_inst *usb;
 	struct sr_datafeed_packet packet;
 	struct sr_datafeed_logic logic;
-	//uint64_t samples_read;
+	unsigned int samples_read;
 	int res;
 	unsigned int packet_num, n;
 	unsigned char *buf;
+	unsigned int status;
+	unsigned int stop_address;
+	unsigned int now_address;
+	unsigned int trigger_address;
+	unsigned int trigger_offset;
+	unsigned int triggerbar;
+	unsigned int ramsize_trigger;
+	unsigned int memory_size;
+	unsigned int valid_samples;
+	unsigned int discard;
+	int trigger_now;
 
 	if (sdi->status != SR_ST_ACTIVE)
 		return SR_ERR_DEV_CLOSED;
@@ -604,8 +635,8 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 		return SR_ERR_ARG;
 	}
 
-	if (configure_probes(sdi) != SR_OK) {
-		sr_err("Failed to configure probes.");
+	if (configure_channels(sdi) != SR_OK) {
+		sr_err("Failed to configure channels.");
 		return SR_ERR;
 	}
 
@@ -620,39 +651,138 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 	sr_info("Waiting for data.");
 	analyzer_wait_data(usb->devhdl);
 
-	sr_info("Stop address    = 0x%x.",
-		analyzer_get_stop_address(usb->devhdl));
-	sr_info("Now address     = 0x%x.",
-		analyzer_get_now_address(usb->devhdl));
-	sr_info("Trigger address = 0x%x.",
-		analyzer_get_trigger_address(usb->devhdl));
+	status = analyzer_read_status(usb->devhdl);
+	stop_address = analyzer_get_stop_address(usb->devhdl);
+	now_address = analyzer_get_now_address(usb->devhdl);
+	trigger_address = analyzer_get_trigger_address(usb->devhdl);
+
+	triggerbar = analyzer_get_triggerbar_address();
+	ramsize_trigger = analyzer_get_ramsize_trigger_address();
+
+	n = get_memory_size(devc->memory_size);
+	memory_size = n / 4;
+
+	sr_info("Status = 0x%x.", status);
+	sr_info("Stop address       = 0x%x.", stop_address);
+	sr_info("Now address        = 0x%x.", now_address);
+	sr_info("Trigger address    = 0x%x.", trigger_address);
+	sr_info("Triggerbar address = 0x%x.", triggerbar);
+	sr_info("Ramsize trigger    = 0x%x.", ramsize_trigger);
+	sr_info("Memory size        = 0x%x.", memory_size);
 
 	/* Send header packet to the session bus. */
 	std_session_send_df_header(cb_data, LOG_PREFIX);
+
+	/* Check for empty capture */
+	if ((status & STATUS_READY) && !stop_address) {
+		packet.type = SR_DF_END;
+		sr_session_send(cb_data, &packet);
+		return SR_OK;
+	}
 
 	if (!(buf = g_try_malloc(PACKET_SIZE))) {
 		sr_err("Packet buffer malloc failed.");
 		return SR_ERR_MALLOC;
 	}
 
-	//samples_read = 0;
+	/* Check if the trigger is in the samples we are throwing away */
+	trigger_now = now_address == trigger_address ||
+		((now_address + 1) % memory_size) == trigger_address;
+
+	/*
+	 * STATUS_READY doesn't clear until now_address advances past
+	 * addr 0, but for our logic, clear it in that case
+	 */
+	if (!now_address)
+		status &= ~STATUS_READY;
+
 	analyzer_read_start(usb->devhdl);
+
+	/* Calculate how much data to discard */
+	discard = 0;
+	if (status & STATUS_READY) {
+		/*
+		 * We haven't wrapped around, we need to throw away data from
+		 * our current position to the end of the buffer.
+		 * Additionally, the first two samples captured are always
+		 * bogus.
+		 */
+		discard += memory_size - now_address + 2;
+		now_address = 2;
+	}
+
+	/* If we have more samples than we need, discard them */
+	valid_samples = (stop_address - now_address) % memory_size;
+	if (valid_samples > ramsize_trigger + triggerbar) {
+		discard += valid_samples - (ramsize_trigger + triggerbar);
+		now_address += valid_samples - (ramsize_trigger + triggerbar);
+	}
+
+	sr_info("Need to discard %d samples.", discard);
+
+	/* Calculate how far in the trigger is */
+	if (trigger_now)
+		trigger_offset = 0;
+	else
+		trigger_offset = (trigger_address - now_address) % memory_size;
+
+	/* Recalculate the number of samples available */
+	valid_samples = (stop_address - now_address) % memory_size;
+
 	/* Send the incoming transfer to the session bus. */
-	n = get_memory_size(devc->memory_size);
-	if (devc->max_memory_size * 4 < n)
-		n = devc->max_memory_size * 4;
+	samples_read = 0;
 	for (packet_num = 0; packet_num < n / PACKET_SIZE; packet_num++) {
+		unsigned int len;
+		unsigned int buf_offset;
+
 		res = analyzer_read_data(usb->devhdl, buf, PACKET_SIZE);
 		sr_info("Tried to read %d bytes, actually read %d bytes.",
 			PACKET_SIZE, res);
 
+		if (discard >= PACKET_SIZE / 4) {
+			discard -= PACKET_SIZE / 4;
+			continue;
+		}
+
+		len = PACKET_SIZE - discard * 4;
+		buf_offset = discard * 4;
+		discard = 0;
+
+		/* Check if we've read all the samples */
+		if (samples_read + len / 4 >= valid_samples)
+			len = (valid_samples - samples_read) * 4;
+		if (!len)
+			break;
+
+		if (samples_read < trigger_offset &&
+		    samples_read + len / 4 > trigger_offset) {
+			/* Send out samples remaining before trigger */
+			packet.type = SR_DF_LOGIC;
+			packet.payload = &logic;
+			logic.length = (trigger_offset - samples_read) * 4;
+			logic.unitsize = 4;
+			logic.data = buf + buf_offset;
+			sr_session_send(cb_data, &packet);
+			len -= logic.length;
+			samples_read += logic.length / 4;
+			buf_offset += logic.length;
+		}
+
+		if (samples_read == trigger_offset) {
+			/* Send out trigger */
+			packet.type = SR_DF_TRIGGER;
+			packet.payload = NULL;
+			sr_session_send(cb_data, &packet);
+		}
+
+		/* Send out data (or data after trigger) */
 		packet.type = SR_DF_LOGIC;
 		packet.payload = &logic;
-		logic.length = PACKET_SIZE;
+		logic.length = len;
 		logic.unitsize = 4;
-		logic.data = buf;
+		logic.data = buf + buf_offset;
 		sr_session_send(cb_data, &packet);
-		//samples_read += res / 4;
+		samples_read += len / 4;
 	}
 	analyzer_read_stop(usb->devhdl);
 	g_free(buf);
@@ -664,7 +794,7 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 }
 
 /* TODO: This stops acquisition on ALL devices, ignoring dev_index. */
-static int hw_dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
+static int dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
 {
 	struct dev_context *devc;
 	struct sr_usb_dev_inst *usb;
@@ -689,17 +819,17 @@ SR_PRIV struct sr_dev_driver zeroplus_logic_cube_driver_info = {
 	.name = "zeroplus-logic-cube",
 	.longname = "ZEROPLUS Logic Cube LAP-C series",
 	.api_version = 1,
-	.init = hw_init,
-	.cleanup = hw_cleanup,
-	.scan = hw_scan,
-	.dev_list = hw_dev_list,
-	.dev_clear = hw_cleanup,
+	.init = init,
+	.cleanup = cleanup,
+	.scan = scan,
+	.dev_list = dev_list,
+	.dev_clear = NULL,
 	.config_get = config_get,
 	.config_set = config_set,
 	.config_list = config_list,
-	.dev_open = hw_dev_open,
-	.dev_close = hw_dev_close,
-	.dev_acquisition_start = hw_dev_acquisition_start,
-	.dev_acquisition_stop = hw_dev_acquisition_stop,
+	.dev_open = dev_open,
+	.dev_close = dev_close,
+	.dev_acquisition_start = dev_acquisition_start,
+	.dev_acquisition_stop = dev_acquisition_stop,
 	.priv = NULL,
 };

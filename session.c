@@ -25,14 +25,9 @@
 #include "libsigrok.h"
 #include "libsigrok-internal.h"
 
-/* Message logging helpers with subsystem-specific prefix string. */
-#define LOG_PREFIX "session: "
-#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
-#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
-#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
-#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
-#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
-#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+/** @cond PRIVATE */
+#define LOG_PREFIX "session"
+/** @endcond */
 
 /**
  * @file
@@ -50,7 +45,7 @@
 
 struct source {
 	int timeout;
-	sr_receive_data_callback_t cb;
+	sr_receive_data_callback cb;
 	void *cb_data;
 
 	/* This is used to keep track of the object (fd, pollfd or channel) which is
@@ -60,7 +55,7 @@ struct source {
 };
 
 struct datafeed_callback {
-	sr_datafeed_callback_t cb;
+	sr_datafeed_callback cb;
 	void *cb_data;
 };
 
@@ -74,7 +69,10 @@ struct sr_session *session;
  * @todo Should it use the file-global "session" variable or take an argument?
  *       The same question applies to all the other session functions.
  *
- * @return A pointer to the newly allocated session, or NULL upon errors.
+ * @retval NULL Error.
+ * @retval other A pointer to the newly allocated session.
+ *
+ * @since 0.1.0
  */
 SR_API struct sr_session *sr_session_new(void)
 {
@@ -84,6 +82,7 @@ SR_API struct sr_session *sr_session_new(void)
 	}
 
 	session->source_timeout = -1;
+	session->running = FALSE;
 	session->abort_session = FALSE;
 	g_mutex_init(&session->stop_mutex);
 
@@ -92,10 +91,12 @@ SR_API struct sr_session *sr_session_new(void)
 
 /**
  * Destroy the current session.
- *
  * This frees up all memory used by the session.
  *
- * @return SR_OK upon success, SR_ERR_BUG if no session exists.
+ * @retval SR_OK Success.
+ * @retval SR_ERR_BUG No session exists.
+ *
+ * @since 0.1.0
  */
 SR_API int sr_session_destroy(void)
 {
@@ -122,7 +123,10 @@ SR_API int sr_session_destroy(void)
  * The session itself (i.e., the struct sr_session) is not free'd and still
  * exists after this function returns.
  *
- * @return SR_OK upon success, SR_ERR_BUG if no session exists.
+ * @retval SR_OK Success.
+ * @retval SR_ERR_BUG No session exists.
+ *
+ * @since 0.1.0
  */
 SR_API int sr_session_dev_remove_all(void)
 {
@@ -144,10 +148,15 @@ SR_API int sr_session_dev_remove_all(void)
  *            be NULL. Also, sdi->driver and sdi->driver->dev_open must
  *            not be NULL.
  *
- * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments.
+ * @retval SR_OK Success.
+ * @retval SR_ERR_ARG Invalid argument.
+ * @retval SR_ERR_BUG No session exists.
+ *
+ * @since 0.2.0
  */
 SR_API int sr_session_dev_add(const struct sr_dev_inst *sdi)
 {
+	int ret;
 
 	if (!sdi) {
 		sr_err("%s: sdi was NULL", __func__);
@@ -176,13 +185,61 @@ SR_API int sr_session_dev_add(const struct sr_dev_inst *sdi)
 
 	session->devs = g_slist_append(session->devs, (gpointer)sdi);
 
+	if (session->running) {
+		/* Adding a device to a running session. Commit settings
+		 * and start acquisition on that device now. */
+		if ((ret = sr_config_commit(sdi)) != SR_OK) {
+			sr_err("Failed to commit device settings before "
+			       "starting acquisition in running session (%s)",
+			       sr_strerror(ret));
+			return ret;
+		}
+		if ((ret = sdi->driver->dev_acquisition_start(sdi,
+						(void *)sdi)) != SR_OK) {
+			sr_err("Failed to start acquisition of device in "
+			       "running session (%s)", sr_strerror(ret));
+			return ret;
+		}
+	}
+
+	return SR_OK;
+}
+
+/**
+ * List all device instances attached to the current session.
+ *
+ * @param devlist A pointer where the device instance list will be
+ *                stored on return. If no devices are in the session,
+ *                this will be NULL. Each element in the list points
+ *                to a struct sr_dev_inst *.
+ *                The list must be freed by the caller, but not the
+ *                elements pointed to.
+ *
+ * @retval SR_OK Success.
+ * @retval SR_ERR Invalid argument.
+ *
+ * @since 0.3.0
+ */
+SR_API int sr_session_dev_list(GSList **devlist)
+{
+
+	*devlist = NULL;
+
+	if (!session)
+		return SR_ERR;
+
+	*devlist = g_slist_copy(session->devs);
+
 	return SR_OK;
 }
 
 /**
  * Remove all datafeed callbacks in the current session.
  *
- * @return SR_OK upon success, SR_ERR_BUG if no session exists.
+ * @retval SR_OK Success.
+ * @retval SR_ERR_BUG No session exists.
+ *
+ * @since 0.1.0
  */
 SR_API int sr_session_datafeed_callback_remove_all(void)
 {
@@ -204,9 +261,12 @@ SR_API int sr_session_datafeed_callback_remove_all(void)
  *           Must not be NULL.
  * @param cb_data Opaque pointer passed in by the caller.
  *
- * @return SR_OK upon success, SR_ERR_BUG if no session exists.
+ * @retval SR_OK Success.
+ * @retval SR_ERR_BUG No session exists.
+ *
+ * @since 0.3.0
  */
-SR_API int sr_session_datafeed_callback_add(sr_datafeed_callback_t cb, void *cb_data)
+SR_API int sr_session_datafeed_callback_add(sr_datafeed_callback cb, void *cb_data)
 {
 	struct datafeed_callback *cb_struct;
 
@@ -232,41 +292,56 @@ SR_API int sr_session_datafeed_callback_add(sr_datafeed_callback_t cb, void *cb_
 	return SR_OK;
 }
 
-static int sr_session_run_poll(void)
+/**
+ * Call every device in the session's callback.
+ *
+ * For sessions not driven by select loops such as sr_session_run(),
+ * but driven by another scheduler, this can be used to poll the devices
+ * from within that scheduler.
+ *
+ * @param block If TRUE, this call will wait for any of the session's
+ *              sources to fire an event on the file descriptors, or
+ *              any of their timeouts to activate. In other words, this
+ *              can be used as a select loop.
+ *              If FALSE, all sources have their callback run, regardless
+ *              of file descriptor or timeout status.
+ *
+ * @retval SR_OK Success.
+ * @retval SR_ERR Error occured.
+ */
+static int sr_session_iteration(gboolean block)
 {
 	unsigned int i;
 	int ret;
 
-	while (session->num_sources > 0) {
-		ret = g_poll(session->pollfds, session->num_sources,
-				session->source_timeout);
-		for (i = 0; i < session->num_sources; i++) {
-			if (session->pollfds[i].revents > 0 || (ret == 0
-				&& session->source_timeout == session->sources[i].timeout)) {
-				/*
-				 * Invoke the source's callback on an event,
-				 * or if the poll timed out and this source
-				 * asked for that timeout.
-				 */
-				if (!session->sources[i].cb(session->pollfds[i].fd,
-						session->pollfds[i].revents,
-						session->sources[i].cb_data))
-					sr_session_source_remove(session->sources[i].poll_object);
-			}
+	ret = g_poll(session->pollfds, session->num_sources,
+			block ? session->source_timeout : 0);
+	for (i = 0; i < session->num_sources; i++) {
+		if (session->pollfds[i].revents > 0 || (ret == 0
+			&& session->source_timeout == session->sources[i].timeout)) {
 			/*
-			 * We want to take as little time as possible to stop
-			 * the session if we have been told to do so. Therefore,
-			 * we check the flag after processing every source, not
-			 * just once per main event loop.
+			 * Invoke the source's callback on an event,
+			 * or if the poll timed out and this source
+			 * asked for that timeout.
 			 */
-			g_mutex_lock(&session->stop_mutex);
-			if (session->abort_session) {
-				sr_session_stop_sync();
-				/* But once is enough. */
-				session->abort_session = FALSE;
-			}
-			g_mutex_unlock(&session->stop_mutex);
+			if (!session->sources[i].cb(session->pollfds[i].fd,
+					session->pollfds[i].revents,
+					session->sources[i].cb_data))
+				sr_session_source_remove(session->sources[i].poll_object);
 		}
+		/*
+		 * We want to take as little time as possible to stop
+		 * the session if we have been told to do so. Therefore,
+		 * we check the flag after processing every source, not
+		 * just once per main event loop.
+		 */
+		g_mutex_lock(&session->stop_mutex);
+		if (session->abort_session) {
+			sr_session_stop_sync();
+			/* But once is enough. */
+			session->abort_session = FALSE;
+		}
+		g_mutex_unlock(&session->stop_mutex);
 	}
 
 	return SR_OK;
@@ -277,7 +352,10 @@ static int sr_session_run_poll(void)
  *
  * There can only be one session at a time.
  *
- * @return SR_OK upon success, SR_ERR upon errors.
+ * @retval SR_OK Success.
+ * @retval SR_ERR Error occured.
+ *
+ * @since 0.1.0
  */
 SR_API int sr_session_start(void)
 {
@@ -302,9 +380,14 @@ SR_API int sr_session_start(void)
 	ret = SR_OK;
 	for (l = session->devs; l; l = l->next) {
 		sdi = l->data;
+		if ((ret = sr_config_commit(sdi)) != SR_OK) {
+			sr_err("Failed to commit device settings before "
+			       "starting acquisition (%s)", sr_strerror(ret));
+			break;
+		}
 		if ((ret = sdi->driver->dev_acquisition_start(sdi, sdi)) != SR_OK) {
 			sr_err("%s: could not start an acquisition "
-			       "(%d)", __func__, ret);
+			       "(%s)", __func__, sr_strerror(ret));
 			break;
 		}
 	}
@@ -317,7 +400,10 @@ SR_API int sr_session_start(void)
 /**
  * Run the session.
  *
- * @return SR_OK upon success, SR_ERR_BUG upon errors.
+ * @retval SR_OK Success.
+ * @retval SR_ERR_BUG Error occured.
+ *
+ * @since 0.1.0
  */
 SR_API int sr_session_run(void)
 {
@@ -333,6 +419,7 @@ SR_API int sr_session_run(void)
 		       "cannot be run without devices.", __func__);
 		return SR_ERR_BUG;
 	}
+	session->running = TRUE;
 
 	sr_info("Running.");
 
@@ -343,7 +430,8 @@ SR_API int sr_session_run(void)
 			session->sources[0].cb(-1, 0, session->sources[0].cb_data);
 	} else {
 		/* Real sources, use g_poll() main loop. */
-		sr_session_run_poll();
+		while (session->num_sources)
+			sr_session_iteration(TRUE);
 	}
 
 	return SR_OK;
@@ -358,7 +446,10 @@ SR_API int sr_session_run(void)
  * This must be called from within the session thread, to prevent freeing
  * resources that the session thread will try to use.
  *
- * @return SR_OK upon success, SR_ERR_BUG if no session exists.
+ * @retval SR_OK Success.
+ * @retval SR_ERR_BUG No session exists.
+ *
+ * @private
  */
 SR_PRIV int sr_session_stop_sync(void)
 {
@@ -379,6 +470,7 @@ SR_PRIV int sr_session_stop_sync(void)
 				sdi->driver->dev_acquisition_stop(sdi, sdi);
 		}
 	}
+	session->running = FALSE;
 
 	return SR_OK;
 }
@@ -394,7 +486,10 @@ SR_PRIV int sr_session_stop_sync(void)
  * to wait for the session thread to return before assuming that the session is
  * completely decommissioned.
  *
- * @return SR_OK upon success, SR_ERR_BUG if no session exists.
+ * @retval SR_OK Success.
+ * @retval SR_ERR_BUG No session exists.
+ *
+ * @since 0.1.0
  */
 SR_API int sr_session_stop(void)
 {
@@ -432,8 +527,8 @@ static void datafeed_dump(const struct sr_datafeed_packet *packet)
 		break;
 	case SR_DF_LOGIC:
 		logic = packet->payload;
-		sr_dbg("bus: Received SR_DF_LOGIC packet (%" PRIu64 " bytes).",
-		       logic->length);
+		sr_dbg("bus: Received SR_DF_LOGIC packet (%" PRIu64 " bytes, "
+		       "unitsize = %d).", logic->length, logic->unitsize);
 		break;
 	case SR_DF_ANALOG:
 		analog = packet->payload;
@@ -463,7 +558,8 @@ static void datafeed_dump(const struct sr_datafeed_packet *packet)
  * @param sdi TODO.
  * @param packet The datafeed packet to send to the session bus.
  *
- * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments.
+ * @retval SR_OK Success.
+ * @retval SR_ERR_ARG Invalid argument.
  *
  * @private
  */
@@ -497,16 +593,18 @@ SR_PRIV int sr_session_send(const struct sr_dev_inst *sdi,
  * Add an event source for a file descriptor.
  *
  * @param pollfd The GPollFD.
- * @param timeout Max time to wait before the callback is called, ignored if 0.
+ * @param[in] timeout Max time to wait before the callback is called,
+ *              ignored if 0.
  * @param cb Callback function to add. Must not be NULL.
  * @param cb_data Data for the callback function. Can be NULL.
  * @param poll_object TODO.
  *
- * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
- *         SR_ERR_MALLOC upon memory allocation errors.
+ * @retval SR_OK Success.
+ * @retval SR_ERR_ARG Invalid argument.
+ * @retval SR_ERR_MALLOC Memory allocation error.
  */
 static int _sr_session_source_add(GPollFD *pollfd, int timeout,
-	sr_receive_data_callback_t cb, void *cb_data, gintptr poll_object)
+	sr_receive_data_callback cb, void *cb_data, gintptr poll_object)
 {
 	struct source *new_sources, *s;
 	GPollFD *new_pollfds;
@@ -557,11 +655,14 @@ static int _sr_session_source_add(GPollFD *pollfd, int timeout,
  * @param cb Callback function to add. Must not be NULL.
  * @param cb_data Data for the callback function. Can be NULL.
  *
- * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
- *         SR_ERR_MALLOC upon memory allocation errors.
+ * @retval SR_OK Success.
+ * @retval SR_ERR_ARG Invalid argument.
+ * @retval SR_ERR_MALLOC Memory allocation error.
+ *
+ * @since 0.3.0
  */
 SR_API int sr_session_source_add(int fd, int events, int timeout,
-		sr_receive_data_callback_t cb, void *cb_data)
+		sr_receive_data_callback cb, void *cb_data)
 {
 	GPollFD p;
 
@@ -579,11 +680,14 @@ SR_API int sr_session_source_add(int fd, int events, int timeout,
  * @param cb Callback function to add. Must not be NULL.
  * @param cb_data Data for the callback function. Can be NULL.
  *
- * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
- *         SR_ERR_MALLOC upon memory allocation errors.
+ * @retval SR_OK Success.
+ * @retval SR_ERR_ARG Invalid argument.
+ * @retval SR_ERR_MALLOC Memory allocation error.
+ *
+ * @since 0.3.0
  */
 SR_API int sr_session_source_add_pollfd(GPollFD *pollfd, int timeout,
-		sr_receive_data_callback_t cb, void *cb_data)
+		sr_receive_data_callback cb, void *cb_data)
 {
 	return _sr_session_source_add(pollfd, timeout, cb,
 				      cb_data, (gintptr)pollfd);
@@ -598,11 +702,14 @@ SR_API int sr_session_source_add_pollfd(GPollFD *pollfd, int timeout,
  * @param cb Callback function to add. Must not be NULL.
  * @param cb_data Data for the callback function. Can be NULL.
  *
- * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
- *         SR_ERR_MALLOC upon memory allocation errors.
+ * @retval SR_OK Success.
+ * @retval SR_ERR_ARG Invalid argument.
+ * @retval SR_ERR_MALLOC Memory allocation error.
+ *
+ * @since 0.3.0
  */
 SR_API int sr_session_source_add_channel(GIOChannel *channel, int events,
-		int timeout, sr_receive_data_callback_t cb, void *cb_data)
+		int timeout, sr_receive_data_callback cb, void *cb_data)
 {
 	GPollFD p;
 
@@ -621,11 +728,12 @@ SR_API int sr_session_source_add_channel(GIOChannel *channel, int events,
  *
  * @todo Add more error checks and logging.
  *
- * @param channel The channel for which the source should be removed.
+ * @param poll_object The channel for which the source should be removed.
  *
- * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
- *         SR_ERR_MALLOC upon memory allocation errors, SR_ERR_BUG upon
- *         internal errors.
+ * @retval SR_OK Success
+ * @retval SR_ERR_ARG Invalid arguments
+ * @retval SR_ERR_MALLOC Memory allocation error
+ * @retval SR_ERR_BUG Internal error
  */
 static int _sr_session_source_remove(gintptr poll_object)
 {
@@ -679,9 +787,12 @@ static int _sr_session_source_remove(gintptr poll_object)
  *
  * @param fd The file descriptor for which the source should be removed.
  *
- * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
- *         SR_ERR_MALLOC upon memory allocation errors, SR_ERR_BUG upon
- *         internal errors.
+ * @retval SR_OK Success
+ * @retval SR_ERR_ARG Invalid argument
+ * @retval SR_ERR_MALLOC Memory allocation error.
+ * @retval SR_ERR_BUG Internal error.
+ *
+ * @since 0.3.0
  */
 SR_API int sr_session_source_remove(int fd)
 {
@@ -696,6 +807,8 @@ SR_API int sr_session_source_remove(int fd)
  * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
  *         SR_ERR_MALLOC upon memory allocation errors, SR_ERR_BUG upon
  *         internal errors.
+ *
+ * @since 0.2.0
  */
 SR_API int sr_session_source_remove_pollfd(GPollFD *pollfd)
 {
@@ -707,9 +820,12 @@ SR_API int sr_session_source_remove_pollfd(GPollFD *pollfd)
  *
  * @param channel The channel for which the source should be removed.
  *
- * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
- *         SR_ERR_MALLOC upon memory allocation errors, SR_ERR_BUG upon
- *         internal errors.
+ * @retval SR_OK Success.
+ * @retval SR_ERR_ARG Invalid argument.
+ * @retval SR_ERR_MALLOC Memory allocation error.
+ * @return SR_ERR_BUG Internal error.
+ *
+ * @since 0.2.0
  */
 SR_API int sr_session_source_remove_channel(GIOChannel *channel)
 {

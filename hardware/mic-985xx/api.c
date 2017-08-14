@@ -49,49 +49,24 @@ SR_PRIV const struct mic_dev_info mic_devs[] = {
 	},
 };
 
-static int clear_instances(int idx)
+static int dev_clear(int idx)
 {
-	struct sr_dev_inst *sdi;
-	struct drv_context *drvc;
-	struct dev_context *devc;
-	struct sr_serial_dev_inst *serial;
-	GSList *l;
-	struct sr_dev_driver *di;
-
-	di = mic_devs[idx].di;
-
-	if (!(drvc = di->priv))
-		return SR_OK;
-
-	for (l = drvc->instances; l; l = l->next) {
-		if (!(sdi = l->data))
-			continue;
-		if (!(devc = sdi->priv))
-			continue;
-		serial = sdi->conn;
-		sr_serial_dev_inst_free(serial);
-		sr_dev_inst_free(sdi);
-	}
-
-	g_slist_free(drvc->instances);
-	drvc->instances = NULL;
-
-	return SR_OK;
+	return std_dev_clear(mic_devs[idx].di, NULL);
 }
 
-static int hw_init(struct sr_context *sr_ctx, int idx)
+static int init(struct sr_context *sr_ctx, int idx)
 {
 	sr_dbg("Selected '%s' subdriver.", mic_devs[idx].di->name);
 
-	return std_hw_init(sr_ctx, mic_devs[idx].di, LOG_PREFIX);
+	return std_init(sr_ctx, mic_devs[idx].di, LOG_PREFIX);
 }
 
-static GSList *scan(const char *conn, const char *serialcomm, int idx)
+static GSList *mic_scan(const char *conn, const char *serialcomm, int idx)
 {
 	struct sr_dev_inst *sdi;
 	struct drv_context *drvc;
 	struct dev_context *devc;
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	struct sr_serial_dev_inst *serial;
 	GSList *devices;
 
@@ -112,7 +87,7 @@ static GSList *scan(const char *conn, const char *serialcomm, int idx)
 
 	/* TODO: Fill in version from protocol response. */
 	if (!(sdi = sr_dev_inst_new(0, SR_ST_INACTIVE, mic_devs[idx].vendor,
-				    mic_devs[idx].device, "")))
+				    mic_devs[idx].device, NULL)))
 		goto scan_cleanup;
 
 	if (!(devc = g_try_malloc0(sizeof(struct dev_context)))) {
@@ -126,14 +101,14 @@ static GSList *scan(const char *conn, const char *serialcomm, int idx)
 	sdi->priv = devc;
 	sdi->driver = mic_devs[idx].di;
 
-	if (!(probe = sr_probe_new(0, SR_PROBE_ANALOG, TRUE, "Temperature")))
+	if (!(ch = sr_channel_new(0, SR_CHANNEL_ANALOG, TRUE, "Temperature")))
 		goto scan_cleanup;
-	sdi->probes = g_slist_append(sdi->probes, probe);
+	sdi->channels = g_slist_append(sdi->channels, ch);
 
 	if (mic_devs[idx].has_humidity) {
-		if (!(probe = sr_probe_new(1, SR_PROBE_ANALOG, TRUE, "Humidity")))
+		if (!(ch = sr_channel_new(1, SR_CHANNEL_ANALOG, TRUE, "Humidity")))
 			goto scan_cleanup;
-		sdi->probes = g_slist_append(sdi->probes, probe);
+		sdi->channels = g_slist_append(sdi->channels, ch);
 	}
 
 	drvc->instances = g_slist_append(drvc->instances, sdi);
@@ -145,7 +120,7 @@ scan_cleanup:
 	return devices;
 }
 
-static GSList *hw_scan(GSList *options, int idx)
+static GSList *scan(GSList *options, int idx)
 {
 	struct sr_config *src;
 	GSList *l, *devices;
@@ -168,56 +143,31 @@ static GSList *hw_scan(GSList *options, int idx)
 
 	if (serialcomm) {
 		/* Use the provided comm specs. */
-		devices = scan(conn, serialcomm, idx);
+		devices = mic_scan(conn, serialcomm, idx);
 	} else {
 		/* Try the default. */
-		devices = scan(conn, mic_devs[idx].conn, idx);
+		devices = mic_scan(conn, mic_devs[idx].conn, idx);
 	}
 
 	return devices;
 }
 
-static GSList *hw_dev_list(int idx)
+static GSList *dev_list(int idx)
 {
 	return ((struct drv_context *)(mic_devs[idx].di->priv))->instances;
 }
 
-static int hw_dev_open(struct sr_dev_inst *sdi)
+static int cleanup(int idx)
 {
-	struct sr_serial_dev_inst *serial;
-
-	serial = sdi->conn;
-	if (serial_open(serial, SERIAL_RDWR | SERIAL_NONBLOCK) != SR_OK)
-		return SR_ERR;
-
-	sdi->status = SR_ST_ACTIVE;
-
-	return SR_OK;
+	return dev_clear(idx);
 }
 
-static int hw_dev_close(struct sr_dev_inst *sdi)
-{
-	struct sr_serial_dev_inst *serial;
-
-	serial = sdi->conn;
-	if (serial && serial->fd != -1) {
-		serial_close(serial);
-		sdi->status = SR_ST_INACTIVE;
-	}
-
-	return SR_OK;
-}
-
-static int hw_cleanup(int idx)
-{
-	clear_instances(idx);
-
-	return SR_OK;
-}
-
-static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
+static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
 	struct dev_context *devc;
+
+	(void)cg;
 
 	if (sdi->status != SR_ST_ACTIVE)
 		return SR_ERR_DEV_CLOSED;
@@ -242,9 +192,11 @@ static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
+static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
 	(void)sdi;
+	(void)cg;
 
 	switch (key) {
 	case SR_CONF_SCAN_OPTIONS:
@@ -262,7 +214,7 @@ static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
+static int dev_acquisition_start(const struct sr_dev_inst *sdi,
 				    void *cb_data, int idx)
 {
 	struct dev_context *devc;
@@ -281,32 +233,32 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 
 	/* Poll every 100ms, or whenever some data comes in. */
 	serial = sdi->conn;
-	sr_source_add(serial->fd, G_IO_IN, 100,
+	serial_source_add(serial, G_IO_IN, 100,
 		      mic_devs[idx].receive_data, (void *)sdi);
 
 	return SR_OK;
 }
 
-static int hw_dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
+static int dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
 {
-	return std_hw_dev_acquisition_stop_serial(sdi, cb_data, hw_dev_close,
-						  sdi->conn, LOG_PREFIX);
+	return std_serial_dev_acquisition_stop(sdi, cb_data, std_serial_dev_close,
+			sdi->conn, LOG_PREFIX);
 }
 
 /* Driver-specific API function wrappers */
 #define HW_INIT(X) \
-static int hw_init_##X(struct sr_context *sr_ctx) { return hw_init(sr_ctx, X); }
+static int init_##X(struct sr_context *sr_ctx) { return init(sr_ctx, X); }
 #define HW_CLEANUP(X) \
-static int hw_cleanup_##X(void) { return hw_cleanup(X); }
+static int cleanup_##X(void) { return cleanup(X); }
 #define HW_SCAN(X) \
-static GSList *hw_scan_##X(GSList *options) { return hw_scan(options, X); }
+static GSList *scan_##X(GSList *options) { return scan(options, X); }
 #define HW_DEV_LIST(X) \
-static GSList *hw_dev_list_##X(void) { return hw_dev_list(X); }
-#define CLEAR_INSTANCES(X) \
-static int clear_instances_##X(void) { return clear_instances(X); }
+static GSList *dev_list_##X(void) { return dev_list(X); }
+#define HW_DEV_CLEAR(X) \
+static int dev_clear_##X(void) { return dev_clear(X); }
 #define HW_DEV_ACQUISITION_START(X) \
-static int hw_dev_acquisition_start_##X(const struct sr_dev_inst *sdi, \
-void *cb_data) { return hw_dev_acquisition_start(sdi, cb_data, X); }
+static int dev_acquisition_start_##X(const struct sr_dev_inst *sdi, \
+void *cb_data) { return dev_acquisition_start(sdi, cb_data, X); }
 
 /* Driver structs and API function wrappers */
 #define DRV(ID, ID_UPPER, NAME, LONGNAME) \
@@ -314,24 +266,24 @@ HW_INIT(ID_UPPER) \
 HW_CLEANUP(ID_UPPER) \
 HW_SCAN(ID_UPPER) \
 HW_DEV_LIST(ID_UPPER) \
-CLEAR_INSTANCES(ID_UPPER) \
+HW_DEV_CLEAR(ID_UPPER) \
 HW_DEV_ACQUISITION_START(ID_UPPER) \
 SR_PRIV struct sr_dev_driver ID##_driver_info = { \
 	.name = NAME, \
 	.longname = LONGNAME, \
 	.api_version = 1, \
-	.init = hw_init_##ID_UPPER, \
-	.cleanup = hw_cleanup_##ID_UPPER, \
-	.scan = hw_scan_##ID_UPPER, \
-	.dev_list = hw_dev_list_##ID_UPPER, \
-	.dev_clear = clear_instances_##ID_UPPER, \
+	.init = init_##ID_UPPER, \
+	.cleanup = cleanup_##ID_UPPER, \
+	.scan = scan_##ID_UPPER, \
+	.dev_list = dev_list_##ID_UPPER, \
+	.dev_clear = dev_clear_##ID_UPPER, \
 	.config_get = NULL, \
 	.config_set = config_set, \
 	.config_list = config_list, \
-	.dev_open = hw_dev_open, \
-	.dev_close = hw_dev_close, \
-	.dev_acquisition_start = hw_dev_acquisition_start_##ID_UPPER, \
-	.dev_acquisition_stop = hw_dev_acquisition_stop, \
+	.dev_open = std_serial_dev_open, \
+	.dev_close = std_serial_dev_close, \
+	.dev_acquisition_start = dev_acquisition_start_##ID_UPPER, \
+	.dev_acquisition_stop = dev_acquisition_stop, \
 	.priv = NULL, \
 };
 

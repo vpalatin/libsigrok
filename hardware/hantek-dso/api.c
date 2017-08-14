@@ -60,7 +60,7 @@ static const int32_t devopts[] = {
 	SR_CONF_NUM_VDIV,
 };
 
-static const char *probe_names[] = {
+static const char *channel_names[] = {
 	"CH1", "CH2",
 	NULL,
 };
@@ -155,12 +155,12 @@ static const char *coupling[] = {
 SR_PRIV struct sr_dev_driver hantek_dso_driver_info;
 static struct sr_dev_driver *di = &hantek_dso_driver_info;
 
-static int hw_dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data);
+static int dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data);
 
 static struct sr_dev_inst *dso_dev_new(int index, const struct dso_profile *prof)
 {
 	struct sr_dev_inst *sdi;
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	struct drv_context *drvc;
 	struct dev_context *devc;
 	int i;
@@ -172,14 +172,14 @@ static struct sr_dev_inst *dso_dev_new(int index, const struct dso_profile *prof
 	sdi->driver = di;
 
 	/*
-	 * Add only the real probes -- EXT isn't a source of data, only
+	 * Add only the real channels -- EXT isn't a source of data, only
 	 * a trigger source internal to the device.
 	 */
-	for (i = 0; probe_names[i]; i++) {
-		if (!(probe = sr_probe_new(i, SR_PROBE_ANALOG, TRUE,
-				probe_names[i])))
+	for (i = 0; channel_names[i]; i++) {
+		if (!(ch = sr_channel_new(i, SR_CHANNEL_ANALOG, TRUE,
+				channel_names[i])))
 			return NULL;
-		sdi->probes = g_slist_append(sdi->probes, probe);
+		sdi->channels = g_slist_append(sdi->channels, ch);
 	}
 
 	if (!(devc = g_try_malloc0(sizeof(struct dev_context)))) {
@@ -210,25 +210,25 @@ static struct sr_dev_inst *dso_dev_new(int index, const struct dso_profile *prof
 	return sdi;
 }
 
-static int configure_probes(const struct sr_dev_inst *sdi)
+static int configure_channels(const struct sr_dev_inst *sdi)
 {
 	struct dev_context *devc;
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	const GSList *l;
 	int p;
 
 	devc = sdi->priv;
 
-	g_slist_free(devc->enabled_probes);
+	g_slist_free(devc->enabled_channels);
 	devc->ch1_enabled = devc->ch2_enabled = FALSE;
-	for (l = sdi->probes, p = 0; l; l = l->next, p++) {
-		probe = l->data;
+	for (l = sdi->channels, p = 0; l; l = l->next, p++) {
+		ch = l->data;
 		if (p == 0)
-			devc->ch1_enabled = probe->enabled;
+			devc->ch1_enabled = ch->enabled;
 		else
-			devc->ch2_enabled = probe->enabled;
-		if (probe->enabled)
-			devc->enabled_probes = g_slist_append(devc->enabled_probes, probe);
+			devc->ch2_enabled = ch->enabled;
+		if (ch->enabled)
+			devc->enabled_channels = g_slist_append(devc->enabled_channels, ch);
 	}
 
 	return SR_OK;
@@ -240,21 +240,21 @@ static void clear_dev_context(void *priv)
 
 	devc = priv;
 	g_free(devc->triggersource);
-	g_slist_free(devc->enabled_probes);
+	g_slist_free(devc->enabled_channels);
 
 }
 
-static int clear_instances(void)
+static int dev_clear(void)
 {
 	return std_dev_clear(di, clear_dev_context);
 }
 
-static int hw_init(struct sr_context *sr_ctx)
+static int init(struct sr_context *sr_ctx)
 {
-	return std_hw_init(sr_ctx, di, LOG_PREFIX);
+	return std_init(sr_ctx, di, LOG_PREFIX);
 }
 
-static GSList *hw_scan(GSList *options)
+static GSList *scan(GSList *options)
 {
 	struct drv_context *drvc;
 	struct dev_context *devc;
@@ -357,12 +357,12 @@ static GSList *hw_scan(GSList *options)
 	return devices;
 }
 
-static GSList *hw_dev_list(void)
+static GSList *dev_list(void)
 {
 	return ((struct drv_context *)(di->priv))->instances;
 }
 
-static int hw_dev_open(struct sr_dev_inst *sdi)
+static int dev_open(struct sr_dev_inst *sdi)
 {
 	struct dev_context *devc;
 	struct sr_usb_dev_inst *usb;
@@ -410,29 +410,25 @@ static int hw_dev_open(struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int hw_dev_close(struct sr_dev_inst *sdi)
+static int dev_close(struct sr_dev_inst *sdi)
 {
 	dso_close(sdi);
 
 	return SR_OK;
 }
 
-static int hw_cleanup(void)
+static int cleanup(void)
 {
-	struct drv_context *drvc;
-
-	if (!(drvc = di->priv))
-		return SR_OK;
-
-	clear_instances();
-
-	return SR_OK;
+	return dev_clear();
 }
 
-static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi)
+static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
 	struct sr_usb_dev_inst *usb;
 	char str[128];
+
+	(void)cg;
 
 	switch (id) {
 	case SR_CONF_CONN:
@@ -459,7 +455,8 @@ static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
+static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
 	struct dev_context *devc;
 	double tmp_double;
@@ -468,6 +465,8 @@ static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
 	unsigned int i;
 	const char *tmp_str;
 	char **targets;
+
+	(void)cg;
 
 	if (sdi->status != SR_ST_ACTIVE)
 		return SR_ERR_DEV_CLOSED;
@@ -479,10 +478,11 @@ static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
 		devc->limit_frames = g_variant_get_uint64(data);
 		break;
 	case SR_CONF_TRIGGER_SLOPE:
-		tmp_u64 = g_variant_get_uint64(data);
-		if (tmp_u64 != SLOPE_NEGATIVE && tmp_u64 != SLOPE_POSITIVE)
-			ret = SR_ERR_ARG;
-		devc->triggerslope = tmp_u64;
+		tmp_str = g_variant_get_string(data, NULL);
+		if (!tmp_str || !(tmp_str[0] == 'f' || tmp_str[0] == 'r'))
+			return SR_ERR_ARG;
+		devc->triggerslope = (tmp_str[0] == 'r')
+			? SLOPE_POSITIVE : SLOPE_NEGATIVE;
 		break;
 	case SR_CONF_HORIZ_TRIGGERPOS:
 		tmp_double = g_variant_get_double(data);
@@ -586,19 +586,16 @@ static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
 	return ret;
 }
 
-static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
+static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
 	struct dev_context *devc;
 	GVariant *tuple, *rational[2];
 	GVariantBuilder gvb;
 	unsigned int i;
 
-	(void)sdi;
+	(void)cg;
 
-	if (!sdi)
-		return SR_ERR_ARG;
-
-	devc = sdi->priv;
 	switch (key) {
 	case SR_CONF_SCAN_OPTIONS:
 		*data = g_variant_new_fixed_array(G_VARIANT_TYPE_INT32,
@@ -609,6 +606,9 @@ static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
 				devopts, ARRAY_SIZE(devopts), sizeof(int32_t));
 		break;
 	case SR_CONF_BUFFERSIZE:
+		if (!sdi)
+			return SR_ERR_ARG;
+		devc = sdi->priv;
 		*data = g_variant_new_fixed_array(G_VARIANT_TYPE_UINT64,
 				devc->profile->buffersizes, 2, sizeof(uint64_t));
 		break;
@@ -657,19 +657,19 @@ static void send_chunk(struct sr_dev_inst *sdi, unsigned char *buf,
 	struct sr_datafeed_analog analog;
 	struct dev_context *devc;
 	float ch1, ch2, range;
-	int num_probes, data_offset, i;
+	int num_channels, data_offset, i;
 
 	devc = sdi->priv;
-	num_probes = (devc->ch1_enabled && devc->ch2_enabled) ? 2 : 1;
+	num_channels = (devc->ch1_enabled && devc->ch2_enabled) ? 2 : 1;
 	packet.type = SR_DF_ANALOG;
 	packet.payload = &analog;
 	/* TODO: support for 5xxx series 9-bit samples */
-	analog.probes = devc->enabled_probes;
+	analog.channels = devc->enabled_channels;
 	analog.num_samples = num_samples;
 	analog.mq = SR_MQ_VOLTAGE;
 	analog.unit = SR_UNIT_VOLT;
 	/* TODO: Check malloc return value. */
-	analog.data = g_try_malloc(analog.num_samples * sizeof(float) * num_probes);
+	analog.data = g_try_malloc(analog.num_samples * sizeof(float) * num_channels);
 	data_offset = 0;
 	for (i = 0; i < analog.num_samples; i++) {
 		/*
@@ -806,8 +806,7 @@ static int handle_event(int fd, int revents, void *cb_data)
 	struct timeval tv;
 	struct dev_context *devc;
 	struct drv_context *drvc = di->priv;
-	const struct libusb_pollfd **lupfd;
-	int num_probes, i;
+	int num_channels;
 	uint32_t trigger_offset;
 	uint8_t capturestate;
 
@@ -823,10 +822,7 @@ static int handle_event(int fd, int revents, void *cb_data)
 		 * TODO: Doesn't really cancel pending transfers so they might
 		 * come in after SR_DF_END is sent.
 		 */
-		lupfd = libusb_get_pollfds(drvc->sr_ctx->libusb_ctx);
-		for (i = 0; lupfd[i]; i++)
-			sr_source_remove(lupfd[i]->fd);
-		free(lupfd);
+		usb_source_remove(drvc->sr_ctx);
 
 		packet.type = SR_DF_END;
 		sr_session_send(sdi, &packet);
@@ -880,9 +876,9 @@ static int handle_event(int fd, int revents, void *cb_data)
 		/* Remember where in the captured frame the trigger is. */
 		devc->trigger_offset = trigger_offset;
 
-		num_probes = (devc->ch1_enabled && devc->ch2_enabled) ? 2 : 1;
+		num_channels = (devc->ch1_enabled && devc->ch2_enabled) ? 2 : 1;
 		/* TODO: Check malloc return value. */
-		devc->framebuf = g_try_malloc(devc->framesize * num_probes * 2);
+		devc->framebuf = g_try_malloc(devc->framesize * num_channels * 2);
 		devc->samp_buffered = devc->samp_received = 0;
 
 		/* Tell the scope to send us the first frame. */
@@ -914,13 +910,10 @@ static int handle_event(int fd, int revents, void *cb_data)
 	return TRUE;
 }
 
-static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
-					void *cb_data)
+static int dev_acquisition_start(const struct sr_dev_inst *sdi, void *cb_data)
 {
-	const struct libusb_pollfd **lupfd;
 	struct dev_context *devc;
 	struct drv_context *drvc = di->priv;
-	int i;
 
 	if (sdi->status != SR_ST_ACTIVE)
 		return SR_ERR_DEV_CLOSED;
@@ -928,8 +921,8 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 	devc = sdi->priv;
 	devc->cb_data = cb_data;
 
-	if (configure_probes(sdi) != SR_OK) {
-		sr_err("Failed to configure probes.");
+	if (configure_channels(sdi) != SR_OK) {
+		sr_err("Failed to configure channels.");
 		return SR_ERR;
 	}
 
@@ -940,11 +933,7 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 		return SR_ERR;
 
 	devc->dev_state = CAPTURE;
-	lupfd = libusb_get_pollfds(drvc->sr_ctx->libusb_ctx);
-	for (i = 0; lupfd[i]; i++)
-		sr_source_add(lupfd[i]->fd, lupfd[i]->events, TICK,
-				handle_event, (void *)sdi);
-	free(lupfd);
+	usb_source_add(drvc->sr_ctx, TICK, handle_event, (void *)sdi);
 
 	/* Send header packet to the session bus. */
 	std_session_send_df_header(cb_data, LOG_PREFIX);
@@ -952,7 +941,7 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 	return SR_OK;
 }
 
-static int hw_dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
+static int dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
 {
 	struct dev_context *devc;
 
@@ -971,17 +960,17 @@ SR_PRIV struct sr_dev_driver hantek_dso_driver_info = {
 	.name = "hantek-dso",
 	.longname = "Hantek DSO",
 	.api_version = 1,
-	.init = hw_init,
-	.cleanup = hw_cleanup,
-	.scan = hw_scan,
-	.dev_list = hw_dev_list,
-	.dev_clear = clear_instances,
+	.init = init,
+	.cleanup = cleanup,
+	.scan = scan,
+	.dev_list = dev_list,
+	.dev_clear = dev_clear,
 	.config_get = config_get,
 	.config_set = config_set,
 	.config_list = config_list,
-	.dev_open = hw_dev_open,
-	.dev_close = hw_dev_close,
-	.dev_acquisition_start = hw_dev_acquisition_start,
-	.dev_acquisition_stop = hw_dev_acquisition_stop,
+	.dev_open = dev_open,
+	.dev_close = dev_close,
+	.dev_acquisition_start = dev_acquisition_start,
+	.dev_acquisition_stop = dev_acquisition_stop,
 	.priv = NULL,
 };

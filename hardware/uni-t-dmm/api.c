@@ -37,75 +37,143 @@ static const int32_t hwcaps[] = {
 	SR_CONF_CONTINUOUS,
 };
 
-SR_PRIV struct sr_dev_driver tecpel_dmm_8060_driver_info;
 SR_PRIV struct sr_dev_driver tecpel_dmm_8061_driver_info;
+SR_PRIV struct sr_dev_driver uni_t_ut60a_driver_info;
+SR_PRIV struct sr_dev_driver uni_t_ut60e_driver_info;
+SR_PRIV struct sr_dev_driver uni_t_ut60g_driver_info;
+SR_PRIV struct sr_dev_driver uni_t_ut61b_driver_info;
+SR_PRIV struct sr_dev_driver uni_t_ut61c_driver_info;
 SR_PRIV struct sr_dev_driver uni_t_ut61d_driver_info;
 SR_PRIV struct sr_dev_driver uni_t_ut61e_driver_info;
 SR_PRIV struct sr_dev_driver voltcraft_vc820_driver_info;
+SR_PRIV struct sr_dev_driver voltcraft_vc830_driver_info;
 SR_PRIV struct sr_dev_driver voltcraft_vc840_driver_info;
+SR_PRIV struct sr_dev_driver tenma_72_7745_driver_info;
+SR_PRIV struct sr_dev_driver tenma_72_7750_driver_info;
 
 SR_PRIV struct dmm_info udmms[] = {
 	{
-		"Tecpel", "DMM-8060", 2400,
-		FS9721_PACKET_SIZE, NULL,
-		sr_fs9721_packet_valid, sr_fs9721_parse,
-		NULL,
-		&tecpel_dmm_8060_driver_info, receive_data_TECPEL_DMM_8060,
-	},
-	{
 		"Tecpel", "DMM-8061", 2400,
-		FS9721_PACKET_SIZE, NULL,
+		FS9721_PACKET_SIZE,
 		sr_fs9721_packet_valid, sr_fs9721_parse,
 		sr_fs9721_00_temp_c,
 		&tecpel_dmm_8061_driver_info, receive_data_TECPEL_DMM_8061,
 	},
 	{
+		"UNI-T", "UT60A", 2400,
+		FS9721_PACKET_SIZE,
+		sr_fs9721_packet_valid, sr_fs9721_parse,
+		NULL,
+		&uni_t_ut60a_driver_info, receive_data_UNI_T_UT60A,
+	},
+	{
+		"UNI-T", "UT60E", 2400,
+		FS9721_PACKET_SIZE,
+		sr_fs9721_packet_valid, sr_fs9721_parse,
+		sr_fs9721_00_temp_c,
+		&uni_t_ut60e_driver_info, receive_data_UNI_T_UT60E,
+	},
+	{
+		/* The baudrate is actually 19230, see "Note 1" below. */
+		"UNI-T", "UT60G", 19200,
+		ES519XX_11B_PACKET_SIZE,
+		sr_es519xx_19200_11b_packet_valid, sr_es519xx_19200_11b_parse,
+		NULL,
+		&uni_t_ut60g_driver_info, receive_data_UNI_T_UT60G,
+	},
+	{
+		"UNI-T", "UT61B", 2400,
+		FS9922_PACKET_SIZE,
+		sr_fs9922_packet_valid, sr_fs9922_parse,
+		NULL,
+		&uni_t_ut61b_driver_info, receive_data_UNI_T_UT61B,
+	},
+	{
+		"UNI-T", "UT61C", 2400,
+		FS9922_PACKET_SIZE,
+		sr_fs9922_packet_valid, sr_fs9922_parse,
+		NULL,
+		&uni_t_ut61c_driver_info, receive_data_UNI_T_UT61C,
+	},
+	{
 		"UNI-T", "UT61D", 2400,
-		FS9922_PACKET_SIZE, NULL,
+		FS9922_PACKET_SIZE,
 		sr_fs9922_packet_valid, sr_fs9922_parse,
 		NULL,
 		&uni_t_ut61d_driver_info, receive_data_UNI_T_UT61D,
 	},
 	{
-		"UNI-T", "UT61E", 19230,
-		ES51922_PACKET_SIZE, NULL,
-		sr_es51922_packet_valid, sr_es51922_parse,
+		/* The baudrate is actually 19230, see "Note 1" below. */
+		"UNI-T", "UT61E", 19200,
+		ES519XX_14B_PACKET_SIZE,
+		sr_es519xx_19200_14b_packet_valid, sr_es519xx_19200_14b_parse,
 		NULL,
 		&uni_t_ut61e_driver_info, receive_data_UNI_T_UT61E,
 	},
 	{
 		"Voltcraft", "VC-820", 2400,
-		FS9721_PACKET_SIZE, NULL,
+		FS9721_PACKET_SIZE,
 		sr_fs9721_packet_valid, sr_fs9721_parse,
 		NULL,
 		&voltcraft_vc820_driver_info, receive_data_VOLTCRAFT_VC820,
 	},
 	{
+		/*
+		 * Note: The VC830 doesn't set the 'volt' and 'diode' bits of
+		 * the FS9922 protocol. Instead, it only sets the user-defined
+		 * bit "z1" to indicate "diode mode" and "voltage".
+		 */
+		"Voltcraft", "VC-830", 2400,
+		FS9922_PACKET_SIZE,
+		sr_fs9922_packet_valid, sr_fs9922_parse,
+		&sr_fs9922_z1_diode,
+		&voltcraft_vc830_driver_info, receive_data_VOLTCRAFT_VC830,
+	},
+	{
 		"Voltcraft", "VC-840", 2400,
-		FS9721_PACKET_SIZE, NULL,
+		FS9721_PACKET_SIZE,
 		sr_fs9721_packet_valid, sr_fs9721_parse,
 		sr_fs9721_00_temp_c,
 		&voltcraft_vc840_driver_info, receive_data_VOLTCRAFT_VC840,
 	},
+	{
+		"Tenma", "72-7745", 2400,
+		FS9721_PACKET_SIZE,
+		sr_fs9721_packet_valid, sr_fs9721_parse,
+		sr_fs9721_00_temp_c,
+		&tenma_72_7745_driver_info, receive_data_TENMA_72_7745,
+	},
+	{
+		/* The baudrate is actually 19230, see "Note 1" below. */
+		"Tenma", "72-7750", 19200,
+		ES519XX_11B_PACKET_SIZE,
+		sr_es519xx_19200_11b_packet_valid, sr_es519xx_19200_11b_parse,
+		NULL,
+		&tenma_72_7750_driver_info, receive_data_TENMA_72_7750,
+	},
 };
 
-static int clear_instances(int dmm)
+/*
+ * Note 1: The actual baudrate of the Cyrustek ES519xx chip used in this DMM
+ * is 19230. However, the WCH CH9325 chip (UART to USB/HID) used in (some
+ * versions of) the UNI-T UT-D04 cable doesn't support 19230 baud. It only
+ * supports 19200, and setting an unsupported baudrate will result in the
+ * default of 2400 being used (which will not work with this DMM, of course).
+ */
+
+static int dev_clear(int dmm)
 {
-	(void)dmm;
-
-	/* TODO: Use common code later. */
-
-	return SR_OK;
+	return std_dev_clear(udmms[dmm].di, NULL);
 }
 
-static int hw_init(struct sr_context *sr_ctx, int dmm)
+static int init(struct sr_context *sr_ctx, int dmm)
 {
 	sr_dbg("Selected '%s' subdriver.", udmms[dmm].di->name);
 
-	return std_hw_init(sr_ctx, udmms[dmm].di, LOG_PREFIX);
+	return std_init(sr_ctx, udmms[dmm].di, LOG_PREFIX);
 }
 
-static GSList *hw_scan(GSList *options, int dmm)
+static GSList *scan(GSList *options, int dmm)
 {
 	GSList *usb_devices, *devices, *l;
 	struct sr_dev_inst *sdi;
@@ -113,7 +181,7 @@ static GSList *hw_scan(GSList *options, int dmm)
 	struct drv_context *drvc;
 	struct sr_usb_dev_inst *usb;
 	struct sr_config *src;
-	struct sr_probe *probe;
+	struct sr_channel *ch;
 	const char *conn;
 
 	drvc = udmms[dmm].di->priv;
@@ -128,7 +196,7 @@ static GSList *hw_scan(GSList *options, int dmm)
 		}
 	}
 	if (!conn)
-		conn = UNI_T_UT_D04_NEW;
+		return NULL;
 
 	devices = NULL;
 	if (!(usb_devices = sr_usb_find(drvc->sr_ctx->libusb_ctx, conn))) {
@@ -153,9 +221,9 @@ static GSList *hw_scan(GSList *options, int dmm)
 		}
 		sdi->priv = devc;
 		sdi->driver = udmms[dmm].di;
-		if (!(probe = sr_probe_new(0, SR_PROBE_ANALOG, TRUE, "P1")))
+		if (!(ch = sr_channel_new(0, SR_CHANNEL_ANALOG, TRUE, "P1")))
 			return NULL;
-		sdi->probes = g_slist_append(sdi->probes, probe);
+		sdi->channels = g_slist_append(sdi->channels, ch);
 
 		sdi->inst_type = SR_INST_USB;
 		sdi->conn = usb;
@@ -167,12 +235,12 @@ static GSList *hw_scan(GSList *options, int dmm)
 	return devices;
 }
 
-static GSList *hw_dev_list(int dmm)
+static GSList *dev_list(int dmm)
 {
 	return ((struct drv_context *)(udmms[dmm].di->priv))->instances;
 }
 
-static int hw_dev_open(struct sr_dev_inst *sdi, int dmm)
+static int dev_open(struct sr_dev_inst *sdi, int dmm)
 {
 	struct drv_context *drvc;
 	struct sr_usb_dev_inst *usb;
@@ -187,10 +255,8 @@ static int hw_dev_open(struct sr_dev_inst *sdi, int dmm)
 	return ret;
 }
 
-static int hw_dev_close(struct sr_dev_inst *sdi)
+static int dev_close(struct sr_dev_inst *sdi)
 {
-	(void)sdi;
-
 	/* TODO */
 
 	sdi->status = SR_ST_INACTIVE;
@@ -198,16 +264,17 @@ static int hw_dev_close(struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int hw_cleanup(int dmm)
+static int cleanup(int dmm)
 {
-	clear_instances(dmm);
-
-	return SR_OK;
+	return dev_clear(dmm);
 }
 
-static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
+static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
 	struct dev_context *devc;
+
+	(void)cg;
 
 	devc = sdi->priv;
 
@@ -237,9 +304,11 @@ static int config_set(int id, GVariant *data, const struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
+static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi,
+		const struct sr_channel_group *cg)
 {
 	(void)sdi;
+	(void)cg;
 
 	switch (key) {
 	case SR_CONF_SCAN_OPTIONS:
@@ -257,7 +326,7 @@ static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
-static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
+static int dev_acquisition_start(const struct sr_dev_inst *sdi,
 				    void *cb_data, int dmm)
 {
 	struct dev_context *devc;
@@ -277,7 +346,7 @@ static int hw_dev_acquisition_start(const struct sr_dev_inst *sdi,
 	return SR_OK;
 }
 
-static int hw_dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
+static int dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
 {
 	struct sr_datafeed_packet packet;
 
@@ -298,20 +367,20 @@ static int hw_dev_acquisition_stop(struct sr_dev_inst *sdi, void *cb_data)
 
 /* Driver-specific API function wrappers */
 #define HW_INIT(X) \
-static int hw_init_##X(struct sr_context *sr_ctx) { return hw_init(sr_ctx, X); }
+static int init_##X(struct sr_context *sr_ctx) { return init(sr_ctx, X); }
 #define HW_CLEANUP(X) \
-static int hw_cleanup_##X(void) { return hw_cleanup(X); }
+static int cleanup_##X(void) { return cleanup(X); }
 #define HW_SCAN(X) \
-static GSList *hw_scan_##X(GSList *options) { return hw_scan(options, X); }
+static GSList *scan_##X(GSList *options) { return scan(options, X); }
 #define HW_DEV_LIST(X) \
-static GSList *hw_dev_list_##X(void) { return hw_dev_list(X); }
-#define CLEAR_INSTANCES(X) \
-static int clear_instances_##X(void) { return clear_instances(X); }
+static GSList *dev_list_##X(void) { return dev_list(X); }
+#define HW_DEV_CLEAR(X) \
+static int dev_clear_##X(void) { return dev_clear(X); }
 #define HW_DEV_ACQUISITION_START(X) \
-static int hw_dev_acquisition_start_##X(const struct sr_dev_inst *sdi, \
-void *cb_data) { return hw_dev_acquisition_start(sdi, cb_data, X); }
+static int dev_acquisition_start_##X(const struct sr_dev_inst *sdi, \
+void *cb_data) { return dev_acquisition_start(sdi, cb_data, X); }
 #define HW_DEV_OPEN(X) \
-static int hw_dev_open_##X(struct sr_dev_inst *sdi) { return hw_dev_open(sdi, X); }
+static int dev_open_##X(struct sr_dev_inst *sdi) { return dev_open(sdi, X); }
 
 /* Driver structs and API function wrappers */
 #define DRV(ID, ID_UPPER, NAME, LONGNAME) \
@@ -319,31 +388,38 @@ HW_INIT(ID_UPPER) \
 HW_CLEANUP(ID_UPPER) \
 HW_SCAN(ID_UPPER) \
 HW_DEV_LIST(ID_UPPER) \
-CLEAR_INSTANCES(ID_UPPER) \
+HW_DEV_CLEAR(ID_UPPER) \
 HW_DEV_ACQUISITION_START(ID_UPPER) \
 HW_DEV_OPEN(ID_UPPER) \
 SR_PRIV struct sr_dev_driver ID##_driver_info = { \
 	.name = NAME, \
 	.longname = LONGNAME, \
 	.api_version = 1, \
-	.init = hw_init_##ID_UPPER, \
-	.cleanup = hw_cleanup_##ID_UPPER, \
-	.scan = hw_scan_##ID_UPPER, \
-	.dev_list = hw_dev_list_##ID_UPPER, \
-	.dev_clear = clear_instances_##ID_UPPER, \
+	.init = init_##ID_UPPER, \
+	.cleanup = cleanup_##ID_UPPER, \
+	.scan = scan_##ID_UPPER, \
+	.dev_list = dev_list_##ID_UPPER, \
+	.dev_clear = dev_clear_##ID_UPPER, \
 	.config_get = NULL, \
 	.config_set = config_set, \
 	.config_list = config_list, \
-	.dev_open = hw_dev_open_##ID_UPPER, \
-	.dev_close = hw_dev_close, \
-	.dev_acquisition_start = hw_dev_acquisition_start_##ID_UPPER, \
-	.dev_acquisition_stop = hw_dev_acquisition_stop, \
+	.dev_open = dev_open_##ID_UPPER, \
+	.dev_close = dev_close, \
+	.dev_acquisition_start = dev_acquisition_start_##ID_UPPER, \
+	.dev_acquisition_stop = dev_acquisition_stop, \
 	.priv = NULL, \
 };
 
-DRV(tecpel_dmm_8060, TECPEL_DMM_8060, "tecpel-dmm-8060", "Tecpel DMM-8060")
 DRV(tecpel_dmm_8061, TECPEL_DMM_8061, "tecpel-dmm-8061", "Tecpel DMM-8061")
+DRV(uni_t_ut60a, UNI_T_UT60A, "uni-t-ut60a", "UNI-T UT60A")
+DRV(uni_t_ut60e, UNI_T_UT60E, "uni-t-ut60e", "UNI-T UT60E")
+DRV(uni_t_ut60g, UNI_T_UT60G, "uni-t-ut60g", "UNI-T UT60G")
+DRV(uni_t_ut61b, UNI_T_UT61B, "uni-t-ut61b", "UNI-T UT61B")
+DRV(uni_t_ut61c, UNI_T_UT61C, "uni-t-ut61c", "UNI-T UT61C")
 DRV(uni_t_ut61d, UNI_T_UT61D, "uni-t-ut61d", "UNI-T UT61D")
 DRV(uni_t_ut61e, UNI_T_UT61E, "uni-t-ut61e", "UNI-T UT61E")
 DRV(voltcraft_vc820, VOLTCRAFT_VC820, "voltcraft-vc820", "Voltcraft VC-820")
+DRV(voltcraft_vc830, VOLTCRAFT_VC830, "voltcraft-vc830", "Voltcraft VC-830")
 DRV(voltcraft_vc840, VOLTCRAFT_VC840, "voltcraft-vc840", "Voltcraft VC-840")
+DRV(tenma_72_7745, TENMA_72_7745, "tenma-72-7745", "Tenma 72-7745")
+DRV(tenma_72_7750, TENMA_72_7750, "tenma-72-7750", "Tenma 72-7750")

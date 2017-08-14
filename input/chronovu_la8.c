@@ -25,18 +25,11 @@
 #include "libsigrok.h"
 #include "libsigrok-internal.h"
 
-/* Message logging helpers with subsystem-specific prefix string. */
-#define LOG_PREFIX "input/chronovu-la8: "
-#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
-#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
-#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
-#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
-#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
-#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+#define LOG_PREFIX "input/chronovu-la8"
 
 #define NUM_PACKETS		2048
 #define PACKET_SIZE		4096
-#define DEFAULT_NUM_PROBES	8
+#define DEFAULT_NUM_CHANNELS	8
 
 /**
  * Convert the LA8 'divcount' value to the respective samplerate (in Hz).
@@ -103,20 +96,20 @@ static int format_match(const char *filename)
 
 static int init(struct sr_input *in, const char *filename)
 {
-	struct sr_probe *probe;
-	int num_probes, i;
-	char name[SR_MAX_PROBENAME_LEN + 1];
+	struct sr_channel *ch;
+	int num_channels, i;
+	char name[SR_MAX_CHANNELNAME_LEN + 1];
 	char *param;
 
 	(void)filename;
 
-	num_probes = DEFAULT_NUM_PROBES;
+	num_channels = DEFAULT_NUM_CHANNELS;
 
 	if (in->param) {
-		param = g_hash_table_lookup(in->param, "numprobes");
+		param = g_hash_table_lookup(in->param, "numchannels");
 		if (param) {
-			num_probes = strtoul(param, NULL, 10);
-			if (num_probes < 1) {
+			num_channels = strtoul(param, NULL, 10);
+			if (num_channels < 1) {
 				sr_err("%s: strtoul failed", __func__);
 				return SR_ERR;
 			}
@@ -126,12 +119,12 @@ static int init(struct sr_input *in, const char *filename)
 	/* Create a virtual device. */
 	in->sdi = sr_dev_inst_new(0, SR_ST_ACTIVE, NULL, NULL, NULL);
 
-	for (i = 0; i < num_probes; i++) {
-		snprintf(name, SR_MAX_PROBENAME_LEN, "%d", i);
+	for (i = 0; i < num_channels; i++) {
+		snprintf(name, SR_MAX_CHANNELNAME_LEN, "%d", i);
 		/* TODO: Check return value. */
-		if (!(probe = sr_probe_new(i, SR_PROBE_LOGIC, TRUE, name)))
+		if (!(ch = sr_channel_new(i, SR_CHANNEL_LOGIC, TRUE, name)))
 			return SR_ERR;
-		in->sdi->probes = g_slist_append(in->sdi->probes, probe);
+		in->sdi->channels = g_slist_append(in->sdi->channels, ch);
 	}
 
 	return SR_OK;
@@ -144,7 +137,7 @@ static int loadfile(struct sr_input *in, const char *filename)
 	struct sr_datafeed_logic logic;
 	struct sr_config *src;
 	uint8_t buf[PACKET_SIZE], divcount;
-	int i, fd, size, num_probes;
+	int i, fd, size, num_channels;
 	uint64_t samplerate;
 
 	/* TODO: Use glib functions! GIOChannel, g_fopen, etc. */
@@ -153,7 +146,7 @@ static int loadfile(struct sr_input *in, const char *filename)
 		return SR_ERR;
 	}
 
-	num_probes = g_slist_length(in->sdi->probes);
+	num_channels = g_slist_length(in->sdi->channels);
 
 	/* Seek to the end of the file, and read the divcount byte. */
 	divcount = 0x00; /* TODO: Don't hardcode! */
@@ -183,7 +176,7 @@ static int loadfile(struct sr_input *in, const char *filename)
 	sr_dbg("%s: sending SR_DF_LOGIC data packets", __func__);
 	packet.type = SR_DF_LOGIC;
 	packet.payload = &logic;
-	logic.unitsize = (num_probes + 7) / 8;
+	logic.unitsize = (num_channels + 7) / 8;
 	logic.data = buf;
 
 	/* Send 8MB of total data to the session bus in small chunks. */

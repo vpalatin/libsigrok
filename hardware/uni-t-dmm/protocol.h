@@ -27,33 +27,29 @@
 #include "libsigrok.h"
 #include "libsigrok-internal.h"
 
-/* Message logging helpers with subsystem-specific prefix string. */
-#define LOG_PREFIX "uni-t-dmm: "
-#define sr_log(l, s, args...) sr_log(l, LOG_PREFIX s, ## args)
-#define sr_spew(s, args...) sr_spew(LOG_PREFIX s, ## args)
-#define sr_dbg(s, args...) sr_dbg(LOG_PREFIX s, ## args)
-#define sr_info(s, args...) sr_info(LOG_PREFIX s, ## args)
-#define sr_warn(s, args...) sr_warn(LOG_PREFIX s, ## args)
-#define sr_err(s, args...) sr_err(LOG_PREFIX s, ## args)
+#define LOG_PREFIX "uni-t-dmm"
 
-/* Note: When adding entries here, don't forget to update DMM_COUNT. */
 enum {
-	TECPEL_DMM_8060,
 	TECPEL_DMM_8061,
+	UNI_T_UT60A,
+	UNI_T_UT60E,
+	UNI_T_UT60G,
+	UNI_T_UT61B,
+	UNI_T_UT61C,
 	UNI_T_UT61D,
 	UNI_T_UT61E,
 	VOLTCRAFT_VC820,
+	VOLTCRAFT_VC830,
 	VOLTCRAFT_VC840,
+	TENMA_72_7745,
+	TENMA_72_7750,
 };
-
-#define DMM_COUNT 6
 
 struct dmm_info {
 	char *vendor;
 	char *device;
 	uint32_t baudrate;
 	int packet_size;
-	int (*packet_request)(struct sr_serial_dev_inst *);
 	gboolean (*packet_valid)(const uint8_t *);
 	int (*packet_parse)(const uint8_t *, float *,
 			    struct sr_datafeed_analog *, void *);
@@ -61,8 +57,6 @@ struct dmm_info {
 	struct sr_dev_driver *di;
 	int (*receive_data)(int, int, void *);
 };
-
-extern SR_PRIV struct dmm_info udmms[DMM_COUNT];
 
 #define CHUNK_SIZE		8
 
@@ -91,11 +85,18 @@ struct dev_context {
 	uint8_t buflen;
 };
 
-SR_PRIV int receive_data_TECPEL_DMM_8060(int fd, int revents, void *cb_data);
 SR_PRIV int receive_data_TECPEL_DMM_8061(int fd, int revents, void *cb_data);
+SR_PRIV int receive_data_UNI_T_UT60A(int fd, int revents, void *cb_data);
+SR_PRIV int receive_data_UNI_T_UT60E(int fd, int revents, void *cb_data);
+SR_PRIV int receive_data_UNI_T_UT60G(int fd, int revents, void *cb_data);
+SR_PRIV int receive_data_UNI_T_UT61B(int fd, int revents, void *cb_data);
+SR_PRIV int receive_data_UNI_T_UT61C(int fd, int revents, void *cb_data);
 SR_PRIV int receive_data_UNI_T_UT61D(int fd, int revents, void *cb_data);
 SR_PRIV int receive_data_UNI_T_UT61E(int fd, int revents, void *cb_data);
 SR_PRIV int receive_data_VOLTCRAFT_VC820(int fd, int revents, void *cb_data);
+SR_PRIV int receive_data_VOLTCRAFT_VC830(int fd, int revents, void *cb_data);
 SR_PRIV int receive_data_VOLTCRAFT_VC840(int fd, int revents, void *cb_data);
+SR_PRIV int receive_data_TENMA_72_7745(int fd, int revents, void *cb_data);
+SR_PRIV int receive_data_TENMA_72_7750(int fd, int revents, void *cb_data);
 
 #endif
