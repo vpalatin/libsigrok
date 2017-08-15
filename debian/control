@@ -38,7 +38,9 @@ Package: libsigrokcxx-dev
 Section: libdevel
 Architecture: any
 Multi-Arch: same
-Depends: libsigrokcxx4 (= ${binary:Version}), ${misc:Depends}
+Depends: libsigrokcxx4 (= ${binary:Version}),
+ libsigrok-dev (= ${binary:Version}),
+ ${misc:Depends}
 Description: sigrok C++ bindings - development files
  libsigrok is a shared library which provides basic hardware access
  drivers for logic analyzers, as well as input/output file format support.
