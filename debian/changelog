@@ -8,6 +8,7 @@ libsigrok (0.5.0-1) experimental; urgency=medium
   * Add build-dep on check to enable unit tests
   * Remove old transitional libsigrok0-dev package.
   * Move maintenance to Debian Electronics Packaging Team (Closes: #852830)
+  * Standards-Version: 4.0.1 (change priority to optional).
 
  -- Jonathan McDowell <noodles@earth.li>  Tue, 15 Aug 2017 19:16:16 +0100
 
