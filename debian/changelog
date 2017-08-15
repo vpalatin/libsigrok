@@ -1,4 +1,4 @@
-libsigrok (0.5.0-1) UNRELEASED; urgency=medium
+libsigrok (0.5.0-1) experimental; urgency=medium
 
   * New upstream release.
     + The libsigrok2 package now becomes libsigrok4 (upstream SO name change).
@@ -9,7 +9,7 @@ libsigrok (0.5.0-1) UNRELEASED; urgency=medium
   * Remove old transitional libsigrok0-dev package.
   * Move maintenance to Debian Electronics Packaging Team (Closes: #852830)
 
- -- Jonathan McDowell <noodles@earth.li>  Mon, 14 Aug 2017 17:19:39 +0100
+ -- Jonathan McDowell <noodles@earth.li>  Tue, 15 Aug 2017 19:16:16 +0100
 
 libsigrok (0.3.0-1) unstable; urgency=medium
 
