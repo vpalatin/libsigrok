@@ -1,3 +1,9 @@
+libsigrok (0.5.0-3) UNRELEASED; urgency=medium
+
+  * Fix unit tests on i386 by casting floats to doubles.
+
+ -- Jonathan McDowell <noodles@earth.li>  Mon, 18 Sep 2017 18:45:04 +0100
+
 libsigrok (0.5.0-2) experimental; urgency=medium
 
   * Update debian/copyright.

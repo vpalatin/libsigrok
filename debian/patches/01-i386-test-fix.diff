@@ -1,0 +1,28 @@
+Description: Fix unit tests on i386 by forcing floats to doubles
+ The unit tests check that various macros and number to string
+ functions operate as expected. However on i386 the precision of
+ the floating point numbers is not quite as expected, which leads to
+ test failures. These are not seen on x86_64 or other platforms, but
+ can be worked around by casting the numbers in questions to double
+ precision rather than defaulting to floats.
+ .
+ See https://www.earth.li/~noodles/blog/2017/08/help-me-c.html and the
+ associated comments for further details.
+Author: Jonathan McDowell <noodles@earth.li>
+Forwarded: no
+Last-Update: 2017-09-18
+diff --git a/tests/strutil.c b/tests/strutil.c
+index a36b6a2d..8883d85a 100644
+--- a/tests/strutil.c
++++ b/tests/strutil.c
+@@ -136,8 +136,8 @@ START_TEST(test_mhz)
+ 	test_samplerate(SR_MHZ(12.345678), "12.345678 MHz");
+ 	test_samplerate(SR_MHZ(123.456789), "123.456789 MHz");
+ 	test_samplerate(SR_MHZ(1.230007), "1.230007 MHz");
+-	test_samplerate(SR_MHZ(1.034567), "1.034567 MHz");
+-	test_samplerate(SR_MHZ(1.000007), "1.000007 MHz");
++	test_samplerate(SR_MHZ((double)1.034567), "1.034567 MHz");
++	test_samplerate(SR_MHZ((double)1.000007), "1.000007 MHz");
+ 	test_samplerate(SR_MHZ(1.234000), "1.234 MHz");
+ }
+ END_TEST
