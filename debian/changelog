@@ -1,8 +1,9 @@
-libsigrok (0.5.0-3) UNRELEASED; urgency=medium
+libsigrok (0.5.0-3) unstable; urgency=medium
 
   * Fix unit tests on i386 by casting floats to doubles.
+  * Upload to unstable.
 
- -- Jonathan McDowell <noodles@earth.li>  Mon, 18 Sep 2017 18:45:04 +0100
+ -- Jonathan McDowell <noodles@earth.li>  Mon, 18 Sep 2017 20:03:49 +0100
 
 libsigrok (0.5.0-2) experimental; urgency=medium
 
