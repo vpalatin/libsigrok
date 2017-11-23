@@ -249,7 +249,7 @@ src_libdrivers_la_SOURCES += \
 	src/hardware/center-3xx/api.c
 endif
 if HW_CHROMIUM_TWINKIE
-libsigrok_la_SOURCES += \
+src_libdrivers_la_SOURCES += \
 	src/hardware/chromium-twinkie/protocol.h \
 	src/hardware/chromium-twinkie/protocol.c \
 	src/hardware/chromium-twinkie/api.c
