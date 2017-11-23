@@ -261,7 +261,8 @@ static void export_vbus(const struct sr_dev_inst *sdi, int mv, int ma)
 	struct sr_datafeed_packet packet[VBUS_GRP_COUNT];
 	uint64_t tlen = devc->vbus_delta * 24 / 10000;
 	uint64_t len = MIN(32768, tlen);
-	unsigned i, g;
+	unsigned i;
+	int g;
 
 	for (g = 0; g < devc->vbus_channels; g++) {
 		float val = g == VBUS_V ? mv/1000.0 : ma/1000.0;
