@@ -70,7 +70,7 @@ struct dev_context {
 SR_PRIV int twinkie_start_acquisition(const struct sr_dev_inst *sdi);
 SR_PRIV int twinkie_init_device(const struct sr_dev_inst *sdi);
 SR_PRIV void LIBUSB_CALL twinkie_receive_transfer(struct libusb_transfer *transfer);
-SR_PRIV void twinkie_vbus_sent(struct libusb_transfer *transfer);
-SR_PRIV void twinkie_vbus_recv(struct libusb_transfer *transfer);
+SR_PRIV void LIBUSB_CALL twinkie_vbus_sent(struct libusb_transfer *transfer);
+SR_PRIV void LIBUSB_CALL twinkie_vbus_recv(struct libusb_transfer *transfer);
 
 #endif

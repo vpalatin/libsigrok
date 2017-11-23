@@ -282,7 +282,7 @@ static void export_vbus(const struct sr_dev_inst *sdi, int mv, int ma)
 	} while (tlen);
 }
 
-SR_PRIV void twinkie_vbus_sent(struct libusb_transfer *transfer)
+SR_PRIV void LIBUSB_CALL twinkie_vbus_sent(struct libusb_transfer *transfer)
 {
 	struct sr_dev_inst *sdi = transfer->user_data;
 	struct dev_context *devc = sdi->priv;
@@ -315,7 +315,7 @@ abort_vbus:
 		finish_acquisition(sdi);
 }
 
-SR_PRIV void twinkie_vbus_recv(struct libusb_transfer *transfer)
+SR_PRIV void LIBUSB_CALL twinkie_vbus_recv(struct libusb_transfer *transfer)
 {
 	struct sr_dev_inst *sdi = transfer->user_data;
 	struct dev_context *devc = sdi->priv;
