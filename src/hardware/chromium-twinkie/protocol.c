@@ -190,7 +190,7 @@ static void expand_sample_data(const struct sr_dev_inst *sdi,
 	devc->cc[1].idx -= rdy_samples;
 }
 
-SR_PRIV void twinkie_receive_transfer(struct libusb_transfer *transfer)
+SR_PRIV void LIBUSB_CALL twinkie_receive_transfer(struct libusb_transfer *transfer)
 {
 	gboolean packet_has_error = FALSE;
 	struct sr_dev_inst *sdi;
