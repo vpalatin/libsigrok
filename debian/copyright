@@ -21,12 +21,12 @@ Files: contrib/*
        src/hardware/mic-985xx/*.[ch] src/hardware/tondaj-sl-814/*.[ch]
        src/hardware/uni-t-dmm/*.[ch]
        src/hardware/zeroplus-logic-cube/protocol.h
-       src/input/chronovu_la8.c
-       src/output/binary.c src/output/csv.c
+       src/input/chronovu_la8.c src/input/null.c
+       src/output/binary.c src/output/csv.c src/output/null.c
        src/scale/kern.c
        src/transform/invert.c src/transform/nop.c src/transform/scale.c
        tests/*.c
-Copyright: 2010-2016 Uwe Hermann <uwe@hermann-uwe.de>
+Copyright: 2010-2018 Uwe Hermann <uwe@hermann-uwe.de>
 License: GPL-2.0+
 
 Files: m4/sigrok.m4
@@ -39,9 +39,14 @@ Copyright: 2010-2012 Bert Vermeulen <bert@biot.com>
            2012 Peter Stuge <peter@stuge.se>
 License: GPL-3.0+
 
+Files: src/conversion.c
+Copyright: 2017 Soeren Apel <soeren@apelpie.net>
+License: GPL-2.0+
+
 Files: src/drivers.c
 Copyright: 2016 Aurelien Jacobs <aurel@gnuage.org>
            2016 Lars-Peter Clausen <lars@metafoo.de>
+           2017 Marcus Comstedt <marcus@mc.pp.se>
 License: GPL-3.0+
 
 Files: src/fallback.c
@@ -102,6 +107,10 @@ Copyright: 2012 Alexandru Gagniuc <mr.nuke.me@gmail.com>
            2015 Matthieu Gaillet <matthieu@gaillet.be>
 License: GPL-2.0+
 
+Files: src/dmm/eev121gw.c
+Copyright: 2018 Gerhard Sittig <gerhard.sittig@gmx.net>
+License: GPL-2.0+
+
 Files: src/dmm/es519xx.c
 Copyright: 2012 Uwe Hermann <uwe@hermann-uwe.de>
            2013 Aurelien Jacobs <aurel@gnuage.org>
@@ -118,6 +127,12 @@ Files: src/dmm/m2110.c
 Copyright: 2013-2014 Matthias Heidbrink <m-sigrok@heidbrink.biz>
 License: GPL-3.0+
 
+Files: src/dmm/ms8250d.c
+Copyright: 2012 Uwe Hermann <uwe@hermann-uwe.de>
+           2012 Alexandru Gagniuc <mr.nuke.me@gmail.com>
+           2018 Stefan Mandl
+License: GPL-2.0+
+
 Files: src/dmm/rs9lcd.c
        src/hardware/brymen-dmm/*.[ch] src/hardware/hp-3457a/*.[ch]
 Copyright: 2012,2016 Alexandru Gagniuc <mr.nuke.me@gmail.com>
@@ -126,6 +141,15 @@ License: GPL-3.0+
 Files: src/dmm/ut372.c
 Copyright: 2015 Martin Ling <martin-sigrok@earth.li>
 License: GPL-2.0+
+
+Files: src/dmm/vc96.c
+Copyright: 2012-2013 Uwe Hermann <uwe@hermann-uwe.de>
+           2018 Matthias Schulz <matthschulz@arcor.de>
+License: GPL-2.0+
+
+Files: src/driver_list_start.c src/driver_list_stop.c
+Copyright: 2017 Marcus Comstedt <marcus@mc.pp.se>
+License: GPL-3.0+
 
 Files: src/hardware/asix-sigma/*.[ch]
 Copyright: 2010-2012 Håvard Espeland <gus@ping.uio.no>
@@ -138,7 +162,7 @@ Copyright: 2015 Bartosz Golaszewski <bgolaszewski@baylibre.com>
 License: GPL-3.0+
 
 Files: src/hardware/beaglelogic/*.[ch]
-Copyright: 2014 Kumar Abhishek <abhishek@theembeddedkitchen.net>
+Copyright: 2014-2017 Kumar Abhishek <abhishek@theembeddedkitchen.net>
 License: GPL-3.0+
 
 Files: src/hardware/demo/*.[ch]
@@ -147,6 +171,16 @@ Copyright: 2010 Uwe Hermann <uwe@hermann-uwe.de>
            2012 Alexandru Gagniuc <mr.nuke.me@gmail.com>
            2015 Bartosz Golaszewski <bgolaszewski@baylibre.com>
 License: GPL-2.0+
+
+Files: src/hardware/dreamsourcelab-dslogic/*.[ch]
+Copyright: 2013 Bert Vermeulen <bert@biot.com>
+           2012 Joel Holdsworth <joel@airwebreathe.org.uk>
+License: GPL-3.0+
+
+Files: src/hardware/fluke-45/*.[ch]
+Copyright: 2013 Bert Vermeulen <bert@biot.com>
+           2017 John Chajecki <subs@qcontinuum.plus.com>
+License: GPL-3.0+
 
 Files: src/hardware/ftdi-la/*.[ch]
 Copyright: 2015 Sergey Alirzaev <zl29ah@gmail.com>
@@ -161,10 +195,19 @@ Files: src/hardware/gwinstek-gds-800/*.[ch]
 Copyright: 2015 Martin Lederhilger <martin.lederhilger@gmx.at>
 License: GPL-3.0+
 
+Files: src/hardware/gwinstek-gpd/*.[ch]
+Copyright: 2018 Bastian Schmitz <bastian.schmitz@udo.edu>
+License: GPL-3.0+
+
 Files: src/hardware/hameg-hmo/*.[ch]
        src/hardware/lecroy-xstream/protocol.h
-       src/scpi/scpi.c
 Copyright: 2013 poljar (Damir Jelić) <poljarinho@gmail.com>
+License: GPL-3.0+
+
+Files: src/hardware/hantek-4032l/*.[ch]
+Copyright: 2016 Andreas Zschunke <andreas.zschunke@gmx.net>
+          2017 Andrej Valek <andy@skyrain.eu>
+          2017 Uwe Hermann <uwe@hermann-uwe.de>
 License: GPL-3.0+
 
 Files: src/hardware/hantek-6xxx/*.[ch]
@@ -176,6 +219,10 @@ Copyright: 2008 Oleg Khudyakov <prcoder@gmail.com>
            2012 Bert Vermeulen <bert@biot.com>
 License: GPL-3.0+
 
+Files: src/hardware/hp-3478a/*.[ch]
+Copyright: 2017 Frank Stettner <frank-stettner@gmx.net>
+License: GPL-3.0+
+
 Files: src/hardware/hung-chang-dso-2100/*.[ch]
 Copyright: 2015 Daniel Glöckner <daniel-gl@gmx.net>
 License: GPL-3.0+
@@ -185,8 +232,13 @@ Files: src/hardware/ikalogic-scanalogic2/*.[ch]
 Copyright: 2013 Marc Schink <sigrok-dev@marcschink.de>
 License: GPL-3.0+
 
+Files: src/hardware/ipdbg-la/*.[ch]
+Copyright: 2016 Eva Kissling <eva.kissling@bluewin.ch>
+License: GPL-3.0+
+
 Files: src/hardware/korad-kaxxxxp/*.[ch]
 Copyright: 2015 Hannu Vuolasaho <vuokkosetae@gmail.com>
+           2018 Frank Stettner <frank-stettner@gmx.net>
 License: GPL-3.0+
 
 Files: src/hardware/lecroy-logicstudio/api.c
@@ -218,6 +270,10 @@ Copyright: 2016 George Hopkins <george-hopkins@null.net>
            2016 Matthieu Guillaumin <matthieu@guillaum.in>
 License: GPL-3.0+
 
+Files: src/hardware/rdtech-dps/*.[ch]
+Copyright: 2018 James Churchill <pelrun@gmail.com>
+License: GPL-3.0+
+
 Files: src/hardware/rigol-ds/*.[ch]
 Copyright: 2012 Martin Ling <martin-git@earth.li>
            2013 Bert Vermeulen <bert@biot.com>
@@ -228,15 +284,25 @@ Files: src/hardware/rohde-schwarz-sme-0x/*.[ch]
 Copyright: 2016 Vlad Ivanov <vlad.ivanov@lab-systems.ru>
 License: GPL-3.0+
 
+Files: src/hardware/saleae-logic-pro/*.[ch]
+Copyright: 2017 Jan Luebbe <jluebbe@lasnet.de>
+License: GPL-3.0+
+
 Files: src/hardware/saleae-logic16/*.[ch]
 Copyright: 2012 Joel Holdsworth <joel@airwebreathe.org.uk>
            2013 Bert Vermeulen <bert@biot.com>
            2013 Marcus Comstedt <marcus@mc.pp.se>
 License: GPL-3.0+
 
+Files: src/hardware/scpi-pps/api.c src/hardware/scpi-pps/protocol.h
+Copyright: 2014 Bert Vermeulen <bert@biot.com>
+           2017 Frank Stettner <frank-stettner@gmx.net>
+License: GPL-3.0+
+
 Files: src/hardware/scpi-pps/profiles.c
 Copyright: 2014 Bert Vermeulen <bert@biot.com>
            2015 Google, Inc.
+           2017 Frank Stettner <frank-stettner@gmx.net>
 License: GPL-3.0+
 
 Files: src/hardware/serial-dmm/api.c
@@ -248,6 +314,17 @@ License: GPL-3.0+
 Files: src/hardware/serial-dmm/protocol.c
 Copyright: 2012 Alexandru Gagniuc <mr.nuke.me@gmail.com>
            2012 Uwe Hermann <uwe@hermann-uwe.de>
+License: GPL-3.0+
+
+Files: src/hardware/siglent-sds/*.[ch]
+Copyright: 2018 mhooijboer <marchelh@gmail.com>
+License: GPL-3.0+
+
+Files: src/hardware/siglent-sds/protocol.c
+Copyright: 2016 mhooijboer <marchelh@gmail.com>
+           2012 Martin Ling <martin-git@earth.li>
+           2013 Bert Vermeulen <bert@biot.com>
+           2013 Mathias Grimmberger <mgri@zaphod.sax.de>
 License: GPL-3.0+
 
 Files: src/hardware/sysclk-lwla/*.[ch]
@@ -263,6 +340,14 @@ Files: src/hardware/zeroplus-logic-cube/analyzer.[ch]
 Copyright: 2010 Sven Peter <sven@fail0verflow.com>
            2010 Haxx Enterprises <bushing@gmail.com>
 License: BSD-2-clause
+
+Files: src/hardware/zketech-ebd-usb/*.[ch]
+Copyright: 2018 Sven Bursch-Osewold <sb_git@bursch.com>
+License: GPL-3.0+
+
+Files: src/input/logicport.c
+Copyright: 2018 Gerhard Sittig <gerhard.sittig@gmx.net>
+License: GPL-2.0+
 
 Files: src/input/raw_analog.c
 Copyright: 2013 Bert Vermeulen <bert@biot.com>
@@ -294,6 +379,11 @@ License: GPL-2.0+
 Files: src/transform/transform.c
 Copyright: 2014 Bert Vermeulen <bert@biot.com>
            2015 Uwe Hermann <uwe@hermann-uwe.de>
+License: GPL-3.0+
+
+Files: src/scpi/scpi.c
+Copyright: 2013 poljar (Damir Jelić) <poljarinho@gmail.com>
+           2015 Bert Vermeulen <bert@biot.com>
 License: GPL-3.0+
 
 Files: src/scpi/scpi_serial.c

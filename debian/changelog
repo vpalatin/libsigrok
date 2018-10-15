@@ -2,6 +2,7 @@ libsigrok (0.5.1-1) UNRELEASED; urgency=medium
 
   * New upstream release.
   * Update appropriate bits to point at Salsa instead of Alioth
+  * Update debian/copyright.
 
  -- Jonathan McDowell <noodles@earth.li>  Mon, 15 Oct 2018 22:32:49 +0100
 
