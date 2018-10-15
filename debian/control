@@ -1,6 +1,6 @@
 Source: libsigrok
 Priority: optional
-Maintainer: Debian Electronics Packaging Team <pkg-electronics-devel@lists.alioth.debian.org>
+Maintainer: Debian Electronics Packaging Team <pkg-electronics-devel@alioth-lists.debian.net>
 Uploaders: Jonathan McDowell <noodles@earth.li>
 Build-Depends: debhelper (>= 9), dh-autoreconf, pkg-config (>= 0.22),
  libglib2.0-dev (>= 2.32.0), libserialport-dev (>= 0.1.0),
@@ -9,8 +9,8 @@ Build-Depends: debhelper (>= 9), dh-autoreconf, pkg-config (>= 0.22),
 Standards-Version: 4.0.1
 Section: libs
 Homepage: http://sigrok.org/wiki/Libsigrok
-Vcs-Browser: https://anonscm.debian.org/cgit/pkg-electronics/libsigrok.git
-Vcs-Git: git://anonscm.debian.org/pkg-electronics/libsigrok.git
+Vcs-Browser: https://salsa.debian.org/electronics-team/sigrok/libsigrok
+Vcs-Git: https://salsa.debian.org/electronics-team/sigrok/libsigrok.git
 
 Package: libsigrok-dev
 Section: libdevel
