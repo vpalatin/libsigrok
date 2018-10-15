@@ -21,7 +21,7 @@
 # We require at least autoconf 2.63 (AC_INIT format changed there).
 AC_PREREQ([2.63])
 
-AC_INIT([libsigrok], [0.5.0],
+AC_INIT([libsigrok], [0.5.1],
 	[sigrok-devel@lists.sourceforge.net],
 	[libsigrok], [http://www.sigrok.org])
 AC_CONFIG_MACRO_DIR([m4])
@@ -68,7 +68,7 @@ SR_PKG_VERSION_SET([SR_PACKAGE_VERSION], [AC_PACKAGE_VERSION])
 # The algorithm for determining which number to change (and how) is nontrivial!
 # http://www.gnu.org/software/libtool/manual/libtool.html#Updating-version-info
 # Format: current:revision:age.
-SR_LIB_VERSION_SET([SR_LIB_VERSION], [4:0:0])
+SR_LIB_VERSION_SET([SR_LIB_VERSION], [5:0:1])
 
 AM_CONDITIONAL([WIN32], [test -z "${host_os##mingw*}" || test -z "${host_os##cygwin*}"])
 
@@ -99,8 +99,7 @@ SR_EXTRA_CXX_LIBS=
 SR_ARG_OPT_PKG([libserialport], [LIBSERIALPORT], [NEED_SERIAL],
 	[libserialport >= 0.1.1])
 
-SR_ARG_OPT_PKG([libftdi], [LIBFTDI],,
-	[libftdi1 >= 1.0], [libftdi >= 0.16])
+SR_ARG_OPT_PKG([libftdi], [LIBFTDI], , [libftdi1 >= 1.0])
 
 # FreeBSD comes with an "integrated" libusb-1.0-style USB API.
 # This means libusb-1.0 is always available; no need to check for it.
@@ -234,18 +233,24 @@ SR_DRIVER([ChronoVu LA], [chronovu-la], [libusb libftdi])
 SR_DRIVER([Colead SLM], [colead-slm], [libserialport])
 SR_DRIVER([Conrad DIGI 35 CPU], [conrad-digi-35-cpu], [libserialport])
 SR_DRIVER([demo], [demo])
+SR_DRIVER([DreamSourceLab DSLogic], [dreamsourcelab-dslogic], [libusb])
+SR_DRIVER([Fluke 45], [fluke-45])
 SR_DRIVER([Fluke DMM], [fluke-dmm], [libserialport])
 SR_DRIVER([FTDI LA], [ftdi-la], [libusb libftdi])
 SR_DRIVER([fx2lafw], [fx2lafw], [libusb])
 SR_DRIVER([GMC MH 1x/2x], [gmc-mh-1x-2x], [libserialport])
 SR_DRIVER([GW Instek GDS-800], [gwinstek-gds-800], [libserialport])
+SR_DRIVER([GW Instek GPD], [gwinstek-gpd], [libserialport])
 SR_DRIVER([Hameg HMO], [hameg-hmo], [libserialport])
+SR_DRIVER([Hantek 4032L], [hantek-4032l], [libusb])
 SR_DRIVER([Hantek 6xxx], [hantek-6xxx], [libusb])
 SR_DRIVER([Hantek DSO], [hantek-dso], [libusb])
 SR_DRIVER([HP 3457A], [hp-3457a])
+SR_DRIVER([HP 3478A], [hp-3478a], [libgpib])
 SR_DRIVER([Hung-Chang DSO-2100], [hung-chang-dso-2100], [libieee1284])
 SR_DRIVER([Ikalogic Scanalogic-2], [ikalogic-scanalogic2], [libusb])
 SR_DRIVER([Ikalogic Scanaplus], [ikalogic-scanaplus], [libftdi])
+SR_DRIVER([IPDBG LA], [ipdbg-la])
 SR_DRIVER([Kecheng KC-330B], [kecheng-kc-330b], [libusb])
 SR_DRIVER([KERN scale], [kern-scale], [libserialport])
 SR_DRIVER([Korad KAxxxxP], [korad-kaxxxxp], [libserialport])
@@ -260,12 +265,15 @@ SR_DRIVER([Norma DMM], [norma-dmm], [libserialport])
 SR_DRIVER([OpenBench Logic Sniffer], [openbench-logic-sniffer], [libserialport])
 SR_DRIVER([PCE PCE-322A], [pce-322a], [libserialport])
 SR_DRIVER([Pipistrello-OLS], [pipistrello-ols], [libftdi])
+SR_DRIVER([RDTech DPSxxxx/DPHxxxx], [rdtech-dps], [libserialport])
 SR_DRIVER([Rigol DS], [rigol-ds])
 SR_DRIVER([Rohde&Schwarz SME-0x], [rohde-schwarz-sme-0x], [libserialport])
 SR_DRIVER([Saleae Logic16], [saleae-logic16], [libusb])
+SR_DRIVER([Saleae Logic Pro], [saleae-logic-pro], [libusb])
 SR_DRIVER([SCPI PPS], [scpi-pps])
 SR_DRIVER([serial DMM], [serial-dmm], [libserialport])
 SR_DRIVER([serial LCR], [serial-lcr], [libserialport])
+SR_DRIVER([Siglent SDS], [siglent-sds])
 SR_DRIVER([Sysclk LWLA], [sysclk-lwla], [libusb])
 SR_DRIVER([Teleinfo], [teleinfo], [libserialport])
 SR_DRIVER([Testo], [testo], [libusb])
@@ -275,6 +283,7 @@ SR_DRIVER([UNI-T UT32x], [uni-t-ut32x], [libusb])
 SR_DRIVER([Victor DMM], [victor-dmm], [libusb])
 SR_DRIVER([Yokogawa DL/DLM], [yokogawa-dlm])
 SR_DRIVER([ZEROPLUS Logic Cube], [zeroplus-logic-cube], [libusb])
+SR_DRIVER([ZKETECH EBD-USB], [zketech-ebd-usb], [libserialport])
 
 ###############################
 ##  Language bindings setup  ##
@@ -604,3 +613,24 @@ Enabled language bindings:
  - Java............................ $BINDINGS_JAVA$sr_report_java
 
 _EOF
+
+# Emit a warning if the C++ bindings are not being built.
+AM_COND_IF([BINDINGS_CXX], [], [
+cat >&AS_MESSAGE_FD <<_EOF
+===============================================================================
+WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+===============================================================================
+===                                                                         ===
+===         The libsigrok C++ bindings are not being built since you        ===
+===             are missing one or more dependencies (see above)!           ===
+===                                                                         ===
+===      This means you won't be able to compile frontends that require     ===
+===  the C++ bindings (such as PulseView)! You also won't be able to build  ===
+===     other bindings and frontends using those (such as sigrok-meter)!    ===
+===                                                                         ===
+===============================================================================
+WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+===============================================================================
+
+_EOF
+])

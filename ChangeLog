@@ -1,3 +1,72 @@
+commit 8686b747cd40695c36f998603f6e853ee5eea883
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Sun Oct 14 19:50:04 2018 +0200
+
+    configure.ac: Bump package version to 0.5.1.
+
+commit 45106f0ca574158632f5a5d33833e8c06967824c
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Sun Oct 14 19:48:41 2018 +0200
+
+    configure.ac: Bump libtool/library version from 4:0:0 to 5:0:1.
+    
+    The libtool current:revision:age numbers change from 4:0:0 to 5:0:1
+    since new APIs were added (but no existing ones were changed or
+    removed). Thus, revision is set to 0, current and age are bumped.
+    
+    Details:
+    http://www.gnu.org/software/libtool/manual/libtool.html#Updating-version-info
+    
+    This changes the library filename (e.g. on Linux) from
+    libsigrok.so.4.0.0 to libsigrok.so.4.1.0, the SONAME
+    (+symlink) remains the same, though (libsigrok.so.4).
+
+commit 6cec31aeace7f941209bc47fd21b72a649777655
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Sun Oct 14 19:51:46 2018 +0200
+
+    Doxygen: Update relevant @since tags to 0.5.1.
+
+commit d0667da66f5c80155cfcc8fb9bd8e6da596080bb
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Sun Oct 14 19:50:33 2018 +0200
+
+    Doxyfile: Set version to 0.5.1.
+
+commit 2d5ccd26012e9f3635593bd6684f0795f4c6d123
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Sun Oct 14 19:28:59 2018 +0200
+
+    NEWS: Add list of user-visible changes so far.
+
+commit d2af13d03f7ab90d591da2fcf31d71b678fe8551
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Sun Oct 14 20:18:40 2018 +0200
+
+    Revert API/ABI change for Context::create_analog_packet().
+    
+    This is fine in libsigrokcxx mainline, but for the 0.5.x series we need
+    to remain API/ABI-compatible.
+
+commit 8cd15dd4ce2fdbefbcc6e64632c8006e5404f253
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Thu Jun 15 18:46:14 2017 +0200
+
+    Backport recent changes from mainline.
+    
+    This includes all changes from
+    
+      59cae77e28538120a472aca1aeee6b2c4465e77a
+      serial_stream_detect(): Make a code comment more generic.
+    
+    up to
+    
+      a7600dc5c7712c588f8a940293e50853c88706ca
+      Makefile.am: Install MIME info file in $(datadir)/mime/packages.
+    
+    This is possible since (almost) none of the changes above change or
+    remove public API calls of the library.
+
 commit 1aba65727015e298f213c851dbc8d2d57d27d37b
 Author: Uwe Hermann <uwe@hermann-uwe.de>
 Date:   Mon Jun 12 03:08:36 2017 +0200
@@ -30677,7 +30746,7 @@ Date:   Sun Mar 18 12:57:34 2012 +0100
     logic analyzer hardware).
 
 commit 21b50ee1831602bd6c1f223fb200e2c298885aa3
-Merge: 9289e273b ecc16ed07
+Merge: 9289e273 ecc16ed0
 Author: Bert Vermeulen <bert@biot.com>
 Date:   Fri Mar 16 00:04:51 2012 +0100
 
@@ -33589,7 +33658,7 @@ Date:   Mon Jan 10 22:49:38 2011 +0100
     demo: Add missing copyright line.
 
 commit 2566bd4884bf33518488504575ba62e99ef43a7b
-Merge: 01cf88149 882e2075b
+Merge: 01cf8814 882e2075
 Author: Daniel Ribeiro <drwyrm@gmail.com>
 Date:   Mon Jan 10 15:58:05 2011 -0200
 
@@ -33655,7 +33724,7 @@ Date:   Mon Jan 10 12:39:53 2011 +0100
     cli: new option to list output modules
 
 commit 43275b4712b0ad5baea1c7d71fdb710249a46681
-Merge: e006af111 9d4bde70f
+Merge: e006af11 9d4bde70
 Author: Daniel Ribeiro <drwyrm@gmail.com>
 Date:   Mon Jan 10 02:36:50 2011 -0200
 
@@ -33671,7 +33740,7 @@ Date:   Mon Jan 10 02:21:07 2011 -0200
     and flocontrol settings.
 
 commit e006af1116adb76014e77db718bb8673137a8bf5
-Merge: 1ff7712c9 9b36e360f
+Merge: 1ff7712c 9b36e360
 Author: Daniel Ribeiro <drwyrm@gmail.com>
 Date:   Mon Jan 10 02:28:59 2011 -0200
 
