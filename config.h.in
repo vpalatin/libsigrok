@@ -78,6 +78,12 @@
 /* Whether to support demo device. */
 #undef HAVE_HW_DEMO
 
+/* Whether to support DreamSourceLab DSLogic device. */
+#undef HAVE_HW_DREAMSOURCELAB_DSLOGIC
+
+/* Whether to support Fluke 45 device. */
+#undef HAVE_HW_FLUKE_45
+
 /* Whether to support Fluke DMM device. */
 #undef HAVE_HW_FLUKE_DMM
 
@@ -93,8 +99,14 @@
 /* Whether to support GW Instek GDS-800 device. */
 #undef HAVE_HW_GWINSTEK_GDS_800
 
+/* Whether to support GW Instek GPD device. */
+#undef HAVE_HW_GWINSTEK_GPD
+
 /* Whether to support Hameg HMO device. */
 #undef HAVE_HW_HAMEG_HMO
+
+/* Whether to support Hantek 4032L device. */
+#undef HAVE_HW_HANTEK_4032L
 
 /* Whether to support Hantek 6xxx device. */
 #undef HAVE_HW_HANTEK_6XXX
@@ -105,6 +117,9 @@
 /* Whether to support HP 3457A device. */
 #undef HAVE_HW_HP_3457A
 
+/* Whether to support HP 3478A device. */
+#undef HAVE_HW_HP_3478A
+
 /* Whether to support Hung-Chang DSO-2100 device. */
 #undef HAVE_HW_HUNG_CHANG_DSO_2100
 
@@ -113,6 +128,9 @@
 
 /* Whether to support Ikalogic Scanaplus device. */
 #undef HAVE_HW_IKALOGIC_SCANAPLUS
+
+/* Whether to support IPDBG LA device. */
+#undef HAVE_HW_IPDBG_LA
 
 /* Whether to support Kecheng KC-330B device. */
 #undef HAVE_HW_KECHENG_KC_330B
@@ -156,6 +174,9 @@
 /* Whether to support Pipistrello-OLS device. */
 #undef HAVE_HW_PIPISTRELLO_OLS
 
+/* Whether to support RDTech DPSxxxx/DPHxxxx device. */
+#undef HAVE_HW_RDTECH_DPS
+
 /* Whether to support Rigol DS device. */
 #undef HAVE_HW_RIGOL_DS
 
@@ -165,6 +186,9 @@
 /* Whether to support Saleae Logic16 device. */
 #undef HAVE_HW_SALEAE_LOGIC16
 
+/* Whether to support Saleae Logic Pro device. */
+#undef HAVE_HW_SALEAE_LOGIC_PRO
+
 /* Whether to support SCPI PPS device. */
 #undef HAVE_HW_SCPI_PPS
 
@@ -173,6 +197,9 @@
 
 /* Whether to support serial LCR device. */
 #undef HAVE_HW_SERIAL_LCR
+
+/* Whether to support Siglent SDS device. */
+#undef HAVE_HW_SIGLENT_SDS
 
 /* Whether to support Sysclk LWLA device. */
 #undef HAVE_HW_SYSCLK_LWLA
@@ -200,6 +227,9 @@
 
 /* Whether to support ZEROPLUS Logic Cube device. */
 #undef HAVE_HW_ZEROPLUS_LOGIC_CUBE
+
+/* Whether to support ZKETECH EBD-USB device. */
+#undef HAVE_HW_ZKETECH_EBD_USB
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
