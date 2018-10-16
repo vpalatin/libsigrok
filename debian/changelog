@@ -4,6 +4,7 @@ libsigrok (0.5.1-1) UNRELEASED; urgency=medium
     + Move to new upstream udev rules.
   * Update appropriate bits to point at Salsa instead of Alioth
   * Update debian/copyright.
+  * Bump debhelper compat level to 10.
 
  -- Jonathan McDowell <noodles@earth.li>  Mon, 15 Oct 2018 22:32:49 +0100
 
