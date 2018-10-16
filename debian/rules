@@ -9,10 +9,8 @@ export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 	dh $@ --with autoreconf --parallel
 
 override_dh_auto_install:
-	cp contrib/z60_libsigrok.rules debian/libsigrok4.udev
+	mkdir -p debian/tmp/lib/udev/rules.d
+	install -m 644 contrib/60-libsigrok.rules debian/tmp/lib/udev/rules.d/
+	install -m 644 contrib/61-libsigrok-plugdev.rules debian/tmp/lib/udev/rules.d/
+	install -m 644 contrib/61-libsigrok-uaccess.rules debian/tmp/lib/udev/rules.d/
 	dh_auto_install
-
-override_dh_auto_clean:
-	dh_auto_clean
-	rm -f debian/libsigrok4.udev
-

@@ -1,1 +1,2 @@
+lib/udev/rules.d/*sigrok*
 usr/lib/*/libsigrok.so.*

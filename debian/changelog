@@ -1,6 +1,7 @@
 libsigrok (0.5.1-1) UNRELEASED; urgency=medium
 
   * New upstream release.
+    + Move to new upstream udev rules.
   * Update appropriate bits to point at Salsa instead of Alioth
   * Update debian/copyright.
 
