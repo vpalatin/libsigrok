@@ -1,4 +1,4 @@
-libsigrok (0.5.1-1) UNRELEASED; urgency=medium
+libsigrok (0.5.1-1) unstable; urgency=medium
 
   * New upstream release.
     + Move to new upstream udev rules.
@@ -8,7 +8,7 @@ libsigrok (0.5.1-1) UNRELEASED; urgency=medium
   * Update Standards-Version to 4.2.1
     + Set Rules-Requires-Root to no
 
- -- Jonathan McDowell <noodles@earth.li>  Mon, 15 Oct 2018 22:32:49 +0100
+ -- Jonathan McDowell <noodles@earth.li>  Wed, 17 Oct 2018 19:07:17 +0100
 
 libsigrok (0.5.0-3) unstable; urgency=medium
 
