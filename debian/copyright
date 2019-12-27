@@ -50,7 +50,7 @@ Copyright: 2016 Aurelien Jacobs <aurel@gnuage.org>
 License: GPL-3.0+
 
 Files: src/fallback.c
-       src/hardware/appa-55ii/*.[ch] src/hardware/brymen-bm86x/*.[ch]
+       src/hardware/appa-55ii/*.[ch]
        src/hardware/maynuo-m97/*.[ch] src/hardware/teleinfo/*.[ch]
        src/modbus/*.c
        src/scpi/scpi_usbtmc_libusb.c src/scpi/scpi_vxi.c
@@ -58,6 +58,24 @@ Copyright: 2013-2015 Aurelien Jacobs <aurel@gnuage.org>
 License: GPL-3.0+
 
 Files: src/serial.c
+Copyright: 2010-2012 Bert Vermeulen <bert@biot.com>
+           2010-2012 Uwe Hermann <uwe@hermann-uwe.de>
+           2012 Alexandru Gagniuc <mr.nuke.me@gmail.com>
+           2014 Uffe Jakobsen <uffe@uffe.org>
+           2017-2019 Gerhard Sittig <gerhard.sittig@gmx.net>
+License: GPL-3.0+
+
+Files: src/serial_bt.c src/serial_hid.[ch] src/serial_hid_bu86x.c
+       src/serial_hid_ch9325.c src/serial_hid_victor.c 
+Copyright: 2018-2019 Gerhard Sittig <gerhard.sittig@gmx.net>
+License: GPL-3.0+
+
+Files: src/serial_hid_cp2110.c
+Copyright: 2017 Carl-Fredrik Sundström <audio.cf@gmail.com>
+           2018-2019 Gerhard Sittig <gerhard.sittig@gmx.net>
+License: GPL-3.0+
+
+Files: src/serial_libsp.c
 Copyright: 2010-2012 Bert Vermeulen <bert@biot.com>
            2010-2012 Uwe Hermann <uwe@hermann-uwe.de>
            2012 Alexandru Gagniuc <mr.nuke.me@gmail.com>
@@ -90,15 +108,22 @@ Files: bindings/ruby/classes.i
 Copyright: 2016 Aurelien Jacobs <aurel@gnuage.org>
 License: GPL-2.0+
 
+Files: src/bt/bt_bluez.c
+Copyright: 2018-2019 Gerhard Sittig <gerhard.sittig@gmx.net>
+License: GPL-3.0+
+
 Files: src/dmm/asycii.c
 Copyright: 2012-2013 Uwe Hermann <uwe@hermann-uwe.de>
            2016 Gerhard Sittig <gerhard.sittig@gmx.net>
 License: GPL-2.0+
 
 Files: src/dmm/bm25x.c
-       src/hardware/serial-lcr/api.c
-       src/lcr/es51919.c
 Copyright: 2014 Janne Huttunen <jahuttun@gmail.com>
+License: GPL-3.0+
+
+Files: src/dmm/bm86x.c
+Copyright: 2014 Aurelien Jacobs <aurel@gnuage.org>
+           2019 Gerhard Sittig <gerhard.sittig@gmx.net>
 License: GPL-3.0+
 
 Files: src/dmm/dtm0660.c
@@ -126,6 +151,10 @@ Files: src/dmm/m2110.c
        src/hardware/norma-dmm/*.[ch]
 Copyright: 2013-2014 Matthias Heidbrink <m-sigrok@heidbrink.biz>
 License: GPL-3.0+
+
+Files: src/dmm/ms2115b.c
+Copyright: 2019 Vitaliy Vorobyov
+License: GPL-2.0+
 
 Files: src/dmm/ms8250d.c
 Copyright: 2012 Uwe Hermann <uwe@hermann-uwe.de>
@@ -170,6 +199,7 @@ Copyright: 2010 Uwe Hermann <uwe@hermann-uwe.de>
            2011 Olivier Fauchon <olivier@aixmarseille.com>
            2012 Alexandru Gagniuc <mr.nuke.me@gmail.com>
            2015 Bartosz Golaszewski <bgolaszewski@baylibre.com>
+           2019 Frank Stettner <frank-stettner@gmx.net>
 License: GPL-2.0+
 
 Files: src/hardware/dreamsourcelab-dslogic/*.[ch]
@@ -202,6 +232,7 @@ License: GPL-3.0+
 Files: src/hardware/hameg-hmo/*.[ch]
        src/hardware/lecroy-xstream/protocol.h
 Copyright: 2013 poljar (Damir Jelić) <poljarinho@gmail.com>
+           2018 Guido Trentalancia <guido@trentalancia.com>
 License: GPL-3.0+
 
 Files: src/hardware/hantek-4032l/*.[ch]
@@ -230,6 +261,7 @@ License: GPL-3.0+
 Files: src/hardware/ikalogic-scanalogic2/*.[ch]
        src/input/csv.c
 Copyright: 2013 Marc Schink <sigrok-dev@marcschink.de>
+           2019 Gerhard Sittig <gerhard.sittig@gmx.net>
 License: GPL-3.0+
 
 Files: src/hardware/ipdbg-la/*.[ch]
@@ -238,7 +270,7 @@ License: GPL-3.0+
 
 Files: src/hardware/korad-kaxxxxp/*.[ch]
 Copyright: 2015 Hannu Vuolasaho <vuokkosetae@gmail.com>
-           2018 Frank Stettner <frank-stettner@gmx.net>
+           2018-2019 Frank Stettner <frank-stettner@gmx.net>
 License: GPL-3.0+
 
 Files: src/hardware/lecroy-logicstudio/api.c
@@ -260,6 +292,18 @@ Copyright: 2014 Matthias Heidbrink <m-sigrok@heidbrink.biz>
            2014 Uwe Hermann <uwe@hermann-uwe.de>
 License: GPL-2.0+
 
+Files: src/hardware/mastech-ms6514/*.[ch]
+Copyright: 2019 Dave Buechi <db@pflutsch.ch>
+License: GPL-3.0+
+
+Files: src/hardware/microchip-pickit2/*.[ch]
+Copyright: 2018 Gerhard Sittig <gerhard.sittig@gmx.net>
+License: GPL-3.0+
+
+Files: src/hardware/mooshimeter-dmm/*.[ch]
+Copyright: 2019 Derek Hageman <hageman@inthat.cloud>
+License: GPL-3.0+
+
 Files: src/hardware/motech-lps-30x/*.[ch]
 Copyright: 2014 Bert Vermeulen <bert@biot.com>
            2014 Matthias Heidbrink <m-sigrok@heidbrink.biz>
@@ -272,6 +316,7 @@ License: GPL-3.0+
 
 Files: src/hardware/rdtech-dps/*.[ch]
 Copyright: 2018 James Churchill <pelrun@gmail.com>
+           2019 Frank Stettner <frank-stettner@gmx.net>
 License: GPL-3.0+
 
 Files: src/hardware/rigol-ds/*.[ch]
@@ -294,15 +339,19 @@ Copyright: 2012 Joel Holdsworth <joel@airwebreathe.org.uk>
            2013 Marcus Comstedt <marcus@mc.pp.se>
 License: GPL-3.0+
 
-Files: src/hardware/scpi-pps/api.c src/hardware/scpi-pps/protocol.h
+Files: src/hardware/scpi-dmm/*.[ch]
+Copyright: 2018 Gerhard Sittig <gerhard.sittig@gmx.net>
+License: GPL-3.0+
+
+Files: src/hardware/scpi-pps/api.c src/hardware/scpi-pps/protocol.[ch]
 Copyright: 2014 Bert Vermeulen <bert@biot.com>
-           2017 Frank Stettner <frank-stettner@gmx.net>
+           2017,2019 Frank Stettner <frank-stettner@gmx.net>
 License: GPL-3.0+
 
 Files: src/hardware/scpi-pps/profiles.c
 Copyright: 2014 Bert Vermeulen <bert@biot.com>
            2015 Google, Inc.
-           2017 Frank Stettner <frank-stettner@gmx.net>
+           2017,2019 Frank Stettner <frank-stettner@gmx.net>
 License: GPL-3.0+
 
 Files: src/hardware/serial-dmm/api.c
@@ -314,6 +363,11 @@ License: GPL-3.0+
 Files: src/hardware/serial-dmm/protocol.c
 Copyright: 2012 Alexandru Gagniuc <mr.nuke.me@gmail.com>
            2012 Uwe Hermann <uwe@hermann-uwe.de>
+License: GPL-3.0+
+
+Files: src/hardware/serial-lcr/*.[ch]
+Copyright: 2014 Janne Huttunen <jahuttun@gmail.com>
+           2019 Gerhard Sittig <gerhard.sittig@gmx.net>
 License: GPL-3.0+
 
 Files: src/hardware/siglent-sds/*.[ch]
@@ -329,6 +383,11 @@ License: GPL-3.0+
 
 Files: src/hardware/sysclk-lwla/*.[ch]
 Copyright: 2014-2015 Daniel Elstner <daniel.kitta@gmail.com>
+License: GPL-3.0+
+
+Files: src/hardware/sysclk-sla5032/*.[ch]
+Copyright: 2014 Daniel Elstner <daniel.kitta@gmail.com>
+           2019 Vitaliy Vorobyov
 License: GPL-3.0+
 
 Files: src/hardware/yokogawa-dlm/*.[ch]
@@ -364,6 +423,15 @@ Copyright: 2012 Petteri Aimonen <jpa@sr.mail.kapsi.fi>
            2014 Bert Vermeulen <bert@biot.com>
 License: GPL-3.0+
 
+Files: src/lcr/es51919.c
+Copyright: 2014 Janne Huttunen <jahuttun@gmail.com>
+           2019 Gerhard Sittig <gerhard.sittig@gmx.net>
+License: GPL-3.0+
+
+Files: src/lcr/vc4080.c
+Copyright: 2019 Gerhard Sittig <gerhard.sittig@gmx.net>
+License: GPL-3.0+
+
 Files: src/output/ascii.c
 Copyright: 2011 Håvard Espeland <gus@ping.uio.no>
            2014 Bert Vermeulen <bert@biot.com>
@@ -375,6 +443,10 @@ Files: src/output/chronovu_la8.c
 Copyright: 2010,2011 Uwe Hermann <uwe@hermann-uwe.de>
            2013,2014 Bert Vermeulen <bert@biot.com>
 License: GPL-2.0+
+
+Files: src/output/wavedrom.c
+Copyright: 2019 Marc Jacobi <obiwanjacobi@hotmail.com>
+License: GPL-3.0+
 
 Files: src/transform/transform.c
 Copyright: 2014 Bert Vermeulen <bert@biot.com>
