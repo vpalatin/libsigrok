@@ -2,10 +2,19 @@ Source: libsigrok
 Priority: optional
 Maintainer: Debian Electronics Packaging Team <pkg-electronics-devel@alioth-lists.debian.net>
 Uploaders: Jonathan McDowell <noodles@earth.li>
-Build-Depends: debhelper (>= 10), pkg-config (>= 0.22),
- libglib2.0-dev (>= 2.32.0), libserialport-dev (>= 0.1.0),
- libusb-1.0-0-dev (>= 1.0.16), libzip-dev (>= 0.10), libftdi1-dev,
- libieee1284-3-dev, libglibmm-2.4-dev, check, doxygen
+Build-Depends: check,
+	debhelper (>= 10),
+	doxygen,
+	libbluetooth-dev,
+	libftdi1-dev,
+	libglib2.0-dev (>= 2.32.0),
+	libglibmm-2.4-dev,
+	libhidapi-dev,
+	libieee1284-3-dev,
+	libserialport-dev (>= 0.1.0),
+	libusb-1.0-0-dev (>= 1.0.16),
+	libzip-dev (>= 0.10),
+	pkg-config (>= 0.22)
 Standards-Version: 4.2.1
 Section: libs
 Homepage: http://sigrok.org/wiki/Libsigrok

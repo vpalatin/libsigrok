@@ -1,6 +1,7 @@
 libsigrok (0.5.2-1) UNRELEASED; urgency=medium
 
   * New upstream release.
+    + Add libbluetooth-dev + libhidapi-dev build deps
   * Update debian/copyright.
   
  -- Jonathan McDowell <noodles@earth.li>  Fri, 27 Dec 2019 10:45:08 +0000
