@@ -1,4 +1,4 @@
-libsigrok (0.5.2-1) UNRELEASED; urgency=medium
+libsigrok (0.5.2-1) unstable; urgency=medium
 
   * New upstream release.
     + Add libbluetooth-dev + libhidapi-dev build deps
