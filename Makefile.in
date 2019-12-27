@@ -97,8 +97,17 @@ host_triplet = @host@
 @NEED_RPC_TRUE@	src/scpi/vxi_xdr.c \
 @NEED_RPC_TRUE@	src/scpi/vxi.h
 
+# endif
 @NEED_SERIAL_TRUE@am__append_3 = \
 @NEED_SERIAL_TRUE@	src/serial.c \
+@NEED_SERIAL_TRUE@	src/serial_bt.c \
+@NEED_SERIAL_TRUE@	src/serial_hid.c \
+@NEED_SERIAL_TRUE@	src/serial_hid.h \
+@NEED_SERIAL_TRUE@	src/serial_hid_bu86x.c \
+@NEED_SERIAL_TRUE@	src/serial_hid_ch9325.c \
+@NEED_SERIAL_TRUE@	src/serial_hid_cp2110.c \
+@NEED_SERIAL_TRUE@	src/serial_hid_victor.c \
+@NEED_SERIAL_TRUE@	src/serial_libsp.c \
 @NEED_SERIAL_TRUE@	src/scpi/scpi_serial.c
 
 @NEED_USB_TRUE@am__append_4 = \
@@ -118,7 +127,8 @@ host_triplet = @host@
 
 # Hardware (LCR chip parsers)
 @NEED_SERIAL_TRUE@am__append_8 = \
-@NEED_SERIAL_TRUE@	src/lcr/es51919.c
+@NEED_SERIAL_TRUE@	src/lcr/es51919.c \
+@NEED_SERIAL_TRUE@	src/lcr/vc4080.c
 
 @HW_AGILENT_DMM_TRUE@am__append_9 = \
 @HW_AGILENT_DMM_TRUE@	src/hardware/agilent-dmm/protocol.h \
@@ -160,252 +170,269 @@ host_triplet = @host@
 @HW_BEAGLELOGIC_TRUE@	src/hardware/beaglelogic/beaglelogic_native.c \
 @HW_BEAGLELOGIC_TRUE@	src/hardware/beaglelogic/beaglelogic_tcp.c
 
-@HW_BRYMEN_BM86X_TRUE@am__append_16 = \
-@HW_BRYMEN_BM86X_TRUE@	src/hardware/brymen-bm86x/protocol.h \
-@HW_BRYMEN_BM86X_TRUE@	src/hardware/brymen-bm86x/protocol.c \
-@HW_BRYMEN_BM86X_TRUE@	src/hardware/brymen-bm86x/api.c
-
-@HW_BRYMEN_DMM_TRUE@am__append_17 = \
+@HW_BRYMEN_DMM_TRUE@am__append_16 = \
 @HW_BRYMEN_DMM_TRUE@	src/hardware/brymen-dmm/parser.c \
 @HW_BRYMEN_DMM_TRUE@	src/hardware/brymen-dmm/protocol.h \
 @HW_BRYMEN_DMM_TRUE@	src/hardware/brymen-dmm/protocol.c \
 @HW_BRYMEN_DMM_TRUE@	src/hardware/brymen-dmm/api.c
 
-@HW_CEM_DT_885X_TRUE@am__append_18 = \
+@HW_CEM_DT_885X_TRUE@am__append_17 = \
 @HW_CEM_DT_885X_TRUE@	src/hardware/cem-dt-885x/protocol.h \
 @HW_CEM_DT_885X_TRUE@	src/hardware/cem-dt-885x/protocol.c \
 @HW_CEM_DT_885X_TRUE@	src/hardware/cem-dt-885x/api.c
 
-@HW_CENTER_3XX_TRUE@am__append_19 = \
+@HW_CENTER_3XX_TRUE@am__append_18 = \
 @HW_CENTER_3XX_TRUE@	src/hardware/center-3xx/protocol.h \
 @HW_CENTER_3XX_TRUE@	src/hardware/center-3xx/protocol.c \
 @HW_CENTER_3XX_TRUE@	src/hardware/center-3xx/api.c
 
-@HW_CHRONOVU_LA_TRUE@am__append_20 = \
+@HW_CHRONOVU_LA_TRUE@am__append_19 = \
 @HW_CHRONOVU_LA_TRUE@	src/hardware/chronovu-la/protocol.h \
 @HW_CHRONOVU_LA_TRUE@	src/hardware/chronovu-la/protocol.c \
 @HW_CHRONOVU_LA_TRUE@	src/hardware/chronovu-la/api.c
 
-@HW_COLEAD_SLM_TRUE@am__append_21 = \
+@HW_COLEAD_SLM_TRUE@am__append_20 = \
 @HW_COLEAD_SLM_TRUE@	src/hardware/colead-slm/protocol.h \
 @HW_COLEAD_SLM_TRUE@	src/hardware/colead-slm/protocol.c \
 @HW_COLEAD_SLM_TRUE@	src/hardware/colead-slm/api.c
 
-@HW_CONRAD_DIGI_35_CPU_TRUE@am__append_22 = \
+@HW_CONRAD_DIGI_35_CPU_TRUE@am__append_21 = \
 @HW_CONRAD_DIGI_35_CPU_TRUE@	src/hardware/conrad-digi-35-cpu/protocol.h \
 @HW_CONRAD_DIGI_35_CPU_TRUE@	src/hardware/conrad-digi-35-cpu/protocol.c \
 @HW_CONRAD_DIGI_35_CPU_TRUE@	src/hardware/conrad-digi-35-cpu/api.c
 
-@HW_DEMO_TRUE@am__append_23 = \
+@HW_DEMO_TRUE@am__append_22 = \
 @HW_DEMO_TRUE@	src/hardware/demo/protocol.h \
 @HW_DEMO_TRUE@	src/hardware/demo/protocol.c \
 @HW_DEMO_TRUE@	src/hardware/demo/api.c
 
-@HW_DREAMSOURCELAB_DSLOGIC_TRUE@am__append_24 = \
+@HW_DREAMSOURCELAB_DSLOGIC_TRUE@am__append_23 = \
 @HW_DREAMSOURCELAB_DSLOGIC_TRUE@	src/hardware/dreamsourcelab-dslogic/protocol.h \
 @HW_DREAMSOURCELAB_DSLOGIC_TRUE@	src/hardware/dreamsourcelab-dslogic/protocol.c \
 @HW_DREAMSOURCELAB_DSLOGIC_TRUE@	src/hardware/dreamsourcelab-dslogic/api.c
 
-@HW_FLUKE_45_TRUE@am__append_25 = \
+@HW_FLUKE_45_TRUE@am__append_24 = \
 @HW_FLUKE_45_TRUE@	src/hardware/fluke-45/protocol.h \
 @HW_FLUKE_45_TRUE@	src/hardware/fluke-45/protocol.c \
 @HW_FLUKE_45_TRUE@	src/hardware/fluke-45/api.c
 
-@HW_FLUKE_DMM_TRUE@am__append_26 = \
+@HW_FLUKE_DMM_TRUE@am__append_25 = \
 @HW_FLUKE_DMM_TRUE@	src/hardware/fluke-dmm/protocol.h \
 @HW_FLUKE_DMM_TRUE@	src/hardware/fluke-dmm/protocol.c \
 @HW_FLUKE_DMM_TRUE@	src/hardware/fluke-dmm/api.c
 
-@HW_FTDI_LA_TRUE@am__append_27 = \
+@HW_FTDI_LA_TRUE@am__append_26 = \
 @HW_FTDI_LA_TRUE@	src/hardware/ftdi-la/protocol.h \
 @HW_FTDI_LA_TRUE@	src/hardware/ftdi-la/protocol.c \
 @HW_FTDI_LA_TRUE@	src/hardware/ftdi-la/api.c
 
-@HW_FX2LAFW_TRUE@am__append_28 = \
+@HW_FX2LAFW_TRUE@am__append_27 = \
 @HW_FX2LAFW_TRUE@	src/hardware/fx2lafw/protocol.h \
 @HW_FX2LAFW_TRUE@	src/hardware/fx2lafw/protocol.c \
 @HW_FX2LAFW_TRUE@	src/hardware/fx2lafw/api.c
 
-@HW_GMC_MH_1X_2X_TRUE@am__append_29 = \
+@HW_GMC_MH_1X_2X_TRUE@am__append_28 = \
 @HW_GMC_MH_1X_2X_TRUE@	src/hardware/gmc-mh-1x-2x/protocol.h \
 @HW_GMC_MH_1X_2X_TRUE@	src/hardware/gmc-mh-1x-2x/protocol.c \
 @HW_GMC_MH_1X_2X_TRUE@	src/hardware/gmc-mh-1x-2x/api.c
 
-@HW_GWINSTEK_GDS_800_TRUE@am__append_30 = \
+@HW_GWINSTEK_GDS_800_TRUE@am__append_29 = \
 @HW_GWINSTEK_GDS_800_TRUE@	src/hardware/gwinstek-gds-800/protocol.h \
 @HW_GWINSTEK_GDS_800_TRUE@	src/hardware/gwinstek-gds-800/protocol.c \
 @HW_GWINSTEK_GDS_800_TRUE@	src/hardware/gwinstek-gds-800/api.c
 
-@HW_GWINSTEK_GPD_TRUE@am__append_31 = \
+@HW_GWINSTEK_GPD_TRUE@am__append_30 = \
 @HW_GWINSTEK_GPD_TRUE@	src/hardware/gwinstek-gpd/protocol.h \
 @HW_GWINSTEK_GPD_TRUE@	src/hardware/gwinstek-gpd/protocol.c \
 @HW_GWINSTEK_GPD_TRUE@	src/hardware/gwinstek-gpd/api.c
 
-@HW_HAMEG_HMO_TRUE@am__append_32 = \
+@HW_HAMEG_HMO_TRUE@am__append_31 = \
 @HW_HAMEG_HMO_TRUE@	src/hardware/hameg-hmo/protocol.h \
 @HW_HAMEG_HMO_TRUE@	src/hardware/hameg-hmo/protocol.c \
 @HW_HAMEG_HMO_TRUE@	src/hardware/hameg-hmo/api.c
 
-@HW_HANTEK_4032L_TRUE@am__append_33 = \
+@HW_HANTEK_4032L_TRUE@am__append_32 = \
 @HW_HANTEK_4032L_TRUE@	src/hardware/hantek-4032l/protocol.h \
 @HW_HANTEK_4032L_TRUE@	src/hardware/hantek-4032l/protocol.c \
 @HW_HANTEK_4032L_TRUE@	src/hardware/hantek-4032l/api.c
 
-@HW_HANTEK_6XXX_TRUE@am__append_34 = \
+@HW_HANTEK_6XXX_TRUE@am__append_33 = \
 @HW_HANTEK_6XXX_TRUE@	src/hardware/hantek-6xxx/protocol.h \
 @HW_HANTEK_6XXX_TRUE@	src/hardware/hantek-6xxx/protocol.c \
 @HW_HANTEK_6XXX_TRUE@	src/hardware/hantek-6xxx/api.c
 
-@HW_HANTEK_DSO_TRUE@am__append_35 = \
+@HW_HANTEK_DSO_TRUE@am__append_34 = \
 @HW_HANTEK_DSO_TRUE@	src/hardware/hantek-dso/protocol.h \
 @HW_HANTEK_DSO_TRUE@	src/hardware/hantek-dso/protocol.c \
 @HW_HANTEK_DSO_TRUE@	src/hardware/hantek-dso/api.c
 
-@HW_HP_3457A_TRUE@am__append_36 = \
+@HW_HP_3457A_TRUE@am__append_35 = \
 @HW_HP_3457A_TRUE@	src/hardware/hp-3457a/protocol.h \
 @HW_HP_3457A_TRUE@	src/hardware/hp-3457a/protocol.c \
 @HW_HP_3457A_TRUE@	src/hardware/hp-3457a/api.c
 
-@HW_HP_3478A_TRUE@am__append_37 = \
+@HW_HP_3478A_TRUE@am__append_36 = \
 @HW_HP_3478A_TRUE@	src/hardware/hp-3478a/protocol.h \
 @HW_HP_3478A_TRUE@	src/hardware/hp-3478a/protocol.c \
 @HW_HP_3478A_TRUE@	src/hardware/hp-3478a/api.c
 
-@HW_HUNG_CHANG_DSO_2100_TRUE@am__append_38 = \
+@HW_HUNG_CHANG_DSO_2100_TRUE@am__append_37 = \
 @HW_HUNG_CHANG_DSO_2100_TRUE@	src/hardware/hung-chang-dso-2100/protocol.h \
 @HW_HUNG_CHANG_DSO_2100_TRUE@	src/hardware/hung-chang-dso-2100/protocol.c \
 @HW_HUNG_CHANG_DSO_2100_TRUE@	src/hardware/hung-chang-dso-2100/api.c
 
-@HW_IKALOGIC_SCANALOGIC2_TRUE@am__append_39 = \
+@HW_IKALOGIC_SCANALOGIC2_TRUE@am__append_38 = \
 @HW_IKALOGIC_SCANALOGIC2_TRUE@	src/hardware/ikalogic-scanalogic2/protocol.h \
 @HW_IKALOGIC_SCANALOGIC2_TRUE@	src/hardware/ikalogic-scanalogic2/protocol.c \
 @HW_IKALOGIC_SCANALOGIC2_TRUE@	src/hardware/ikalogic-scanalogic2/api.c
 
-@HW_IKALOGIC_SCANAPLUS_TRUE@am__append_40 = \
+@HW_IKALOGIC_SCANAPLUS_TRUE@am__append_39 = \
 @HW_IKALOGIC_SCANAPLUS_TRUE@	src/hardware/ikalogic-scanaplus/protocol.h \
 @HW_IKALOGIC_SCANAPLUS_TRUE@	src/hardware/ikalogic-scanaplus/protocol.c \
 @HW_IKALOGIC_SCANAPLUS_TRUE@	src/hardware/ikalogic-scanaplus/api.c
 
-@HW_IPDBG_LA_TRUE@am__append_41 = \
+@HW_IPDBG_LA_TRUE@am__append_40 = \
 @HW_IPDBG_LA_TRUE@	src/hardware/ipdbg-la/protocol.h \
 @HW_IPDBG_LA_TRUE@	src/hardware/ipdbg-la/protocol.c \
 @HW_IPDBG_LA_TRUE@	src/hardware/ipdbg-la/api.c
 
-@HW_KECHENG_KC_330B_TRUE@am__append_42 = \
+@HW_KECHENG_KC_330B_TRUE@am__append_41 = \
 @HW_KECHENG_KC_330B_TRUE@	src/hardware/kecheng-kc-330b/protocol.h \
 @HW_KECHENG_KC_330B_TRUE@	src/hardware/kecheng-kc-330b/protocol.c \
 @HW_KECHENG_KC_330B_TRUE@	src/hardware/kecheng-kc-330b/api.c
 
-@HW_KERN_SCALE_TRUE@am__append_43 = \
+@HW_KERN_SCALE_TRUE@am__append_42 = \
 @HW_KERN_SCALE_TRUE@	src/hardware/kern-scale/protocol.h \
 @HW_KERN_SCALE_TRUE@	src/hardware/kern-scale/protocol.c \
 @HW_KERN_SCALE_TRUE@	src/hardware/kern-scale/api.c
 
-@HW_KORAD_KAXXXXP_TRUE@am__append_44 = \
+@HW_KORAD_KAXXXXP_TRUE@am__append_43 = \
 @HW_KORAD_KAXXXXP_TRUE@	src/hardware/korad-kaxxxxp/protocol.h \
 @HW_KORAD_KAXXXXP_TRUE@	src/hardware/korad-kaxxxxp/protocol.c \
 @HW_KORAD_KAXXXXP_TRUE@	src/hardware/korad-kaxxxxp/api.c
 
-@HW_LASCAR_EL_USB_TRUE@am__append_45 = \
+@HW_LASCAR_EL_USB_TRUE@am__append_44 = \
 @HW_LASCAR_EL_USB_TRUE@	src/hardware/lascar-el-usb/protocol.h \
 @HW_LASCAR_EL_USB_TRUE@	src/hardware/lascar-el-usb/protocol.c \
 @HW_LASCAR_EL_USB_TRUE@	src/hardware/lascar-el-usb/api.c
 
-@HW_LECROY_LOGICSTUDIO_TRUE@am__append_46 = \
+@HW_LECROY_LOGICSTUDIO_TRUE@am__append_45 = \
 @HW_LECROY_LOGICSTUDIO_TRUE@	src/hardware/lecroy-logicstudio/protocol.h \
 @HW_LECROY_LOGICSTUDIO_TRUE@	src/hardware/lecroy-logicstudio/protocol.c \
 @HW_LECROY_LOGICSTUDIO_TRUE@	src/hardware/lecroy-logicstudio/api.c
 
-@HW_LECROY_XSTREAM_TRUE@am__append_47 = \
+@HW_LECROY_XSTREAM_TRUE@am__append_46 = \
 @HW_LECROY_XSTREAM_TRUE@	src/hardware/lecroy-xstream/protocol.h \
 @HW_LECROY_XSTREAM_TRUE@	src/hardware/lecroy-xstream/protocol.c \
 @HW_LECROY_XSTREAM_TRUE@	src/hardware/lecroy-xstream/api.c
 
-@HW_MANSON_HCS_3XXX_TRUE@am__append_48 = \
+@HW_MANSON_HCS_3XXX_TRUE@am__append_47 = \
 @HW_MANSON_HCS_3XXX_TRUE@	src/hardware/manson-hcs-3xxx/protocol.h \
 @HW_MANSON_HCS_3XXX_TRUE@	src/hardware/manson-hcs-3xxx/protocol.c \
 @HW_MANSON_HCS_3XXX_TRUE@	src/hardware/manson-hcs-3xxx/api.c
+
+@HW_MASTECH_MS6514_TRUE@am__append_48 = \
+@HW_MASTECH_MS6514_TRUE@	src/hardware/mastech-ms6514/protocol.h \
+@HW_MASTECH_MS6514_TRUE@	src/hardware/mastech-ms6514/protocol.c \
+@HW_MASTECH_MS6514_TRUE@	src/hardware/mastech-ms6514/api.c
 
 @HW_MAYNUO_M97_TRUE@am__append_49 = \
 @HW_MAYNUO_M97_TRUE@	src/hardware/maynuo-m97/protocol.h \
 @HW_MAYNUO_M97_TRUE@	src/hardware/maynuo-m97/protocol.c \
 @HW_MAYNUO_M97_TRUE@	src/hardware/maynuo-m97/api.c
 
-@HW_MIC_985XX_TRUE@am__append_50 = \
+@HW_MICROCHIP_PICKIT2_TRUE@am__append_50 = \
+@HW_MICROCHIP_PICKIT2_TRUE@	src/hardware/microchip-pickit2/protocol.h \
+@HW_MICROCHIP_PICKIT2_TRUE@	src/hardware/microchip-pickit2/protocol.c \
+@HW_MICROCHIP_PICKIT2_TRUE@	src/hardware/microchip-pickit2/api.c
+
+@HW_MIC_985XX_TRUE@am__append_51 = \
 @HW_MIC_985XX_TRUE@	src/hardware/mic-985xx/protocol.h \
 @HW_MIC_985XX_TRUE@	src/hardware/mic-985xx/protocol.c \
 @HW_MIC_985XX_TRUE@	src/hardware/mic-985xx/api.c
 
-@HW_MOTECH_LPS_30X_TRUE@am__append_51 = \
+@HW_MOOSHIMETER_DMM_TRUE@am__append_52 = \
+@HW_MOOSHIMETER_DMM_TRUE@	src/hardware/mooshimeter-dmm/protocol.h \
+@HW_MOOSHIMETER_DMM_TRUE@	src/hardware/mooshimeter-dmm/protocol.c \
+@HW_MOOSHIMETER_DMM_TRUE@	src/hardware/mooshimeter-dmm/api.c
+
+@HW_MOTECH_LPS_30X_TRUE@am__append_53 = \
 @HW_MOTECH_LPS_30X_TRUE@	src/hardware/motech-lps-30x/protocol.h \
 @HW_MOTECH_LPS_30X_TRUE@	src/hardware/motech-lps-30x/protocol.c \
 @HW_MOTECH_LPS_30X_TRUE@	src/hardware/motech-lps-30x/api.c
 
-@HW_NORMA_DMM_TRUE@am__append_52 = \
+@HW_NORMA_DMM_TRUE@am__append_54 = \
 @HW_NORMA_DMM_TRUE@	src/hardware/norma-dmm/protocol.h \
 @HW_NORMA_DMM_TRUE@	src/hardware/norma-dmm/protocol.c \
 @HW_NORMA_DMM_TRUE@	src/hardware/norma-dmm/api.c
 
-@HW_OPENBENCH_LOGIC_SNIFFER_TRUE@am__append_53 = \
+@HW_OPENBENCH_LOGIC_SNIFFER_TRUE@am__append_55 = \
 @HW_OPENBENCH_LOGIC_SNIFFER_TRUE@	src/hardware/openbench-logic-sniffer/protocol.h \
 @HW_OPENBENCH_LOGIC_SNIFFER_TRUE@	src/hardware/openbench-logic-sniffer/protocol.c \
 @HW_OPENBENCH_LOGIC_SNIFFER_TRUE@	src/hardware/openbench-logic-sniffer/api.c
 
-@HW_PCE_322A_TRUE@am__append_54 = \
+@HW_PCE_322A_TRUE@am__append_56 = \
 @HW_PCE_322A_TRUE@	src/hardware/pce-322a/protocol.h \
 @HW_PCE_322A_TRUE@	src/hardware/pce-322a/protocol.c \
 @HW_PCE_322A_TRUE@	src/hardware/pce-322a/api.c
 
-@HW_PIPISTRELLO_OLS_TRUE@am__append_55 = \
+@HW_PIPISTRELLO_OLS_TRUE@am__append_57 = \
 @HW_PIPISTRELLO_OLS_TRUE@	src/hardware/pipistrello-ols/protocol.h \
 @HW_PIPISTRELLO_OLS_TRUE@	src/hardware/pipistrello-ols/protocol.c \
 @HW_PIPISTRELLO_OLS_TRUE@	src/hardware/pipistrello-ols/api.c
 
-@HW_RDTECH_DPS_TRUE@am__append_56 = \
+@HW_RDTECH_DPS_TRUE@am__append_58 = \
 @HW_RDTECH_DPS_TRUE@	src/hardware/rdtech-dps/protocol.h \
 @HW_RDTECH_DPS_TRUE@	src/hardware/rdtech-dps/protocol.c \
 @HW_RDTECH_DPS_TRUE@	src/hardware/rdtech-dps/api.c
 
-@HW_RIGOL_DS_TRUE@am__append_57 = \
+@HW_RIGOL_DS_TRUE@am__append_59 = \
 @HW_RIGOL_DS_TRUE@	src/hardware/rigol-ds/protocol.h \
 @HW_RIGOL_DS_TRUE@	src/hardware/rigol-ds/protocol.c \
 @HW_RIGOL_DS_TRUE@	src/hardware/rigol-ds/api.c
 
-@HW_ROHDE_SCHWARZ_SME_0X_TRUE@am__append_58 = \
+@HW_ROHDE_SCHWARZ_SME_0X_TRUE@am__append_60 = \
 @HW_ROHDE_SCHWARZ_SME_0X_TRUE@	src/hardware/rohde-schwarz-sme-0x/protocol.h \
 @HW_ROHDE_SCHWARZ_SME_0X_TRUE@	src/hardware/rohde-schwarz-sme-0x/protocol.c \
 @HW_ROHDE_SCHWARZ_SME_0X_TRUE@	src/hardware/rohde-schwarz-sme-0x/api.c
 
-@HW_SALEAE_LOGIC16_TRUE@am__append_59 = \
+@HW_SALEAE_LOGIC16_TRUE@am__append_61 = \
 @HW_SALEAE_LOGIC16_TRUE@	src/hardware/saleae-logic16/protocol.h \
 @HW_SALEAE_LOGIC16_TRUE@	src/hardware/saleae-logic16/protocol.c \
 @HW_SALEAE_LOGIC16_TRUE@	src/hardware/saleae-logic16/api.c
 
-@HW_SALEAE_LOGIC_PRO_TRUE@am__append_60 = \
+@HW_SALEAE_LOGIC_PRO_TRUE@am__append_62 = \
 @HW_SALEAE_LOGIC_PRO_TRUE@	src/hardware/saleae-logic-pro/protocol.h \
 @HW_SALEAE_LOGIC_PRO_TRUE@	src/hardware/saleae-logic-pro/protocol.c \
 @HW_SALEAE_LOGIC_PRO_TRUE@	src/hardware/saleae-logic-pro/api.c
 
-@HW_SCPI_PPS_TRUE@am__append_61 = \
+@HW_SCPI_DMM_TRUE@am__append_63 = \
+@HW_SCPI_DMM_TRUE@	src/hardware/scpi-dmm/protocol.h \
+@HW_SCPI_DMM_TRUE@	src/hardware/scpi-dmm/protocol.c \
+@HW_SCPI_DMM_TRUE@	src/hardware/scpi-dmm/api.c
+
+@HW_SCPI_PPS_TRUE@am__append_64 = \
 @HW_SCPI_PPS_TRUE@	src/hardware/scpi-pps/protocol.h \
 @HW_SCPI_PPS_TRUE@	src/hardware/scpi-pps/protocol.c \
 @HW_SCPI_PPS_TRUE@	src/hardware/scpi-pps/profiles.c \
 @HW_SCPI_PPS_TRUE@	src/hardware/scpi-pps/api.c
 
-@HW_SERIAL_DMM_TRUE@am__append_62 = \
+@HW_SERIAL_DMM_TRUE@am__append_65 = \
 @HW_SERIAL_DMM_TRUE@	src/hardware/serial-dmm/protocol.h \
 @HW_SERIAL_DMM_TRUE@	src/hardware/serial-dmm/protocol.c \
 @HW_SERIAL_DMM_TRUE@	src/hardware/serial-dmm/api.c
 
-@HW_SERIAL_LCR_TRUE@am__append_63 = \
+@HW_SERIAL_LCR_TRUE@am__append_66 = \
+@HW_SERIAL_LCR_TRUE@	src/hardware/serial-lcr/protocol.h \
+@HW_SERIAL_LCR_TRUE@	src/hardware/serial-lcr/protocol.c \
 @HW_SERIAL_LCR_TRUE@	src/hardware/serial-lcr/api.c
 
-@HW_SIGLENT_SDS_TRUE@am__append_64 = \
+@HW_SIGLENT_SDS_TRUE@am__append_67 = \
 @HW_SIGLENT_SDS_TRUE@	src/hardware/siglent-sds/protocol.h \
 @HW_SIGLENT_SDS_TRUE@	src/hardware/siglent-sds/protocol.c \
 @HW_SIGLENT_SDS_TRUE@	src/hardware/siglent-sds/api.c
 
-@HW_SYSCLK_LWLA_TRUE@am__append_65 = \
+@HW_SYSCLK_LWLA_TRUE@am__append_68 = \
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/lwla.h \
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/lwla.c \
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/lwla1016.c \
@@ -414,44 +441,44 @@ host_triplet = @host@
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/protocol.c \
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/api.c
 
-@HW_TELEINFO_TRUE@am__append_66 = \
+@HW_SYSCLK_SLA5032_TRUE@am__append_69 = \
+@HW_SYSCLK_SLA5032_TRUE@	src/hardware/sysclk-sla5032/protocol.h \
+@HW_SYSCLK_SLA5032_TRUE@	src/hardware/sysclk-sla5032/protocol.c \
+@HW_SYSCLK_SLA5032_TRUE@	src/hardware/sysclk-sla5032/api.c
+
+@HW_TELEINFO_TRUE@am__append_70 = \
 @HW_TELEINFO_TRUE@	src/hardware/teleinfo/protocol.h \
 @HW_TELEINFO_TRUE@	src/hardware/teleinfo/protocol.c \
 @HW_TELEINFO_TRUE@	src/hardware/teleinfo/api.c
 
-@HW_TESTO_TRUE@am__append_67 = \
+@HW_TESTO_TRUE@am__append_71 = \
 @HW_TESTO_TRUE@	src/hardware/testo/protocol.h \
 @HW_TESTO_TRUE@	src/hardware/testo/protocol.c \
 @HW_TESTO_TRUE@	src/hardware/testo/api.c
 
-@HW_TONDAJ_SL_814_TRUE@am__append_68 = \
+@HW_TONDAJ_SL_814_TRUE@am__append_72 = \
 @HW_TONDAJ_SL_814_TRUE@	src/hardware/tondaj-sl-814/protocol.h \
 @HW_TONDAJ_SL_814_TRUE@	src/hardware/tondaj-sl-814/protocol.c \
 @HW_TONDAJ_SL_814_TRUE@	src/hardware/tondaj-sl-814/api.c
 
-@HW_UNI_T_DMM_TRUE@am__append_69 = \
+@HW_UNI_T_DMM_TRUE@am__append_73 = \
 @HW_UNI_T_DMM_TRUE@	src/hardware/uni-t-dmm/protocol.h \
 @HW_UNI_T_DMM_TRUE@	src/hardware/uni-t-dmm/protocol.c \
 @HW_UNI_T_DMM_TRUE@	src/hardware/uni-t-dmm/api.c
 
-@HW_UNI_T_UT32X_TRUE@am__append_70 = \
+@HW_UNI_T_UT32X_TRUE@am__append_74 = \
 @HW_UNI_T_UT32X_TRUE@	src/hardware/uni-t-ut32x/protocol.h \
 @HW_UNI_T_UT32X_TRUE@	src/hardware/uni-t-ut32x/protocol.c \
 @HW_UNI_T_UT32X_TRUE@	src/hardware/uni-t-ut32x/api.c
 
-@HW_VICTOR_DMM_TRUE@am__append_71 = \
-@HW_VICTOR_DMM_TRUE@	src/hardware/victor-dmm/protocol.h \
-@HW_VICTOR_DMM_TRUE@	src/hardware/victor-dmm/protocol.c \
-@HW_VICTOR_DMM_TRUE@	src/hardware/victor-dmm/api.c
-
-@HW_YOKOGAWA_DLM_TRUE@am__append_72 = \
+@HW_YOKOGAWA_DLM_TRUE@am__append_75 = \
 @HW_YOKOGAWA_DLM_TRUE@	src/hardware/yokogawa-dlm/protocol.h \
 @HW_YOKOGAWA_DLM_TRUE@	src/hardware/yokogawa-dlm/protocol.c \
 @HW_YOKOGAWA_DLM_TRUE@	src/hardware/yokogawa-dlm/protocol_wrappers.h \
 @HW_YOKOGAWA_DLM_TRUE@	src/hardware/yokogawa-dlm/protocol_wrappers.c \
 @HW_YOKOGAWA_DLM_TRUE@	src/hardware/yokogawa-dlm/api.c
 
-@HW_ZEROPLUS_LOGIC_CUBE_TRUE@am__append_73 = \
+@HW_ZEROPLUS_LOGIC_CUBE_TRUE@am__append_76 = \
 @HW_ZEROPLUS_LOGIC_CUBE_TRUE@	src/hardware/zeroplus-logic-cube/analyzer.c \
 @HW_ZEROPLUS_LOGIC_CUBE_TRUE@	src/hardware/zeroplus-logic-cube/analyzer.h \
 @HW_ZEROPLUS_LOGIC_CUBE_TRUE@	src/hardware/zeroplus-logic-cube/gl_usb.h \
@@ -460,28 +487,28 @@ host_triplet = @host@
 @HW_ZEROPLUS_LOGIC_CUBE_TRUE@	src/hardware/zeroplus-logic-cube/protocol.c \
 @HW_ZEROPLUS_LOGIC_CUBE_TRUE@	src/hardware/zeroplus-logic-cube/api.c
 
-@HW_ZKETECH_EBD_USB_TRUE@am__append_74 = \
+@HW_ZKETECH_EBD_USB_TRUE@am__append_77 = \
 @HW_ZKETECH_EBD_USB_TRUE@	src/hardware/zketech-ebd-usb/protocol.h \
 @HW_ZKETECH_EBD_USB_TRUE@	src/hardware/zketech-ebd-usb/protocol.c \
 @HW_ZKETECH_EBD_USB_TRUE@	src/hardware/zketech-ebd-usb/api.c
 
 @HAVE_CHECK_TRUE@TESTS = tests/main$(EXEEXT)
 @HAVE_CHECK_TRUE@check_PROGRAMS = $(am__EXEEXT_1)
-@BINDINGS_CXX_TRUE@am__append_75 = bindings/cxx/libsigrokcxx.la
-@BINDINGS_CXX_TRUE@am__append_76 = bindings/cxx/libsigrokcxx.pc
-@BINDINGS_CXX_TRUE@am__append_77 = cxx-clean
-@BINDINGS_CXX_TRUE@am__append_78 = cxx-uninstall
-@BINDINGS_PYTHON_TRUE@am__append_79 = python-build
-@BINDINGS_PYTHON_TRUE@am__append_80 = python-install
-@BINDINGS_PYTHON_TRUE@am__append_81 = python-clean
-@BINDINGS_RUBY_TRUE@am__append_82 = ruby-build
-@BINDINGS_RUBY_TRUE@am__append_83 = ruby-install
-@BINDINGS_RUBY_TRUE@am__append_84 = ruby-uninstall
-@BINDINGS_RUBY_TRUE@am__append_85 = ruby-clean
-@BINDINGS_JAVA_TRUE@am__append_86 = java-build
-@BINDINGS_JAVA_TRUE@am__append_87 = java-install
-@BINDINGS_JAVA_TRUE@am__append_88 = java-uninstall
-@BINDINGS_JAVA_TRUE@am__append_89 = java-clean
+@BINDINGS_CXX_TRUE@am__append_78 = bindings/cxx/libsigrokcxx.la
+@BINDINGS_CXX_TRUE@am__append_79 = bindings/cxx/libsigrokcxx.pc
+@BINDINGS_CXX_TRUE@am__append_80 = cxx-clean
+@BINDINGS_CXX_TRUE@am__append_81 = cxx-uninstall
+@BINDINGS_PYTHON_TRUE@am__append_82 = python-build
+@BINDINGS_PYTHON_TRUE@am__append_83 = python-install
+@BINDINGS_PYTHON_TRUE@am__append_84 = python-clean
+@BINDINGS_RUBY_TRUE@am__append_85 = ruby-build
+@BINDINGS_RUBY_TRUE@am__append_86 = ruby-install
+@BINDINGS_RUBY_TRUE@am__append_87 = ruby-uninstall
+@BINDINGS_RUBY_TRUE@am__append_88 = ruby-clean
+@BINDINGS_JAVA_TRUE@am__append_89 = java-build
+@BINDINGS_JAVA_TRUE@am__append_90 = java-install
+@BINDINGS_JAVA_TRUE@am__append_91 = java-uninstall
+@BINDINGS_JAVA_TRUE@am__append_92 = java-clean
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_cxx_compile_stdcxx.m4 \
@@ -573,31 +600,39 @@ am__libsigrok_la_SOURCES_DIST = src/backend.c src/conversion.c \
 	src/output/analog.c src/output/ascii.c src/output/bits.c \
 	src/output/binary.c src/output/csv.c src/output/chronovu_la8.c \
 	src/output/wav.c src/output/hex.c src/output/ols.c \
-	src/output/srzip.c src/output/vcd.c src/output/null.c \
-	src/transform/transform.c src/transform/nop.c \
-	src/transform/scale.c src/transform/invert.c src/scpi.h \
-	src/scpi/scpi.c src/scpi/scpi_tcp.c src/scpi/scpi_vxi.c \
-	src/scpi/vxi_clnt.c src/scpi/vxi_xdr.c src/scpi/vxi.h \
-	src/serial.c src/scpi/scpi_serial.c src/ezusb.c src/usb.c \
-	src/scpi/scpi_usbtmc_libusb.c src/scpi/scpi_visa.c \
+	src/output/srzip.c src/output/vcd.c src/output/wavedrom.c \
+	src/output/null.c src/transform/transform.c \
+	src/transform/nop.c src/transform/scale.c \
+	src/transform/invert.c src/scpi.h src/scpi/scpi.c \
+	src/scpi/scpi_tcp.c src/scpi/scpi_vxi.c src/scpi/vxi_clnt.c \
+	src/scpi/vxi_xdr.c src/scpi/vxi.h src/bt/bt_bluez.c \
+	src/serial.c src/serial_bt.c src/serial_hid.c src/serial_hid.h \
+	src/serial_hid_bu86x.c src/serial_hid_ch9325.c \
+	src/serial_hid_cp2110.c src/serial_hid_victor.c \
+	src/serial_libsp.c src/scpi/scpi_serial.c src/ezusb.c \
+	src/usb.c src/scpi/scpi_usbtmc_libusb.c src/scpi/scpi_visa.c \
 	src/scpi/scpi_libgpib.c src/modbus/modbus.c \
 	src/modbus/modbus_serial_rtu.c src/dmm/asycii.c \
-	src/dmm/bm25x.c src/dmm/dtm0660.c src/dmm/eev121gw.c \
-	src/dmm/es519xx.c src/dmm/fs9721.c src/dmm/fs9922.c \
-	src/dmm/m2110.c src/dmm/metex14.c src/dmm/ms8250d.c \
-	src/dmm/rs9lcd.c src/dmm/ut372.c src/dmm/ut71x.c \
-	src/dmm/vc870.c src/dmm/vc96.c src/lcr/es51919.c \
-	src/scale/kern.c
+	src/dmm/bm25x.c src/dmm/bm86x.c src/dmm/dtm0660.c \
+	src/dmm/eev121gw.c src/dmm/es519xx.c src/dmm/fs9721.c \
+	src/dmm/fs9922.c src/dmm/m2110.c src/dmm/metex14.c \
+	src/dmm/ms2115b.c src/dmm/ms8250d.c src/dmm/rs9lcd.c \
+	src/dmm/ut372.c src/dmm/ut71x.c src/dmm/vc870.c src/dmm/vc96.c \
+	src/lcr/es51919.c src/lcr/vc4080.c src/scale/kern.c
 @NEED_RPC_TRUE@am__objects_1 = src/scpi/scpi_vxi.lo \
 @NEED_RPC_TRUE@	src/scpi/vxi_clnt.lo src/scpi/vxi_xdr.lo
-@NEED_SERIAL_TRUE@am__objects_2 = src/serial.lo \
+@NEED_SERIAL_TRUE@am__objects_2 = src/serial.lo src/serial_bt.lo \
+@NEED_SERIAL_TRUE@	src/serial_hid.lo src/serial_hid_bu86x.lo \
+@NEED_SERIAL_TRUE@	src/serial_hid_ch9325.lo \
+@NEED_SERIAL_TRUE@	src/serial_hid_cp2110.lo \
+@NEED_SERIAL_TRUE@	src/serial_hid_victor.lo src/serial_libsp.lo \
 @NEED_SERIAL_TRUE@	src/scpi/scpi_serial.lo
 @NEED_USB_TRUE@am__objects_3 = src/ezusb.lo src/usb.lo \
 @NEED_USB_TRUE@	src/scpi/scpi_usbtmc_libusb.lo
 @NEED_VISA_TRUE@am__objects_4 = src/scpi/scpi_visa.lo
 @NEED_GPIB_TRUE@am__objects_5 = src/scpi/scpi_libgpib.lo
 @NEED_SERIAL_TRUE@am__objects_6 = src/modbus/modbus_serial_rtu.lo
-@NEED_SERIAL_TRUE@am__objects_7 = src/lcr/es51919.lo
+@NEED_SERIAL_TRUE@am__objects_7 = src/lcr/es51919.lo src/lcr/vc4080.lo
 am_libsigrok_la_OBJECTS = src/backend.lo src/conversion.lo \
 	src/device.lo src/session.lo src/session_file.lo \
 	src/session_driver.lo src/hwdriver.lo src/trigger.lo \
@@ -611,15 +646,16 @@ am_libsigrok_la_OBJECTS = src/backend.lo src/conversion.lo \
 	src/output/ascii.lo src/output/bits.lo src/output/binary.lo \
 	src/output/csv.lo src/output/chronovu_la8.lo src/output/wav.lo \
 	src/output/hex.lo src/output/ols.lo src/output/srzip.lo \
-	src/output/vcd.lo src/output/null.lo \
+	src/output/vcd.lo src/output/wavedrom.lo src/output/null.lo \
 	src/transform/transform.lo src/transform/nop.lo \
 	src/transform/scale.lo src/transform/invert.lo \
 	src/scpi/scpi.lo src/scpi/scpi_tcp.lo $(am__objects_1) \
-	$(am__objects_2) $(am__objects_3) $(am__objects_4) \
-	$(am__objects_5) src/modbus/modbus.lo $(am__objects_6) \
-	src/dmm/asycii.lo src/dmm/bm25x.lo src/dmm/dtm0660.lo \
-	src/dmm/eev121gw.lo src/dmm/es519xx.lo src/dmm/fs9721.lo \
-	src/dmm/fs9922.lo src/dmm/m2110.lo src/dmm/metex14.lo \
+	src/bt/bt_bluez.lo $(am__objects_2) $(am__objects_3) \
+	$(am__objects_4) $(am__objects_5) src/modbus/modbus.lo \
+	$(am__objects_6) src/dmm/asycii.lo src/dmm/bm25x.lo \
+	src/dmm/bm86x.lo src/dmm/dtm0660.lo src/dmm/eev121gw.lo \
+	src/dmm/es519xx.lo src/dmm/fs9721.lo src/dmm/fs9922.lo \
+	src/dmm/m2110.lo src/dmm/metex14.lo src/dmm/ms2115b.lo \
 	src/dmm/ms8250d.lo src/dmm/rs9lcd.lo src/dmm/ut372.lo \
 	src/dmm/ut71x.lo src/dmm/vc870.lo src/dmm/vc96.lo \
 	$(am__objects_7) src/scale/kern.lo
@@ -654,9 +690,6 @@ am__src_libdrivers_la_SOURCES_DIST = src/drivers.c \
 	src/hardware/beaglelogic/api.c \
 	src/hardware/beaglelogic/beaglelogic_native.c \
 	src/hardware/beaglelogic/beaglelogic_tcp.c \
-	src/hardware/brymen-bm86x/protocol.h \
-	src/hardware/brymen-bm86x/protocol.c \
-	src/hardware/brymen-bm86x/api.c \
 	src/hardware/brymen-dmm/parser.c \
 	src/hardware/brymen-dmm/protocol.h \
 	src/hardware/brymen-dmm/protocol.c \
@@ -744,11 +777,20 @@ am__src_libdrivers_la_SOURCES_DIST = src/drivers.c \
 	src/hardware/manson-hcs-3xxx/protocol.h \
 	src/hardware/manson-hcs-3xxx/protocol.c \
 	src/hardware/manson-hcs-3xxx/api.c \
+	src/hardware/mastech-ms6514/protocol.h \
+	src/hardware/mastech-ms6514/protocol.c \
+	src/hardware/mastech-ms6514/api.c \
 	src/hardware/maynuo-m97/protocol.h \
 	src/hardware/maynuo-m97/protocol.c \
 	src/hardware/maynuo-m97/api.c \
+	src/hardware/microchip-pickit2/protocol.h \
+	src/hardware/microchip-pickit2/protocol.c \
+	src/hardware/microchip-pickit2/api.c \
 	src/hardware/mic-985xx/protocol.h \
 	src/hardware/mic-985xx/protocol.c src/hardware/mic-985xx/api.c \
+	src/hardware/mooshimeter-dmm/protocol.h \
+	src/hardware/mooshimeter-dmm/protocol.c \
+	src/hardware/mooshimeter-dmm/api.c \
 	src/hardware/motech-lps-30x/protocol.h \
 	src/hardware/motech-lps-30x/protocol.c \
 	src/hardware/motech-lps-30x/api.c \
@@ -775,12 +817,17 @@ am__src_libdrivers_la_SOURCES_DIST = src/drivers.c \
 	src/hardware/saleae-logic-pro/protocol.h \
 	src/hardware/saleae-logic-pro/protocol.c \
 	src/hardware/saleae-logic-pro/api.c \
+	src/hardware/scpi-dmm/protocol.h \
+	src/hardware/scpi-dmm/protocol.c src/hardware/scpi-dmm/api.c \
 	src/hardware/scpi-pps/protocol.h \
 	src/hardware/scpi-pps/protocol.c \
 	src/hardware/scpi-pps/profiles.c src/hardware/scpi-pps/api.c \
 	src/hardware/serial-dmm/protocol.h \
 	src/hardware/serial-dmm/protocol.c \
-	src/hardware/serial-dmm/api.c src/hardware/serial-lcr/api.c \
+	src/hardware/serial-dmm/api.c \
+	src/hardware/serial-lcr/protocol.h \
+	src/hardware/serial-lcr/protocol.c \
+	src/hardware/serial-lcr/api.c \
 	src/hardware/siglent-sds/protocol.h \
 	src/hardware/siglent-sds/protocol.c \
 	src/hardware/siglent-sds/api.c src/hardware/sysclk-lwla/lwla.h \
@@ -790,6 +837,9 @@ am__src_libdrivers_la_SOURCES_DIST = src/drivers.c \
 	src/hardware/sysclk-lwla/protocol.h \
 	src/hardware/sysclk-lwla/protocol.c \
 	src/hardware/sysclk-lwla/api.c \
+	src/hardware/sysclk-sla5032/protocol.h \
+	src/hardware/sysclk-sla5032/protocol.c \
+	src/hardware/sysclk-sla5032/api.c \
 	src/hardware/teleinfo/protocol.h \
 	src/hardware/teleinfo/protocol.c src/hardware/teleinfo/api.c \
 	src/hardware/testo/protocol.h src/hardware/testo/protocol.c \
@@ -801,9 +851,6 @@ am__src_libdrivers_la_SOURCES_DIST = src/drivers.c \
 	src/hardware/uni-t-ut32x/protocol.h \
 	src/hardware/uni-t-ut32x/protocol.c \
 	src/hardware/uni-t-ut32x/api.c \
-	src/hardware/victor-dmm/protocol.h \
-	src/hardware/victor-dmm/protocol.c \
-	src/hardware/victor-dmm/api.c \
 	src/hardware/yokogawa-dlm/protocol.h \
 	src/hardware/yokogawa-dlm/protocol.c \
 	src/hardware/yokogawa-dlm/protocol_wrappers.h \
@@ -841,158 +888,164 @@ am__src_libdrivers_la_SOURCES_DIST = src/drivers.c \
 @HW_BEAGLELOGIC_TRUE@	src/hardware/beaglelogic/api.lo \
 @HW_BEAGLELOGIC_TRUE@	src/hardware/beaglelogic/beaglelogic_native.lo \
 @HW_BEAGLELOGIC_TRUE@	src/hardware/beaglelogic/beaglelogic_tcp.lo
-@HW_BRYMEN_BM86X_TRUE@am__objects_15 =  \
-@HW_BRYMEN_BM86X_TRUE@	src/hardware/brymen-bm86x/protocol.lo \
-@HW_BRYMEN_BM86X_TRUE@	src/hardware/brymen-bm86x/api.lo
-@HW_BRYMEN_DMM_TRUE@am__objects_16 =  \
+@HW_BRYMEN_DMM_TRUE@am__objects_15 =  \
 @HW_BRYMEN_DMM_TRUE@	src/hardware/brymen-dmm/parser.lo \
 @HW_BRYMEN_DMM_TRUE@	src/hardware/brymen-dmm/protocol.lo \
 @HW_BRYMEN_DMM_TRUE@	src/hardware/brymen-dmm/api.lo
-@HW_CEM_DT_885X_TRUE@am__objects_17 =  \
+@HW_CEM_DT_885X_TRUE@am__objects_16 =  \
 @HW_CEM_DT_885X_TRUE@	src/hardware/cem-dt-885x/protocol.lo \
 @HW_CEM_DT_885X_TRUE@	src/hardware/cem-dt-885x/api.lo
-@HW_CENTER_3XX_TRUE@am__objects_18 =  \
+@HW_CENTER_3XX_TRUE@am__objects_17 =  \
 @HW_CENTER_3XX_TRUE@	src/hardware/center-3xx/protocol.lo \
 @HW_CENTER_3XX_TRUE@	src/hardware/center-3xx/api.lo
-@HW_CHRONOVU_LA_TRUE@am__objects_19 =  \
+@HW_CHRONOVU_LA_TRUE@am__objects_18 =  \
 @HW_CHRONOVU_LA_TRUE@	src/hardware/chronovu-la/protocol.lo \
 @HW_CHRONOVU_LA_TRUE@	src/hardware/chronovu-la/api.lo
-@HW_COLEAD_SLM_TRUE@am__objects_20 =  \
+@HW_COLEAD_SLM_TRUE@am__objects_19 =  \
 @HW_COLEAD_SLM_TRUE@	src/hardware/colead-slm/protocol.lo \
 @HW_COLEAD_SLM_TRUE@	src/hardware/colead-slm/api.lo
-@HW_CONRAD_DIGI_35_CPU_TRUE@am__objects_21 = src/hardware/conrad-digi-35-cpu/protocol.lo \
+@HW_CONRAD_DIGI_35_CPU_TRUE@am__objects_20 = src/hardware/conrad-digi-35-cpu/protocol.lo \
 @HW_CONRAD_DIGI_35_CPU_TRUE@	src/hardware/conrad-digi-35-cpu/api.lo
-@HW_DEMO_TRUE@am__objects_22 = src/hardware/demo/protocol.lo \
+@HW_DEMO_TRUE@am__objects_21 = src/hardware/demo/protocol.lo \
 @HW_DEMO_TRUE@	src/hardware/demo/api.lo
-@HW_DREAMSOURCELAB_DSLOGIC_TRUE@am__objects_23 = src/hardware/dreamsourcelab-dslogic/protocol.lo \
+@HW_DREAMSOURCELAB_DSLOGIC_TRUE@am__objects_22 = src/hardware/dreamsourcelab-dslogic/protocol.lo \
 @HW_DREAMSOURCELAB_DSLOGIC_TRUE@	src/hardware/dreamsourcelab-dslogic/api.lo
-@HW_FLUKE_45_TRUE@am__objects_24 = src/hardware/fluke-45/protocol.lo \
+@HW_FLUKE_45_TRUE@am__objects_23 = src/hardware/fluke-45/protocol.lo \
 @HW_FLUKE_45_TRUE@	src/hardware/fluke-45/api.lo
-@HW_FLUKE_DMM_TRUE@am__objects_25 =  \
+@HW_FLUKE_DMM_TRUE@am__objects_24 =  \
 @HW_FLUKE_DMM_TRUE@	src/hardware/fluke-dmm/protocol.lo \
 @HW_FLUKE_DMM_TRUE@	src/hardware/fluke-dmm/api.lo
-@HW_FTDI_LA_TRUE@am__objects_26 = src/hardware/ftdi-la/protocol.lo \
+@HW_FTDI_LA_TRUE@am__objects_25 = src/hardware/ftdi-la/protocol.lo \
 @HW_FTDI_LA_TRUE@	src/hardware/ftdi-la/api.lo
-@HW_FX2LAFW_TRUE@am__objects_27 = src/hardware/fx2lafw/protocol.lo \
+@HW_FX2LAFW_TRUE@am__objects_26 = src/hardware/fx2lafw/protocol.lo \
 @HW_FX2LAFW_TRUE@	src/hardware/fx2lafw/api.lo
-@HW_GMC_MH_1X_2X_TRUE@am__objects_28 =  \
+@HW_GMC_MH_1X_2X_TRUE@am__objects_27 =  \
 @HW_GMC_MH_1X_2X_TRUE@	src/hardware/gmc-mh-1x-2x/protocol.lo \
 @HW_GMC_MH_1X_2X_TRUE@	src/hardware/gmc-mh-1x-2x/api.lo
-@HW_GWINSTEK_GDS_800_TRUE@am__objects_29 = src/hardware/gwinstek-gds-800/protocol.lo \
+@HW_GWINSTEK_GDS_800_TRUE@am__objects_28 = src/hardware/gwinstek-gds-800/protocol.lo \
 @HW_GWINSTEK_GDS_800_TRUE@	src/hardware/gwinstek-gds-800/api.lo
-@HW_GWINSTEK_GPD_TRUE@am__objects_30 =  \
+@HW_GWINSTEK_GPD_TRUE@am__objects_29 =  \
 @HW_GWINSTEK_GPD_TRUE@	src/hardware/gwinstek-gpd/protocol.lo \
 @HW_GWINSTEK_GPD_TRUE@	src/hardware/gwinstek-gpd/api.lo
-@HW_HAMEG_HMO_TRUE@am__objects_31 =  \
+@HW_HAMEG_HMO_TRUE@am__objects_30 =  \
 @HW_HAMEG_HMO_TRUE@	src/hardware/hameg-hmo/protocol.lo \
 @HW_HAMEG_HMO_TRUE@	src/hardware/hameg-hmo/api.lo
-@HW_HANTEK_4032L_TRUE@am__objects_32 =  \
+@HW_HANTEK_4032L_TRUE@am__objects_31 =  \
 @HW_HANTEK_4032L_TRUE@	src/hardware/hantek-4032l/protocol.lo \
 @HW_HANTEK_4032L_TRUE@	src/hardware/hantek-4032l/api.lo
-@HW_HANTEK_6XXX_TRUE@am__objects_33 =  \
+@HW_HANTEK_6XXX_TRUE@am__objects_32 =  \
 @HW_HANTEK_6XXX_TRUE@	src/hardware/hantek-6xxx/protocol.lo \
 @HW_HANTEK_6XXX_TRUE@	src/hardware/hantek-6xxx/api.lo
-@HW_HANTEK_DSO_TRUE@am__objects_34 =  \
+@HW_HANTEK_DSO_TRUE@am__objects_33 =  \
 @HW_HANTEK_DSO_TRUE@	src/hardware/hantek-dso/protocol.lo \
 @HW_HANTEK_DSO_TRUE@	src/hardware/hantek-dso/api.lo
-@HW_HP_3457A_TRUE@am__objects_35 = src/hardware/hp-3457a/protocol.lo \
+@HW_HP_3457A_TRUE@am__objects_34 = src/hardware/hp-3457a/protocol.lo \
 @HW_HP_3457A_TRUE@	src/hardware/hp-3457a/api.lo
-@HW_HP_3478A_TRUE@am__objects_36 = src/hardware/hp-3478a/protocol.lo \
+@HW_HP_3478A_TRUE@am__objects_35 = src/hardware/hp-3478a/protocol.lo \
 @HW_HP_3478A_TRUE@	src/hardware/hp-3478a/api.lo
-@HW_HUNG_CHANG_DSO_2100_TRUE@am__objects_37 = src/hardware/hung-chang-dso-2100/protocol.lo \
+@HW_HUNG_CHANG_DSO_2100_TRUE@am__objects_36 = src/hardware/hung-chang-dso-2100/protocol.lo \
 @HW_HUNG_CHANG_DSO_2100_TRUE@	src/hardware/hung-chang-dso-2100/api.lo
-@HW_IKALOGIC_SCANALOGIC2_TRUE@am__objects_38 = src/hardware/ikalogic-scanalogic2/protocol.lo \
+@HW_IKALOGIC_SCANALOGIC2_TRUE@am__objects_37 = src/hardware/ikalogic-scanalogic2/protocol.lo \
 @HW_IKALOGIC_SCANALOGIC2_TRUE@	src/hardware/ikalogic-scanalogic2/api.lo
-@HW_IKALOGIC_SCANAPLUS_TRUE@am__objects_39 = src/hardware/ikalogic-scanaplus/protocol.lo \
+@HW_IKALOGIC_SCANAPLUS_TRUE@am__objects_38 = src/hardware/ikalogic-scanaplus/protocol.lo \
 @HW_IKALOGIC_SCANAPLUS_TRUE@	src/hardware/ikalogic-scanaplus/api.lo
-@HW_IPDBG_LA_TRUE@am__objects_40 = src/hardware/ipdbg-la/protocol.lo \
+@HW_IPDBG_LA_TRUE@am__objects_39 = src/hardware/ipdbg-la/protocol.lo \
 @HW_IPDBG_LA_TRUE@	src/hardware/ipdbg-la/api.lo
-@HW_KECHENG_KC_330B_TRUE@am__objects_41 = src/hardware/kecheng-kc-330b/protocol.lo \
+@HW_KECHENG_KC_330B_TRUE@am__objects_40 = src/hardware/kecheng-kc-330b/protocol.lo \
 @HW_KECHENG_KC_330B_TRUE@	src/hardware/kecheng-kc-330b/api.lo
-@HW_KERN_SCALE_TRUE@am__objects_42 =  \
+@HW_KERN_SCALE_TRUE@am__objects_41 =  \
 @HW_KERN_SCALE_TRUE@	src/hardware/kern-scale/protocol.lo \
 @HW_KERN_SCALE_TRUE@	src/hardware/kern-scale/api.lo
-@HW_KORAD_KAXXXXP_TRUE@am__objects_43 =  \
+@HW_KORAD_KAXXXXP_TRUE@am__objects_42 =  \
 @HW_KORAD_KAXXXXP_TRUE@	src/hardware/korad-kaxxxxp/protocol.lo \
 @HW_KORAD_KAXXXXP_TRUE@	src/hardware/korad-kaxxxxp/api.lo
-@HW_LASCAR_EL_USB_TRUE@am__objects_44 =  \
+@HW_LASCAR_EL_USB_TRUE@am__objects_43 =  \
 @HW_LASCAR_EL_USB_TRUE@	src/hardware/lascar-el-usb/protocol.lo \
 @HW_LASCAR_EL_USB_TRUE@	src/hardware/lascar-el-usb/api.lo
-@HW_LECROY_LOGICSTUDIO_TRUE@am__objects_45 = src/hardware/lecroy-logicstudio/protocol.lo \
+@HW_LECROY_LOGICSTUDIO_TRUE@am__objects_44 = src/hardware/lecroy-logicstudio/protocol.lo \
 @HW_LECROY_LOGICSTUDIO_TRUE@	src/hardware/lecroy-logicstudio/api.lo
-@HW_LECROY_XSTREAM_TRUE@am__objects_46 = src/hardware/lecroy-xstream/protocol.lo \
+@HW_LECROY_XSTREAM_TRUE@am__objects_45 = src/hardware/lecroy-xstream/protocol.lo \
 @HW_LECROY_XSTREAM_TRUE@	src/hardware/lecroy-xstream/api.lo
-@HW_MANSON_HCS_3XXX_TRUE@am__objects_47 = src/hardware/manson-hcs-3xxx/protocol.lo \
+@HW_MANSON_HCS_3XXX_TRUE@am__objects_46 = src/hardware/manson-hcs-3xxx/protocol.lo \
 @HW_MANSON_HCS_3XXX_TRUE@	src/hardware/manson-hcs-3xxx/api.lo
+@HW_MASTECH_MS6514_TRUE@am__objects_47 = src/hardware/mastech-ms6514/protocol.lo \
+@HW_MASTECH_MS6514_TRUE@	src/hardware/mastech-ms6514/api.lo
 @HW_MAYNUO_M97_TRUE@am__objects_48 =  \
 @HW_MAYNUO_M97_TRUE@	src/hardware/maynuo-m97/protocol.lo \
 @HW_MAYNUO_M97_TRUE@	src/hardware/maynuo-m97/api.lo
-@HW_MIC_985XX_TRUE@am__objects_49 =  \
+@HW_MICROCHIP_PICKIT2_TRUE@am__objects_49 = src/hardware/microchip-pickit2/protocol.lo \
+@HW_MICROCHIP_PICKIT2_TRUE@	src/hardware/microchip-pickit2/api.lo
+@HW_MIC_985XX_TRUE@am__objects_50 =  \
 @HW_MIC_985XX_TRUE@	src/hardware/mic-985xx/protocol.lo \
 @HW_MIC_985XX_TRUE@	src/hardware/mic-985xx/api.lo
-@HW_MOTECH_LPS_30X_TRUE@am__objects_50 = src/hardware/motech-lps-30x/protocol.lo \
+@HW_MOOSHIMETER_DMM_TRUE@am__objects_51 = src/hardware/mooshimeter-dmm/protocol.lo \
+@HW_MOOSHIMETER_DMM_TRUE@	src/hardware/mooshimeter-dmm/api.lo
+@HW_MOTECH_LPS_30X_TRUE@am__objects_52 = src/hardware/motech-lps-30x/protocol.lo \
 @HW_MOTECH_LPS_30X_TRUE@	src/hardware/motech-lps-30x/api.lo
-@HW_NORMA_DMM_TRUE@am__objects_51 =  \
+@HW_NORMA_DMM_TRUE@am__objects_53 =  \
 @HW_NORMA_DMM_TRUE@	src/hardware/norma-dmm/protocol.lo \
 @HW_NORMA_DMM_TRUE@	src/hardware/norma-dmm/api.lo
-@HW_OPENBENCH_LOGIC_SNIFFER_TRUE@am__objects_52 = src/hardware/openbench-logic-sniffer/protocol.lo \
+@HW_OPENBENCH_LOGIC_SNIFFER_TRUE@am__objects_54 = src/hardware/openbench-logic-sniffer/protocol.lo \
 @HW_OPENBENCH_LOGIC_SNIFFER_TRUE@	src/hardware/openbench-logic-sniffer/api.lo
-@HW_PCE_322A_TRUE@am__objects_53 = src/hardware/pce-322a/protocol.lo \
+@HW_PCE_322A_TRUE@am__objects_55 = src/hardware/pce-322a/protocol.lo \
 @HW_PCE_322A_TRUE@	src/hardware/pce-322a/api.lo
-@HW_PIPISTRELLO_OLS_TRUE@am__objects_54 = src/hardware/pipistrello-ols/protocol.lo \
+@HW_PIPISTRELLO_OLS_TRUE@am__objects_56 = src/hardware/pipistrello-ols/protocol.lo \
 @HW_PIPISTRELLO_OLS_TRUE@	src/hardware/pipistrello-ols/api.lo
-@HW_RDTECH_DPS_TRUE@am__objects_55 =  \
+@HW_RDTECH_DPS_TRUE@am__objects_57 =  \
 @HW_RDTECH_DPS_TRUE@	src/hardware/rdtech-dps/protocol.lo \
 @HW_RDTECH_DPS_TRUE@	src/hardware/rdtech-dps/api.lo
-@HW_RIGOL_DS_TRUE@am__objects_56 = src/hardware/rigol-ds/protocol.lo \
+@HW_RIGOL_DS_TRUE@am__objects_58 = src/hardware/rigol-ds/protocol.lo \
 @HW_RIGOL_DS_TRUE@	src/hardware/rigol-ds/api.lo
-@HW_ROHDE_SCHWARZ_SME_0X_TRUE@am__objects_57 = src/hardware/rohde-schwarz-sme-0x/protocol.lo \
+@HW_ROHDE_SCHWARZ_SME_0X_TRUE@am__objects_59 = src/hardware/rohde-schwarz-sme-0x/protocol.lo \
 @HW_ROHDE_SCHWARZ_SME_0X_TRUE@	src/hardware/rohde-schwarz-sme-0x/api.lo
-@HW_SALEAE_LOGIC16_TRUE@am__objects_58 = src/hardware/saleae-logic16/protocol.lo \
+@HW_SALEAE_LOGIC16_TRUE@am__objects_60 = src/hardware/saleae-logic16/protocol.lo \
 @HW_SALEAE_LOGIC16_TRUE@	src/hardware/saleae-logic16/api.lo
-@HW_SALEAE_LOGIC_PRO_TRUE@am__objects_59 = src/hardware/saleae-logic-pro/protocol.lo \
+@HW_SALEAE_LOGIC_PRO_TRUE@am__objects_61 = src/hardware/saleae-logic-pro/protocol.lo \
 @HW_SALEAE_LOGIC_PRO_TRUE@	src/hardware/saleae-logic-pro/api.lo
-@HW_SCPI_PPS_TRUE@am__objects_60 = src/hardware/scpi-pps/protocol.lo \
+@HW_SCPI_DMM_TRUE@am__objects_62 = src/hardware/scpi-dmm/protocol.lo \
+@HW_SCPI_DMM_TRUE@	src/hardware/scpi-dmm/api.lo
+@HW_SCPI_PPS_TRUE@am__objects_63 = src/hardware/scpi-pps/protocol.lo \
 @HW_SCPI_PPS_TRUE@	src/hardware/scpi-pps/profiles.lo \
 @HW_SCPI_PPS_TRUE@	src/hardware/scpi-pps/api.lo
-@HW_SERIAL_DMM_TRUE@am__objects_61 =  \
+@HW_SERIAL_DMM_TRUE@am__objects_64 =  \
 @HW_SERIAL_DMM_TRUE@	src/hardware/serial-dmm/protocol.lo \
 @HW_SERIAL_DMM_TRUE@	src/hardware/serial-dmm/api.lo
-@HW_SERIAL_LCR_TRUE@am__objects_62 = src/hardware/serial-lcr/api.lo
-@HW_SIGLENT_SDS_TRUE@am__objects_63 =  \
+@HW_SERIAL_LCR_TRUE@am__objects_65 =  \
+@HW_SERIAL_LCR_TRUE@	src/hardware/serial-lcr/protocol.lo \
+@HW_SERIAL_LCR_TRUE@	src/hardware/serial-lcr/api.lo
+@HW_SIGLENT_SDS_TRUE@am__objects_66 =  \
 @HW_SIGLENT_SDS_TRUE@	src/hardware/siglent-sds/protocol.lo \
 @HW_SIGLENT_SDS_TRUE@	src/hardware/siglent-sds/api.lo
-@HW_SYSCLK_LWLA_TRUE@am__objects_64 =  \
+@HW_SYSCLK_LWLA_TRUE@am__objects_67 =  \
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/lwla.lo \
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/lwla1016.lo \
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/lwla1034.lo \
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/protocol.lo \
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/api.lo
-@HW_TELEINFO_TRUE@am__objects_65 = src/hardware/teleinfo/protocol.lo \
+@HW_SYSCLK_SLA5032_TRUE@am__objects_68 = src/hardware/sysclk-sla5032/protocol.lo \
+@HW_SYSCLK_SLA5032_TRUE@	src/hardware/sysclk-sla5032/api.lo
+@HW_TELEINFO_TRUE@am__objects_69 = src/hardware/teleinfo/protocol.lo \
 @HW_TELEINFO_TRUE@	src/hardware/teleinfo/api.lo
-@HW_TESTO_TRUE@am__objects_66 = src/hardware/testo/protocol.lo \
+@HW_TESTO_TRUE@am__objects_70 = src/hardware/testo/protocol.lo \
 @HW_TESTO_TRUE@	src/hardware/testo/api.lo
-@HW_TONDAJ_SL_814_TRUE@am__objects_67 =  \
+@HW_TONDAJ_SL_814_TRUE@am__objects_71 =  \
 @HW_TONDAJ_SL_814_TRUE@	src/hardware/tondaj-sl-814/protocol.lo \
 @HW_TONDAJ_SL_814_TRUE@	src/hardware/tondaj-sl-814/api.lo
-@HW_UNI_T_DMM_TRUE@am__objects_68 =  \
+@HW_UNI_T_DMM_TRUE@am__objects_72 =  \
 @HW_UNI_T_DMM_TRUE@	src/hardware/uni-t-dmm/protocol.lo \
 @HW_UNI_T_DMM_TRUE@	src/hardware/uni-t-dmm/api.lo
-@HW_UNI_T_UT32X_TRUE@am__objects_69 =  \
+@HW_UNI_T_UT32X_TRUE@am__objects_73 =  \
 @HW_UNI_T_UT32X_TRUE@	src/hardware/uni-t-ut32x/protocol.lo \
 @HW_UNI_T_UT32X_TRUE@	src/hardware/uni-t-ut32x/api.lo
-@HW_VICTOR_DMM_TRUE@am__objects_70 =  \
-@HW_VICTOR_DMM_TRUE@	src/hardware/victor-dmm/protocol.lo \
-@HW_VICTOR_DMM_TRUE@	src/hardware/victor-dmm/api.lo
-@HW_YOKOGAWA_DLM_TRUE@am__objects_71 =  \
+@HW_YOKOGAWA_DLM_TRUE@am__objects_74 =  \
 @HW_YOKOGAWA_DLM_TRUE@	src/hardware/yokogawa-dlm/protocol.lo \
 @HW_YOKOGAWA_DLM_TRUE@	src/hardware/yokogawa-dlm/protocol_wrappers.lo \
 @HW_YOKOGAWA_DLM_TRUE@	src/hardware/yokogawa-dlm/api.lo
-@HW_ZEROPLUS_LOGIC_CUBE_TRUE@am__objects_72 = src/hardware/zeroplus-logic-cube/analyzer.lo \
+@HW_ZEROPLUS_LOGIC_CUBE_TRUE@am__objects_75 = src/hardware/zeroplus-logic-cube/analyzer.lo \
 @HW_ZEROPLUS_LOGIC_CUBE_TRUE@	src/hardware/zeroplus-logic-cube/gl_usb.lo \
 @HW_ZEROPLUS_LOGIC_CUBE_TRUE@	src/hardware/zeroplus-logic-cube/protocol.lo \
 @HW_ZEROPLUS_LOGIC_CUBE_TRUE@	src/hardware/zeroplus-logic-cube/api.lo
-@HW_ZKETECH_EBD_USB_TRUE@am__objects_73 = src/hardware/zketech-ebd-usb/protocol.lo \
+@HW_ZKETECH_EBD_USB_TRUE@am__objects_76 = src/hardware/zketech-ebd-usb/protocol.lo \
 @HW_ZKETECH_EBD_USB_TRUE@	src/hardware/zketech-ebd-usb/api.lo
 am_src_libdrivers_la_OBJECTS = src/drivers.lo $(am__objects_8) \
 	$(am__objects_9) $(am__objects_10) $(am__objects_11) \
@@ -1016,7 +1069,8 @@ am_src_libdrivers_la_OBJECTS = src/drivers.lo $(am__objects_8) \
 	$(am__objects_63) $(am__objects_64) $(am__objects_65) \
 	$(am__objects_66) $(am__objects_67) $(am__objects_68) \
 	$(am__objects_69) $(am__objects_70) $(am__objects_71) \
-	$(am__objects_72) $(am__objects_73)
+	$(am__objects_72) $(am__objects_73) $(am__objects_74) \
+	$(am__objects_75) $(am__objects_76)
 src_libdrivers_la_OBJECTS = $(am_src_libdrivers_la_OBJECTS)
 src_libdrivers_head_la_LIBADD =
 am_src_libdrivers_head_la_OBJECTS = src/driver_list_start.lo
@@ -1057,20 +1111,27 @@ am__depfiles_remade = bindings/cxx/$(DEPDIR)/classes.Plo \
 	src/$(DEPDIR)/error.Plo src/$(DEPDIR)/ezusb.Plo \
 	src/$(DEPDIR)/fallback.Plo src/$(DEPDIR)/hwdriver.Plo \
 	src/$(DEPDIR)/log.Plo src/$(DEPDIR)/resource.Plo \
-	src/$(DEPDIR)/serial.Plo src/$(DEPDIR)/session.Plo \
+	src/$(DEPDIR)/serial.Plo src/$(DEPDIR)/serial_bt.Plo \
+	src/$(DEPDIR)/serial_hid.Plo \
+	src/$(DEPDIR)/serial_hid_bu86x.Plo \
+	src/$(DEPDIR)/serial_hid_ch9325.Plo \
+	src/$(DEPDIR)/serial_hid_cp2110.Plo \
+	src/$(DEPDIR)/serial_hid_victor.Plo \
+	src/$(DEPDIR)/serial_libsp.Plo src/$(DEPDIR)/session.Plo \
 	src/$(DEPDIR)/session_driver.Plo \
 	src/$(DEPDIR)/session_file.Plo src/$(DEPDIR)/soft-trigger.Plo \
 	src/$(DEPDIR)/std.Plo src/$(DEPDIR)/strutil.Plo \
 	src/$(DEPDIR)/sw_limits.Plo src/$(DEPDIR)/trigger.Plo \
 	src/$(DEPDIR)/usb.Plo src/$(DEPDIR)/version.Plo \
-	src/dmm/$(DEPDIR)/asycii.Plo src/dmm/$(DEPDIR)/bm25x.Plo \
+	src/bt/$(DEPDIR)/bt_bluez.Plo src/dmm/$(DEPDIR)/asycii.Plo \
+	src/dmm/$(DEPDIR)/bm25x.Plo src/dmm/$(DEPDIR)/bm86x.Plo \
 	src/dmm/$(DEPDIR)/dtm0660.Plo src/dmm/$(DEPDIR)/eev121gw.Plo \
 	src/dmm/$(DEPDIR)/es519xx.Plo src/dmm/$(DEPDIR)/fs9721.Plo \
 	src/dmm/$(DEPDIR)/fs9922.Plo src/dmm/$(DEPDIR)/m2110.Plo \
-	src/dmm/$(DEPDIR)/metex14.Plo src/dmm/$(DEPDIR)/ms8250d.Plo \
-	src/dmm/$(DEPDIR)/rs9lcd.Plo src/dmm/$(DEPDIR)/ut372.Plo \
-	src/dmm/$(DEPDIR)/ut71x.Plo src/dmm/$(DEPDIR)/vc870.Plo \
-	src/dmm/$(DEPDIR)/vc96.Plo \
+	src/dmm/$(DEPDIR)/metex14.Plo src/dmm/$(DEPDIR)/ms2115b.Plo \
+	src/dmm/$(DEPDIR)/ms8250d.Plo src/dmm/$(DEPDIR)/rs9lcd.Plo \
+	src/dmm/$(DEPDIR)/ut372.Plo src/dmm/$(DEPDIR)/ut71x.Plo \
+	src/dmm/$(DEPDIR)/vc870.Plo src/dmm/$(DEPDIR)/vc96.Plo \
 	src/hardware/agilent-dmm/$(DEPDIR)/api.Plo \
 	src/hardware/agilent-dmm/$(DEPDIR)/protocol.Plo \
 	src/hardware/appa-55ii/$(DEPDIR)/api.Plo \
@@ -1088,8 +1149,6 @@ am__depfiles_remade = bindings/cxx/$(DEPDIR)/classes.Plo \
 	src/hardware/beaglelogic/$(DEPDIR)/beaglelogic_native.Plo \
 	src/hardware/beaglelogic/$(DEPDIR)/beaglelogic_tcp.Plo \
 	src/hardware/beaglelogic/$(DEPDIR)/protocol.Plo \
-	src/hardware/brymen-bm86x/$(DEPDIR)/api.Plo \
-	src/hardware/brymen-bm86x/$(DEPDIR)/protocol.Plo \
 	src/hardware/brymen-dmm/$(DEPDIR)/api.Plo \
 	src/hardware/brymen-dmm/$(DEPDIR)/parser.Plo \
 	src/hardware/brymen-dmm/$(DEPDIR)/protocol.Plo \
@@ -1155,10 +1214,16 @@ am__depfiles_remade = bindings/cxx/$(DEPDIR)/classes.Plo \
 	src/hardware/lecroy-xstream/$(DEPDIR)/protocol.Plo \
 	src/hardware/manson-hcs-3xxx/$(DEPDIR)/api.Plo \
 	src/hardware/manson-hcs-3xxx/$(DEPDIR)/protocol.Plo \
+	src/hardware/mastech-ms6514/$(DEPDIR)/api.Plo \
+	src/hardware/mastech-ms6514/$(DEPDIR)/protocol.Plo \
 	src/hardware/maynuo-m97/$(DEPDIR)/api.Plo \
 	src/hardware/maynuo-m97/$(DEPDIR)/protocol.Plo \
 	src/hardware/mic-985xx/$(DEPDIR)/api.Plo \
 	src/hardware/mic-985xx/$(DEPDIR)/protocol.Plo \
+	src/hardware/microchip-pickit2/$(DEPDIR)/api.Plo \
+	src/hardware/microchip-pickit2/$(DEPDIR)/protocol.Plo \
+	src/hardware/mooshimeter-dmm/$(DEPDIR)/api.Plo \
+	src/hardware/mooshimeter-dmm/$(DEPDIR)/protocol.Plo \
 	src/hardware/motech-lps-30x/$(DEPDIR)/api.Plo \
 	src/hardware/motech-lps-30x/$(DEPDIR)/protocol.Plo \
 	src/hardware/norma-dmm/$(DEPDIR)/api.Plo \
@@ -1179,12 +1244,15 @@ am__depfiles_remade = bindings/cxx/$(DEPDIR)/classes.Plo \
 	src/hardware/saleae-logic-pro/$(DEPDIR)/protocol.Plo \
 	src/hardware/saleae-logic16/$(DEPDIR)/api.Plo \
 	src/hardware/saleae-logic16/$(DEPDIR)/protocol.Plo \
+	src/hardware/scpi-dmm/$(DEPDIR)/api.Plo \
+	src/hardware/scpi-dmm/$(DEPDIR)/protocol.Plo \
 	src/hardware/scpi-pps/$(DEPDIR)/api.Plo \
 	src/hardware/scpi-pps/$(DEPDIR)/profiles.Plo \
 	src/hardware/scpi-pps/$(DEPDIR)/protocol.Plo \
 	src/hardware/serial-dmm/$(DEPDIR)/api.Plo \
 	src/hardware/serial-dmm/$(DEPDIR)/protocol.Plo \
 	src/hardware/serial-lcr/$(DEPDIR)/api.Plo \
+	src/hardware/serial-lcr/$(DEPDIR)/protocol.Plo \
 	src/hardware/siglent-sds/$(DEPDIR)/api.Plo \
 	src/hardware/siglent-sds/$(DEPDIR)/protocol.Plo \
 	src/hardware/sysclk-lwla/$(DEPDIR)/api.Plo \
@@ -1192,6 +1260,8 @@ am__depfiles_remade = bindings/cxx/$(DEPDIR)/classes.Plo \
 	src/hardware/sysclk-lwla/$(DEPDIR)/lwla1016.Plo \
 	src/hardware/sysclk-lwla/$(DEPDIR)/lwla1034.Plo \
 	src/hardware/sysclk-lwla/$(DEPDIR)/protocol.Plo \
+	src/hardware/sysclk-sla5032/$(DEPDIR)/api.Plo \
+	src/hardware/sysclk-sla5032/$(DEPDIR)/protocol.Plo \
 	src/hardware/teleinfo/$(DEPDIR)/api.Plo \
 	src/hardware/teleinfo/$(DEPDIR)/protocol.Plo \
 	src/hardware/testo/$(DEPDIR)/api.Plo \
@@ -1202,8 +1272,6 @@ am__depfiles_remade = bindings/cxx/$(DEPDIR)/classes.Plo \
 	src/hardware/uni-t-dmm/$(DEPDIR)/protocol.Plo \
 	src/hardware/uni-t-ut32x/$(DEPDIR)/api.Plo \
 	src/hardware/uni-t-ut32x/$(DEPDIR)/protocol.Plo \
-	src/hardware/victor-dmm/$(DEPDIR)/api.Plo \
-	src/hardware/victor-dmm/$(DEPDIR)/protocol.Plo \
 	src/hardware/yokogawa-dlm/$(DEPDIR)/api.Plo \
 	src/hardware/yokogawa-dlm/$(DEPDIR)/protocol.Plo \
 	src/hardware/yokogawa-dlm/$(DEPDIR)/protocol_wrappers.Plo \
@@ -1220,7 +1288,7 @@ am__depfiles_remade = bindings/cxx/$(DEPDIR)/classes.Plo \
 	src/input/$(DEPDIR)/raw_analog.Plo \
 	src/input/$(DEPDIR)/trace32_ad.Plo src/input/$(DEPDIR)/vcd.Plo \
 	src/input/$(DEPDIR)/wav.Plo src/lcr/$(DEPDIR)/es51919.Plo \
-	src/modbus/$(DEPDIR)/modbus.Plo \
+	src/lcr/$(DEPDIR)/vc4080.Plo src/modbus/$(DEPDIR)/modbus.Plo \
 	src/modbus/$(DEPDIR)/modbus_serial_rtu.Plo \
 	src/output/$(DEPDIR)/analog.Plo src/output/$(DEPDIR)/ascii.Plo \
 	src/output/$(DEPDIR)/binary.Plo src/output/$(DEPDIR)/bits.Plo \
@@ -1229,7 +1297,8 @@ am__depfiles_remade = bindings/cxx/$(DEPDIR)/classes.Plo \
 	src/output/$(DEPDIR)/null.Plo src/output/$(DEPDIR)/ols.Plo \
 	src/output/$(DEPDIR)/output.Plo src/output/$(DEPDIR)/srzip.Plo \
 	src/output/$(DEPDIR)/vcd.Plo src/output/$(DEPDIR)/wav.Plo \
-	src/scale/$(DEPDIR)/kern.Plo src/scpi/$(DEPDIR)/scpi.Plo \
+	src/output/$(DEPDIR)/wavedrom.Plo src/scale/$(DEPDIR)/kern.Plo \
+	src/scpi/$(DEPDIR)/scpi.Plo \
 	src/scpi/$(DEPDIR)/scpi_libgpib.Plo \
 	src/scpi/$(DEPDIR)/scpi_serial.Plo \
 	src/scpi/$(DEPDIR)/scpi_tcp.Plo \
@@ -1719,7 +1788,7 @@ AM_CPPFLAGS = $(local_includes) $(global_defs)
 # python bindings CFLAGS are a superset of the C++ bindings CFLAGS.
 AM_CFLAGS = $(SR_EXTRA_CFLAGS) $(SR_WFLAGS) $(TESTS_CFLAGS)
 AM_CXXFLAGS = $(SR_WXXFLAGS) $(LIBSIGROKCXX_CFLAGS)
-lib_LTLIBRARIES = libsigrok.la $(am__append_75)
+lib_LTLIBRARIES = libsigrok.la $(am__append_78)
 
 # Backend files
 
@@ -1730,6 +1799,7 @@ lib_LTLIBRARIES = libsigrok.la $(am__append_75)
 # Transform modules
 
 # SCPI support
+# if HAVE_BLUETOOTH
 
 # Modbus support
 
@@ -1748,17 +1818,18 @@ libsigrok_la_SOURCES = src/backend.c src/conversion.c src/device.c \
 	src/output/ascii.c src/output/bits.c src/output/binary.c \
 	src/output/csv.c src/output/chronovu_la8.c src/output/wav.c \
 	src/output/hex.c src/output/ols.c src/output/srzip.c \
-	src/output/vcd.c src/output/null.c src/transform/transform.c \
-	src/transform/nop.c src/transform/scale.c \
-	src/transform/invert.c src/scpi.h src/scpi/scpi.c \
-	src/scpi/scpi_tcp.c $(am__append_2) $(am__append_3) \
-	$(am__append_4) $(am__append_5) $(am__append_6) \
-	src/modbus/modbus.c $(am__append_7) src/dmm/asycii.c \
-	src/dmm/bm25x.c src/dmm/dtm0660.c src/dmm/eev121gw.c \
+	src/output/vcd.c src/output/wavedrom.c src/output/null.c \
+	src/transform/transform.c src/transform/nop.c \
+	src/transform/scale.c src/transform/invert.c src/scpi.h \
+	src/scpi/scpi.c src/scpi/scpi_tcp.c $(am__append_2) \
+	src/bt/bt_bluez.c $(am__append_3) $(am__append_4) \
+	$(am__append_5) $(am__append_6) src/modbus/modbus.c \
+	$(am__append_7) src/dmm/asycii.c src/dmm/bm25x.c \
+	src/dmm/bm86x.c src/dmm/dtm0660.c src/dmm/eev121gw.c \
 	src/dmm/es519xx.c src/dmm/fs9721.c src/dmm/fs9922.c \
-	src/dmm/m2110.c src/dmm/metex14.c src/dmm/ms8250d.c \
-	src/dmm/rs9lcd.c src/dmm/ut372.c src/dmm/ut71x.c \
-	src/dmm/vc870.c src/dmm/vc96.c $(am__append_8) \
+	src/dmm/m2110.c src/dmm/metex14.c src/dmm/ms2115b.c \
+	src/dmm/ms8250d.c src/dmm/rs9lcd.c src/dmm/ut372.c \
+	src/dmm/ut71x.c src/dmm/vc870.c src/dmm/vc96.c $(am__append_8) \
 	src/scale/kern.c
 
 # Hardware drivers
@@ -1789,7 +1860,8 @@ src_libdrivers_la_SOURCES = src/drivers.c $(am__append_9) \
 	$(am__append_64) $(am__append_65) $(am__append_66) \
 	$(am__append_67) $(am__append_68) $(am__append_69) \
 	$(am__append_70) $(am__append_71) $(am__append_72) \
-	$(am__append_73) $(am__append_74)
+	$(am__append_73) $(am__append_74) $(am__append_75) \
+	$(am__append_76) $(am__append_77)
 libsigrok_la_LIBADD = src/libdrivers.lo $(SR_EXTRA_LIBS) $(LIBSIGROK_LIBS)
 libsigrok_la_LDFLAGS = -version-info $(SR_LIB_VERSION) -no-undefined
 library_includedir = $(includedir)/libsigrok
@@ -1802,7 +1874,7 @@ nodist_library_include_HEADERS = \
 
 noinst_HEADERS = src/libsigrok-internal.h
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libsigrok.pc $(am__append_76)
+pkgconfig_DATA = libsigrok.pc $(am__append_79)
 mimeappdir = $(datadir)/mime/packages
 mimeapp_DATA = contrib/vnd.sigrok.session.xml
 mimeicondir = $(datadir)/icons/hicolor/48x48/mimetypes
@@ -1860,12 +1932,12 @@ tests_main_SOURCES = \
 	tests/analog.c
 
 tests_main_LDADD = libsigrok.la $(SR_EXTRA_LIBS) $(TESTS_LIBS)
-BUILD_EXTRA = $(am__append_79) $(am__append_82) $(am__append_86)
-INSTALL_EXTRA = $(am__append_80) $(am__append_83) $(am__append_87)
-UNINSTALL_EXTRA = libsigrok-uninstall $(am__append_78) \
-	$(am__append_84) $(am__append_88)
-CLEAN_EXTRA = $(am__append_77) $(am__append_81) $(am__append_85) \
-	$(am__append_89)
+BUILD_EXTRA = $(am__append_82) $(am__append_85) $(am__append_89)
+INSTALL_EXTRA = $(am__append_83) $(am__append_86) $(am__append_90)
+UNINSTALL_EXTRA = libsigrok-uninstall $(am__append_81) \
+	$(am__append_87) $(am__append_91)
+CLEAN_EXTRA = $(am__append_80) $(am__append_84) $(am__append_88) \
+	$(am__append_92)
 @BINDINGS_CXX_TRUE@bindings_cxx_libsigrokcxx_la_SOURCES = bindings/cxx/classes.cpp
 @BINDINGS_CXX_TRUE@bindings_cxx_libsigrokcxx_la_LIBADD = libsigrok.la $(SR_EXTRA_LIBS) $(LIBSIGROKCXX_LIBS) $(SR_EXTRA_CXX_LIBS)
 @BINDINGS_CXX_TRUE@bindings_cxx_libsigrokcxx_la_LDFLAGS = -version-info $(SR_LIB_VERSION) -no-undefined
@@ -2114,6 +2186,8 @@ src/output/srzip.lo: src/output/$(am__dirstamp) \
 	src/output/$(DEPDIR)/$(am__dirstamp)
 src/output/vcd.lo: src/output/$(am__dirstamp) \
 	src/output/$(DEPDIR)/$(am__dirstamp)
+src/output/wavedrom.lo: src/output/$(am__dirstamp) \
+	src/output/$(DEPDIR)/$(am__dirstamp)
 src/output/null.lo: src/output/$(am__dirstamp) \
 	src/output/$(DEPDIR)/$(am__dirstamp)
 src/transform/$(am__dirstamp):
@@ -2146,7 +2220,26 @@ src/scpi/vxi_clnt.lo: src/scpi/$(am__dirstamp) \
 	src/scpi/$(DEPDIR)/$(am__dirstamp)
 src/scpi/vxi_xdr.lo: src/scpi/$(am__dirstamp) \
 	src/scpi/$(DEPDIR)/$(am__dirstamp)
+src/bt/$(am__dirstamp):
+	@$(MKDIR_P) src/bt
+	@: > src/bt/$(am__dirstamp)
+src/bt/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/bt/$(DEPDIR)
+	@: > src/bt/$(DEPDIR)/$(am__dirstamp)
+src/bt/bt_bluez.lo: src/bt/$(am__dirstamp) \
+	src/bt/$(DEPDIR)/$(am__dirstamp)
 src/serial.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/serial_bt.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/serial_hid.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/serial_hid_bu86x.lo: src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
+src/serial_hid_ch9325.lo: src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
+src/serial_hid_cp2110.lo: src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
+src/serial_hid_victor.lo: src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
+src/serial_libsp.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/scpi/scpi_serial.lo: src/scpi/$(am__dirstamp) \
 	src/scpi/$(DEPDIR)/$(am__dirstamp)
 src/ezusb.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
@@ -2177,6 +2270,8 @@ src/dmm/asycii.lo: src/dmm/$(am__dirstamp) \
 	src/dmm/$(DEPDIR)/$(am__dirstamp)
 src/dmm/bm25x.lo: src/dmm/$(am__dirstamp) \
 	src/dmm/$(DEPDIR)/$(am__dirstamp)
+src/dmm/bm86x.lo: src/dmm/$(am__dirstamp) \
+	src/dmm/$(DEPDIR)/$(am__dirstamp)
 src/dmm/dtm0660.lo: src/dmm/$(am__dirstamp) \
 	src/dmm/$(DEPDIR)/$(am__dirstamp)
 src/dmm/eev121gw.lo: src/dmm/$(am__dirstamp) \
@@ -2190,6 +2285,8 @@ src/dmm/fs9922.lo: src/dmm/$(am__dirstamp) \
 src/dmm/m2110.lo: src/dmm/$(am__dirstamp) \
 	src/dmm/$(DEPDIR)/$(am__dirstamp)
 src/dmm/metex14.lo: src/dmm/$(am__dirstamp) \
+	src/dmm/$(DEPDIR)/$(am__dirstamp)
+src/dmm/ms2115b.lo: src/dmm/$(am__dirstamp) \
 	src/dmm/$(DEPDIR)/$(am__dirstamp)
 src/dmm/ms8250d.lo: src/dmm/$(am__dirstamp) \
 	src/dmm/$(DEPDIR)/$(am__dirstamp)
@@ -2210,6 +2307,8 @@ src/lcr/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) src/lcr/$(DEPDIR)
 	@: > src/lcr/$(DEPDIR)/$(am__dirstamp)
 src/lcr/es51919.lo: src/lcr/$(am__dirstamp) \
+	src/lcr/$(DEPDIR)/$(am__dirstamp)
+src/lcr/vc4080.lo: src/lcr/$(am__dirstamp) \
 	src/lcr/$(DEPDIR)/$(am__dirstamp)
 src/scale/$(am__dirstamp):
 	@$(MKDIR_P) src/scale
@@ -2315,18 +2414,6 @@ src/hardware/beaglelogic/beaglelogic_native.lo:  \
 src/hardware/beaglelogic/beaglelogic_tcp.lo:  \
 	src/hardware/beaglelogic/$(am__dirstamp) \
 	src/hardware/beaglelogic/$(DEPDIR)/$(am__dirstamp)
-src/hardware/brymen-bm86x/$(am__dirstamp):
-	@$(MKDIR_P) src/hardware/brymen-bm86x
-	@: > src/hardware/brymen-bm86x/$(am__dirstamp)
-src/hardware/brymen-bm86x/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) src/hardware/brymen-bm86x/$(DEPDIR)
-	@: > src/hardware/brymen-bm86x/$(DEPDIR)/$(am__dirstamp)
-src/hardware/brymen-bm86x/protocol.lo:  \
-	src/hardware/brymen-bm86x/$(am__dirstamp) \
-	src/hardware/brymen-bm86x/$(DEPDIR)/$(am__dirstamp)
-src/hardware/brymen-bm86x/api.lo:  \
-	src/hardware/brymen-bm86x/$(am__dirstamp) \
-	src/hardware/brymen-bm86x/$(DEPDIR)/$(am__dirstamp)
 src/hardware/brymen-dmm/$(am__dirstamp):
 	@$(MKDIR_P) src/hardware/brymen-dmm
 	@: > src/hardware/brymen-dmm/$(am__dirstamp)
@@ -2704,6 +2791,18 @@ src/hardware/manson-hcs-3xxx/protocol.lo:  \
 src/hardware/manson-hcs-3xxx/api.lo:  \
 	src/hardware/manson-hcs-3xxx/$(am__dirstamp) \
 	src/hardware/manson-hcs-3xxx/$(DEPDIR)/$(am__dirstamp)
+src/hardware/mastech-ms6514/$(am__dirstamp):
+	@$(MKDIR_P) src/hardware/mastech-ms6514
+	@: > src/hardware/mastech-ms6514/$(am__dirstamp)
+src/hardware/mastech-ms6514/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/hardware/mastech-ms6514/$(DEPDIR)
+	@: > src/hardware/mastech-ms6514/$(DEPDIR)/$(am__dirstamp)
+src/hardware/mastech-ms6514/protocol.lo:  \
+	src/hardware/mastech-ms6514/$(am__dirstamp) \
+	src/hardware/mastech-ms6514/$(DEPDIR)/$(am__dirstamp)
+src/hardware/mastech-ms6514/api.lo:  \
+	src/hardware/mastech-ms6514/$(am__dirstamp) \
+	src/hardware/mastech-ms6514/$(DEPDIR)/$(am__dirstamp)
 src/hardware/maynuo-m97/$(am__dirstamp):
 	@$(MKDIR_P) src/hardware/maynuo-m97
 	@: > src/hardware/maynuo-m97/$(am__dirstamp)
@@ -2716,6 +2815,18 @@ src/hardware/maynuo-m97/protocol.lo:  \
 src/hardware/maynuo-m97/api.lo:  \
 	src/hardware/maynuo-m97/$(am__dirstamp) \
 	src/hardware/maynuo-m97/$(DEPDIR)/$(am__dirstamp)
+src/hardware/microchip-pickit2/$(am__dirstamp):
+	@$(MKDIR_P) src/hardware/microchip-pickit2
+	@: > src/hardware/microchip-pickit2/$(am__dirstamp)
+src/hardware/microchip-pickit2/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/hardware/microchip-pickit2/$(DEPDIR)
+	@: > src/hardware/microchip-pickit2/$(DEPDIR)/$(am__dirstamp)
+src/hardware/microchip-pickit2/protocol.lo:  \
+	src/hardware/microchip-pickit2/$(am__dirstamp) \
+	src/hardware/microchip-pickit2/$(DEPDIR)/$(am__dirstamp)
+src/hardware/microchip-pickit2/api.lo:  \
+	src/hardware/microchip-pickit2/$(am__dirstamp) \
+	src/hardware/microchip-pickit2/$(DEPDIR)/$(am__dirstamp)
 src/hardware/mic-985xx/$(am__dirstamp):
 	@$(MKDIR_P) src/hardware/mic-985xx
 	@: > src/hardware/mic-985xx/$(am__dirstamp)
@@ -2727,6 +2838,18 @@ src/hardware/mic-985xx/protocol.lo:  \
 	src/hardware/mic-985xx/$(DEPDIR)/$(am__dirstamp)
 src/hardware/mic-985xx/api.lo: src/hardware/mic-985xx/$(am__dirstamp) \
 	src/hardware/mic-985xx/$(DEPDIR)/$(am__dirstamp)
+src/hardware/mooshimeter-dmm/$(am__dirstamp):
+	@$(MKDIR_P) src/hardware/mooshimeter-dmm
+	@: > src/hardware/mooshimeter-dmm/$(am__dirstamp)
+src/hardware/mooshimeter-dmm/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/hardware/mooshimeter-dmm/$(DEPDIR)
+	@: > src/hardware/mooshimeter-dmm/$(DEPDIR)/$(am__dirstamp)
+src/hardware/mooshimeter-dmm/protocol.lo:  \
+	src/hardware/mooshimeter-dmm/$(am__dirstamp) \
+	src/hardware/mooshimeter-dmm/$(DEPDIR)/$(am__dirstamp)
+src/hardware/mooshimeter-dmm/api.lo:  \
+	src/hardware/mooshimeter-dmm/$(am__dirstamp) \
+	src/hardware/mooshimeter-dmm/$(DEPDIR)/$(am__dirstamp)
 src/hardware/motech-lps-30x/$(am__dirstamp):
 	@$(MKDIR_P) src/hardware/motech-lps-30x
 	@: > src/hardware/motech-lps-30x/$(am__dirstamp)
@@ -2844,6 +2967,17 @@ src/hardware/saleae-logic-pro/protocol.lo:  \
 src/hardware/saleae-logic-pro/api.lo:  \
 	src/hardware/saleae-logic-pro/$(am__dirstamp) \
 	src/hardware/saleae-logic-pro/$(DEPDIR)/$(am__dirstamp)
+src/hardware/scpi-dmm/$(am__dirstamp):
+	@$(MKDIR_P) src/hardware/scpi-dmm
+	@: > src/hardware/scpi-dmm/$(am__dirstamp)
+src/hardware/scpi-dmm/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/hardware/scpi-dmm/$(DEPDIR)
+	@: > src/hardware/scpi-dmm/$(DEPDIR)/$(am__dirstamp)
+src/hardware/scpi-dmm/protocol.lo:  \
+	src/hardware/scpi-dmm/$(am__dirstamp) \
+	src/hardware/scpi-dmm/$(DEPDIR)/$(am__dirstamp)
+src/hardware/scpi-dmm/api.lo: src/hardware/scpi-dmm/$(am__dirstamp) \
+	src/hardware/scpi-dmm/$(DEPDIR)/$(am__dirstamp)
 src/hardware/scpi-pps/$(am__dirstamp):
 	@$(MKDIR_P) src/hardware/scpi-pps
 	@: > src/hardware/scpi-pps/$(am__dirstamp)
@@ -2876,6 +3010,9 @@ src/hardware/serial-lcr/$(am__dirstamp):
 src/hardware/serial-lcr/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) src/hardware/serial-lcr/$(DEPDIR)
 	@: > src/hardware/serial-lcr/$(DEPDIR)/$(am__dirstamp)
+src/hardware/serial-lcr/protocol.lo:  \
+	src/hardware/serial-lcr/$(am__dirstamp) \
+	src/hardware/serial-lcr/$(DEPDIR)/$(am__dirstamp)
 src/hardware/serial-lcr/api.lo:  \
 	src/hardware/serial-lcr/$(am__dirstamp) \
 	src/hardware/serial-lcr/$(DEPDIR)/$(am__dirstamp)
@@ -2912,6 +3049,18 @@ src/hardware/sysclk-lwla/protocol.lo:  \
 src/hardware/sysclk-lwla/api.lo:  \
 	src/hardware/sysclk-lwla/$(am__dirstamp) \
 	src/hardware/sysclk-lwla/$(DEPDIR)/$(am__dirstamp)
+src/hardware/sysclk-sla5032/$(am__dirstamp):
+	@$(MKDIR_P) src/hardware/sysclk-sla5032
+	@: > src/hardware/sysclk-sla5032/$(am__dirstamp)
+src/hardware/sysclk-sla5032/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/hardware/sysclk-sla5032/$(DEPDIR)
+	@: > src/hardware/sysclk-sla5032/$(DEPDIR)/$(am__dirstamp)
+src/hardware/sysclk-sla5032/protocol.lo:  \
+	src/hardware/sysclk-sla5032/$(am__dirstamp) \
+	src/hardware/sysclk-sla5032/$(DEPDIR)/$(am__dirstamp)
+src/hardware/sysclk-sla5032/api.lo:  \
+	src/hardware/sysclk-sla5032/$(am__dirstamp) \
+	src/hardware/sysclk-sla5032/$(DEPDIR)/$(am__dirstamp)
 src/hardware/teleinfo/$(am__dirstamp):
 	@$(MKDIR_P) src/hardware/teleinfo
 	@: > src/hardware/teleinfo/$(am__dirstamp)
@@ -2968,18 +3117,6 @@ src/hardware/uni-t-ut32x/protocol.lo:  \
 src/hardware/uni-t-ut32x/api.lo:  \
 	src/hardware/uni-t-ut32x/$(am__dirstamp) \
 	src/hardware/uni-t-ut32x/$(DEPDIR)/$(am__dirstamp)
-src/hardware/victor-dmm/$(am__dirstamp):
-	@$(MKDIR_P) src/hardware/victor-dmm
-	@: > src/hardware/victor-dmm/$(am__dirstamp)
-src/hardware/victor-dmm/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) src/hardware/victor-dmm/$(DEPDIR)
-	@: > src/hardware/victor-dmm/$(DEPDIR)/$(am__dirstamp)
-src/hardware/victor-dmm/protocol.lo:  \
-	src/hardware/victor-dmm/$(am__dirstamp) \
-	src/hardware/victor-dmm/$(DEPDIR)/$(am__dirstamp)
-src/hardware/victor-dmm/api.lo:  \
-	src/hardware/victor-dmm/$(am__dirstamp) \
-	src/hardware/victor-dmm/$(DEPDIR)/$(am__dirstamp)
 src/hardware/yokogawa-dlm/$(am__dirstamp):
 	@$(MKDIR_P) src/hardware/yokogawa-dlm
 	@: > src/hardware/yokogawa-dlm/$(am__dirstamp)
@@ -3083,6 +3220,8 @@ mostlyclean-compile:
 	-rm -f bindings/cxx/*.lo
 	-rm -f src/*.$(OBJEXT)
 	-rm -f src/*.lo
+	-rm -f src/bt/*.$(OBJEXT)
+	-rm -f src/bt/*.lo
 	-rm -f src/dmm/*.$(OBJEXT)
 	-rm -f src/dmm/*.lo
 	-rm -f src/hardware/agilent-dmm/*.$(OBJEXT)
@@ -3099,8 +3238,6 @@ mostlyclean-compile:
 	-rm -f src/hardware/baylibre-acme/*.lo
 	-rm -f src/hardware/beaglelogic/*.$(OBJEXT)
 	-rm -f src/hardware/beaglelogic/*.lo
-	-rm -f src/hardware/brymen-bm86x/*.$(OBJEXT)
-	-rm -f src/hardware/brymen-bm86x/*.lo
 	-rm -f src/hardware/brymen-dmm/*.$(OBJEXT)
 	-rm -f src/hardware/brymen-dmm/*.lo
 	-rm -f src/hardware/cem-dt-885x/*.$(OBJEXT)
@@ -3165,10 +3302,16 @@ mostlyclean-compile:
 	-rm -f src/hardware/lecroy-xstream/*.lo
 	-rm -f src/hardware/manson-hcs-3xxx/*.$(OBJEXT)
 	-rm -f src/hardware/manson-hcs-3xxx/*.lo
+	-rm -f src/hardware/mastech-ms6514/*.$(OBJEXT)
+	-rm -f src/hardware/mastech-ms6514/*.lo
 	-rm -f src/hardware/maynuo-m97/*.$(OBJEXT)
 	-rm -f src/hardware/maynuo-m97/*.lo
 	-rm -f src/hardware/mic-985xx/*.$(OBJEXT)
 	-rm -f src/hardware/mic-985xx/*.lo
+	-rm -f src/hardware/microchip-pickit2/*.$(OBJEXT)
+	-rm -f src/hardware/microchip-pickit2/*.lo
+	-rm -f src/hardware/mooshimeter-dmm/*.$(OBJEXT)
+	-rm -f src/hardware/mooshimeter-dmm/*.lo
 	-rm -f src/hardware/motech-lps-30x/*.$(OBJEXT)
 	-rm -f src/hardware/motech-lps-30x/*.lo
 	-rm -f src/hardware/norma-dmm/*.$(OBJEXT)
@@ -3189,6 +3332,8 @@ mostlyclean-compile:
 	-rm -f src/hardware/saleae-logic-pro/*.lo
 	-rm -f src/hardware/saleae-logic16/*.$(OBJEXT)
 	-rm -f src/hardware/saleae-logic16/*.lo
+	-rm -f src/hardware/scpi-dmm/*.$(OBJEXT)
+	-rm -f src/hardware/scpi-dmm/*.lo
 	-rm -f src/hardware/scpi-pps/*.$(OBJEXT)
 	-rm -f src/hardware/scpi-pps/*.lo
 	-rm -f src/hardware/serial-dmm/*.$(OBJEXT)
@@ -3199,6 +3344,8 @@ mostlyclean-compile:
 	-rm -f src/hardware/siglent-sds/*.lo
 	-rm -f src/hardware/sysclk-lwla/*.$(OBJEXT)
 	-rm -f src/hardware/sysclk-lwla/*.lo
+	-rm -f src/hardware/sysclk-sla5032/*.$(OBJEXT)
+	-rm -f src/hardware/sysclk-sla5032/*.lo
 	-rm -f src/hardware/teleinfo/*.$(OBJEXT)
 	-rm -f src/hardware/teleinfo/*.lo
 	-rm -f src/hardware/testo/*.$(OBJEXT)
@@ -3209,8 +3356,6 @@ mostlyclean-compile:
 	-rm -f src/hardware/uni-t-dmm/*.lo
 	-rm -f src/hardware/uni-t-ut32x/*.$(OBJEXT)
 	-rm -f src/hardware/uni-t-ut32x/*.lo
-	-rm -f src/hardware/victor-dmm/*.$(OBJEXT)
-	-rm -f src/hardware/victor-dmm/*.lo
 	-rm -f src/hardware/yokogawa-dlm/*.$(OBJEXT)
 	-rm -f src/hardware/yokogawa-dlm/*.lo
 	-rm -f src/hardware/zeroplus-logic-cube/*.$(OBJEXT)
@@ -3251,6 +3396,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/log.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/resource.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/serial.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/serial_bt.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/serial_hid.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/serial_hid_bu86x.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/serial_hid_ch9325.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/serial_hid_cp2110.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/serial_hid_victor.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/serial_libsp.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/session.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/session_driver.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/session_file.Plo@am__quote@ # am--include-marker
@@ -3261,8 +3413,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/trigger.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/usb.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/version.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/bt/$(DEPDIR)/bt_bluez.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/dmm/$(DEPDIR)/asycii.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/dmm/$(DEPDIR)/bm25x.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/dmm/$(DEPDIR)/bm86x.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/dmm/$(DEPDIR)/dtm0660.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/dmm/$(DEPDIR)/eev121gw.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/dmm/$(DEPDIR)/es519xx.Plo@am__quote@ # am--include-marker
@@ -3270,6 +3424,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/dmm/$(DEPDIR)/fs9922.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/dmm/$(DEPDIR)/m2110.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/dmm/$(DEPDIR)/metex14.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/dmm/$(DEPDIR)/ms2115b.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/dmm/$(DEPDIR)/ms8250d.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/dmm/$(DEPDIR)/rs9lcd.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/dmm/$(DEPDIR)/ut372.Plo@am__quote@ # am--include-marker
@@ -3293,8 +3448,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/beaglelogic/$(DEPDIR)/beaglelogic_native.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/beaglelogic/$(DEPDIR)/beaglelogic_tcp.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/beaglelogic/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/hardware/brymen-bm86x/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/hardware/brymen-bm86x/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/brymen-dmm/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/brymen-dmm/$(DEPDIR)/parser.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/brymen-dmm/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
@@ -3360,10 +3513,16 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/lecroy-xstream/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/manson-hcs-3xxx/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/manson-hcs-3xxx/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/hardware/mastech-ms6514/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/hardware/mastech-ms6514/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/maynuo-m97/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/maynuo-m97/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/mic-985xx/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/mic-985xx/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/hardware/microchip-pickit2/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/hardware/microchip-pickit2/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/hardware/mooshimeter-dmm/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/hardware/mooshimeter-dmm/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/motech-lps-30x/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/motech-lps-30x/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/norma-dmm/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
@@ -3384,12 +3543,15 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/saleae-logic-pro/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/saleae-logic16/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/saleae-logic16/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/hardware/scpi-dmm/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/hardware/scpi-dmm/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/scpi-pps/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/scpi-pps/$(DEPDIR)/profiles.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/scpi-pps/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/serial-dmm/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/serial-dmm/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/serial-lcr/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/hardware/serial-lcr/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/siglent-sds/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/siglent-sds/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/sysclk-lwla/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
@@ -3397,6 +3559,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/sysclk-lwla/$(DEPDIR)/lwla1016.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/sysclk-lwla/$(DEPDIR)/lwla1034.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/sysclk-lwla/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/hardware/sysclk-sla5032/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/hardware/sysclk-sla5032/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/teleinfo/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/teleinfo/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/testo/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
@@ -3407,8 +3571,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/uni-t-dmm/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/uni-t-ut32x/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/uni-t-ut32x/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/hardware/victor-dmm/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@src/hardware/victor-dmm/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/yokogawa-dlm/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/yokogawa-dlm/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/yokogawa-dlm/$(DEPDIR)/protocol_wrappers.Plo@am__quote@ # am--include-marker
@@ -3429,6 +3591,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/input/$(DEPDIR)/vcd.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/input/$(DEPDIR)/wav.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/lcr/$(DEPDIR)/es51919.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/lcr/$(DEPDIR)/vc4080.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/modbus/$(DEPDIR)/modbus.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/modbus/$(DEPDIR)/modbus_serial_rtu.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/output/$(DEPDIR)/analog.Plo@am__quote@ # am--include-marker
@@ -3444,6 +3607,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/output/$(DEPDIR)/srzip.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/output/$(DEPDIR)/vcd.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/output/$(DEPDIR)/wav.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/output/$(DEPDIR)/wavedrom.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/scale/$(DEPDIR)/kern.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/scpi/$(DEPDIR)/scpi.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/scpi/$(DEPDIR)/scpi_libgpib.Plo@am__quote@ # am--include-marker
@@ -3534,6 +3698,7 @@ clean-libtool:
 	-rm -rf .libs _libs
 	-rm -rf bindings/cxx/.libs bindings/cxx/_libs
 	-rm -rf src/.libs src/_libs
+	-rm -rf src/bt/.libs src/bt/_libs
 	-rm -rf src/dmm/.libs src/dmm/_libs
 	-rm -rf src/hardware/agilent-dmm/.libs src/hardware/agilent-dmm/_libs
 	-rm -rf src/hardware/appa-55ii/.libs src/hardware/appa-55ii/_libs
@@ -3542,7 +3707,6 @@ clean-libtool:
 	-rm -rf src/hardware/atten-pps3xxx/.libs src/hardware/atten-pps3xxx/_libs
 	-rm -rf src/hardware/baylibre-acme/.libs src/hardware/baylibre-acme/_libs
 	-rm -rf src/hardware/beaglelogic/.libs src/hardware/beaglelogic/_libs
-	-rm -rf src/hardware/brymen-bm86x/.libs src/hardware/brymen-bm86x/_libs
 	-rm -rf src/hardware/brymen-dmm/.libs src/hardware/brymen-dmm/_libs
 	-rm -rf src/hardware/cem-dt-885x/.libs src/hardware/cem-dt-885x/_libs
 	-rm -rf src/hardware/center-3xx/.libs src/hardware/center-3xx/_libs
@@ -3575,8 +3739,11 @@ clean-libtool:
 	-rm -rf src/hardware/lecroy-logicstudio/.libs src/hardware/lecroy-logicstudio/_libs
 	-rm -rf src/hardware/lecroy-xstream/.libs src/hardware/lecroy-xstream/_libs
 	-rm -rf src/hardware/manson-hcs-3xxx/.libs src/hardware/manson-hcs-3xxx/_libs
+	-rm -rf src/hardware/mastech-ms6514/.libs src/hardware/mastech-ms6514/_libs
 	-rm -rf src/hardware/maynuo-m97/.libs src/hardware/maynuo-m97/_libs
 	-rm -rf src/hardware/mic-985xx/.libs src/hardware/mic-985xx/_libs
+	-rm -rf src/hardware/microchip-pickit2/.libs src/hardware/microchip-pickit2/_libs
+	-rm -rf src/hardware/mooshimeter-dmm/.libs src/hardware/mooshimeter-dmm/_libs
 	-rm -rf src/hardware/motech-lps-30x/.libs src/hardware/motech-lps-30x/_libs
 	-rm -rf src/hardware/norma-dmm/.libs src/hardware/norma-dmm/_libs
 	-rm -rf src/hardware/openbench-logic-sniffer/.libs src/hardware/openbench-logic-sniffer/_libs
@@ -3587,17 +3754,18 @@ clean-libtool:
 	-rm -rf src/hardware/rohde-schwarz-sme-0x/.libs src/hardware/rohde-schwarz-sme-0x/_libs
 	-rm -rf src/hardware/saleae-logic-pro/.libs src/hardware/saleae-logic-pro/_libs
 	-rm -rf src/hardware/saleae-logic16/.libs src/hardware/saleae-logic16/_libs
+	-rm -rf src/hardware/scpi-dmm/.libs src/hardware/scpi-dmm/_libs
 	-rm -rf src/hardware/scpi-pps/.libs src/hardware/scpi-pps/_libs
 	-rm -rf src/hardware/serial-dmm/.libs src/hardware/serial-dmm/_libs
 	-rm -rf src/hardware/serial-lcr/.libs src/hardware/serial-lcr/_libs
 	-rm -rf src/hardware/siglent-sds/.libs src/hardware/siglent-sds/_libs
 	-rm -rf src/hardware/sysclk-lwla/.libs src/hardware/sysclk-lwla/_libs
+	-rm -rf src/hardware/sysclk-sla5032/.libs src/hardware/sysclk-sla5032/_libs
 	-rm -rf src/hardware/teleinfo/.libs src/hardware/teleinfo/_libs
 	-rm -rf src/hardware/testo/.libs src/hardware/testo/_libs
 	-rm -rf src/hardware/tondaj-sl-814/.libs src/hardware/tondaj-sl-814/_libs
 	-rm -rf src/hardware/uni-t-dmm/.libs src/hardware/uni-t-dmm/_libs
 	-rm -rf src/hardware/uni-t-ut32x/.libs src/hardware/uni-t-ut32x/_libs
-	-rm -rf src/hardware/victor-dmm/.libs src/hardware/victor-dmm/_libs
 	-rm -rf src/hardware/yokogawa-dlm/.libs src/hardware/yokogawa-dlm/_libs
 	-rm -rf src/hardware/zeroplus-logic-cube/.libs src/hardware/zeroplus-logic-cube/_libs
 	-rm -rf src/hardware/zketech-ebd-usb/.libs src/hardware/zketech-ebd-usb/_libs
@@ -4220,6 +4388,8 @@ distclean-generic:
 	-rm -f bindings/cxx/$(am__dirstamp)
 	-rm -f src/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/$(am__dirstamp)
+	-rm -f src/bt/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/bt/$(am__dirstamp)
 	-rm -f src/dmm/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/dmm/$(am__dirstamp)
 	-rm -f src/hardware/agilent-dmm/$(DEPDIR)/$(am__dirstamp)
@@ -4236,8 +4406,6 @@ distclean-generic:
 	-rm -f src/hardware/baylibre-acme/$(am__dirstamp)
 	-rm -f src/hardware/beaglelogic/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/hardware/beaglelogic/$(am__dirstamp)
-	-rm -f src/hardware/brymen-bm86x/$(DEPDIR)/$(am__dirstamp)
-	-rm -f src/hardware/brymen-bm86x/$(am__dirstamp)
 	-rm -f src/hardware/brymen-dmm/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/hardware/brymen-dmm/$(am__dirstamp)
 	-rm -f src/hardware/cem-dt-885x/$(DEPDIR)/$(am__dirstamp)
@@ -4302,10 +4470,16 @@ distclean-generic:
 	-rm -f src/hardware/lecroy-xstream/$(am__dirstamp)
 	-rm -f src/hardware/manson-hcs-3xxx/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/hardware/manson-hcs-3xxx/$(am__dirstamp)
+	-rm -f src/hardware/mastech-ms6514/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/hardware/mastech-ms6514/$(am__dirstamp)
 	-rm -f src/hardware/maynuo-m97/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/hardware/maynuo-m97/$(am__dirstamp)
 	-rm -f src/hardware/mic-985xx/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/hardware/mic-985xx/$(am__dirstamp)
+	-rm -f src/hardware/microchip-pickit2/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/hardware/microchip-pickit2/$(am__dirstamp)
+	-rm -f src/hardware/mooshimeter-dmm/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/hardware/mooshimeter-dmm/$(am__dirstamp)
 	-rm -f src/hardware/motech-lps-30x/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/hardware/motech-lps-30x/$(am__dirstamp)
 	-rm -f src/hardware/norma-dmm/$(DEPDIR)/$(am__dirstamp)
@@ -4326,6 +4500,8 @@ distclean-generic:
 	-rm -f src/hardware/saleae-logic-pro/$(am__dirstamp)
 	-rm -f src/hardware/saleae-logic16/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/hardware/saleae-logic16/$(am__dirstamp)
+	-rm -f src/hardware/scpi-dmm/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/hardware/scpi-dmm/$(am__dirstamp)
 	-rm -f src/hardware/scpi-pps/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/hardware/scpi-pps/$(am__dirstamp)
 	-rm -f src/hardware/serial-dmm/$(DEPDIR)/$(am__dirstamp)
@@ -4336,6 +4512,8 @@ distclean-generic:
 	-rm -f src/hardware/siglent-sds/$(am__dirstamp)
 	-rm -f src/hardware/sysclk-lwla/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/hardware/sysclk-lwla/$(am__dirstamp)
+	-rm -f src/hardware/sysclk-sla5032/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/hardware/sysclk-sla5032/$(am__dirstamp)
 	-rm -f src/hardware/teleinfo/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/hardware/teleinfo/$(am__dirstamp)
 	-rm -f src/hardware/testo/$(DEPDIR)/$(am__dirstamp)
@@ -4346,8 +4524,6 @@ distclean-generic:
 	-rm -f src/hardware/uni-t-dmm/$(am__dirstamp)
 	-rm -f src/hardware/uni-t-ut32x/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/hardware/uni-t-ut32x/$(am__dirstamp)
-	-rm -f src/hardware/victor-dmm/$(DEPDIR)/$(am__dirstamp)
-	-rm -f src/hardware/victor-dmm/$(am__dirstamp)
 	-rm -f src/hardware/yokogawa-dlm/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/hardware/yokogawa-dlm/$(am__dirstamp)
 	-rm -f src/hardware/zeroplus-logic-cube/$(DEPDIR)/$(am__dirstamp)
@@ -4397,6 +4573,13 @@ distclean: distclean-am
 	-rm -f src/$(DEPDIR)/log.Plo
 	-rm -f src/$(DEPDIR)/resource.Plo
 	-rm -f src/$(DEPDIR)/serial.Plo
+	-rm -f src/$(DEPDIR)/serial_bt.Plo
+	-rm -f src/$(DEPDIR)/serial_hid.Plo
+	-rm -f src/$(DEPDIR)/serial_hid_bu86x.Plo
+	-rm -f src/$(DEPDIR)/serial_hid_ch9325.Plo
+	-rm -f src/$(DEPDIR)/serial_hid_cp2110.Plo
+	-rm -f src/$(DEPDIR)/serial_hid_victor.Plo
+	-rm -f src/$(DEPDIR)/serial_libsp.Plo
 	-rm -f src/$(DEPDIR)/session.Plo
 	-rm -f src/$(DEPDIR)/session_driver.Plo
 	-rm -f src/$(DEPDIR)/session_file.Plo
@@ -4407,8 +4590,10 @@ distclean: distclean-am
 	-rm -f src/$(DEPDIR)/trigger.Plo
 	-rm -f src/$(DEPDIR)/usb.Plo
 	-rm -f src/$(DEPDIR)/version.Plo
+	-rm -f src/bt/$(DEPDIR)/bt_bluez.Plo
 	-rm -f src/dmm/$(DEPDIR)/asycii.Plo
 	-rm -f src/dmm/$(DEPDIR)/bm25x.Plo
+	-rm -f src/dmm/$(DEPDIR)/bm86x.Plo
 	-rm -f src/dmm/$(DEPDIR)/dtm0660.Plo
 	-rm -f src/dmm/$(DEPDIR)/eev121gw.Plo
 	-rm -f src/dmm/$(DEPDIR)/es519xx.Plo
@@ -4416,6 +4601,7 @@ distclean: distclean-am
 	-rm -f src/dmm/$(DEPDIR)/fs9922.Plo
 	-rm -f src/dmm/$(DEPDIR)/m2110.Plo
 	-rm -f src/dmm/$(DEPDIR)/metex14.Plo
+	-rm -f src/dmm/$(DEPDIR)/ms2115b.Plo
 	-rm -f src/dmm/$(DEPDIR)/ms8250d.Plo
 	-rm -f src/dmm/$(DEPDIR)/rs9lcd.Plo
 	-rm -f src/dmm/$(DEPDIR)/ut372.Plo
@@ -4439,8 +4625,6 @@ distclean: distclean-am
 	-rm -f src/hardware/beaglelogic/$(DEPDIR)/beaglelogic_native.Plo
 	-rm -f src/hardware/beaglelogic/$(DEPDIR)/beaglelogic_tcp.Plo
 	-rm -f src/hardware/beaglelogic/$(DEPDIR)/protocol.Plo
-	-rm -f src/hardware/brymen-bm86x/$(DEPDIR)/api.Plo
-	-rm -f src/hardware/brymen-bm86x/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/brymen-dmm/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/brymen-dmm/$(DEPDIR)/parser.Plo
 	-rm -f src/hardware/brymen-dmm/$(DEPDIR)/protocol.Plo
@@ -4506,10 +4690,16 @@ distclean: distclean-am
 	-rm -f src/hardware/lecroy-xstream/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/manson-hcs-3xxx/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/manson-hcs-3xxx/$(DEPDIR)/protocol.Plo
+	-rm -f src/hardware/mastech-ms6514/$(DEPDIR)/api.Plo
+	-rm -f src/hardware/mastech-ms6514/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/maynuo-m97/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/maynuo-m97/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/mic-985xx/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/mic-985xx/$(DEPDIR)/protocol.Plo
+	-rm -f src/hardware/microchip-pickit2/$(DEPDIR)/api.Plo
+	-rm -f src/hardware/microchip-pickit2/$(DEPDIR)/protocol.Plo
+	-rm -f src/hardware/mooshimeter-dmm/$(DEPDIR)/api.Plo
+	-rm -f src/hardware/mooshimeter-dmm/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/motech-lps-30x/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/motech-lps-30x/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/norma-dmm/$(DEPDIR)/api.Plo
@@ -4530,12 +4720,15 @@ distclean: distclean-am
 	-rm -f src/hardware/saleae-logic-pro/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/saleae-logic16/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/saleae-logic16/$(DEPDIR)/protocol.Plo
+	-rm -f src/hardware/scpi-dmm/$(DEPDIR)/api.Plo
+	-rm -f src/hardware/scpi-dmm/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/scpi-pps/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/scpi-pps/$(DEPDIR)/profiles.Plo
 	-rm -f src/hardware/scpi-pps/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/serial-dmm/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/serial-dmm/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/serial-lcr/$(DEPDIR)/api.Plo
+	-rm -f src/hardware/serial-lcr/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/siglent-sds/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/siglent-sds/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/sysclk-lwla/$(DEPDIR)/api.Plo
@@ -4543,6 +4736,8 @@ distclean: distclean-am
 	-rm -f src/hardware/sysclk-lwla/$(DEPDIR)/lwla1016.Plo
 	-rm -f src/hardware/sysclk-lwla/$(DEPDIR)/lwla1034.Plo
 	-rm -f src/hardware/sysclk-lwla/$(DEPDIR)/protocol.Plo
+	-rm -f src/hardware/sysclk-sla5032/$(DEPDIR)/api.Plo
+	-rm -f src/hardware/sysclk-sla5032/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/teleinfo/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/teleinfo/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/testo/$(DEPDIR)/api.Plo
@@ -4553,8 +4748,6 @@ distclean: distclean-am
 	-rm -f src/hardware/uni-t-dmm/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/uni-t-ut32x/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/uni-t-ut32x/$(DEPDIR)/protocol.Plo
-	-rm -f src/hardware/victor-dmm/$(DEPDIR)/api.Plo
-	-rm -f src/hardware/victor-dmm/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/yokogawa-dlm/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/yokogawa-dlm/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/yokogawa-dlm/$(DEPDIR)/protocol_wrappers.Plo
@@ -4575,6 +4768,7 @@ distclean: distclean-am
 	-rm -f src/input/$(DEPDIR)/vcd.Plo
 	-rm -f src/input/$(DEPDIR)/wav.Plo
 	-rm -f src/lcr/$(DEPDIR)/es51919.Plo
+	-rm -f src/lcr/$(DEPDIR)/vc4080.Plo
 	-rm -f src/modbus/$(DEPDIR)/modbus.Plo
 	-rm -f src/modbus/$(DEPDIR)/modbus_serial_rtu.Plo
 	-rm -f src/output/$(DEPDIR)/analog.Plo
@@ -4590,6 +4784,7 @@ distclean: distclean-am
 	-rm -f src/output/$(DEPDIR)/srzip.Plo
 	-rm -f src/output/$(DEPDIR)/vcd.Plo
 	-rm -f src/output/$(DEPDIR)/wav.Plo
+	-rm -f src/output/$(DEPDIR)/wavedrom.Plo
 	-rm -f src/scale/$(DEPDIR)/kern.Plo
 	-rm -f src/scpi/$(DEPDIR)/scpi.Plo
 	-rm -f src/scpi/$(DEPDIR)/scpi_libgpib.Plo
@@ -4684,6 +4879,13 @@ maintainer-clean: maintainer-clean-am
 	-rm -f src/$(DEPDIR)/log.Plo
 	-rm -f src/$(DEPDIR)/resource.Plo
 	-rm -f src/$(DEPDIR)/serial.Plo
+	-rm -f src/$(DEPDIR)/serial_bt.Plo
+	-rm -f src/$(DEPDIR)/serial_hid.Plo
+	-rm -f src/$(DEPDIR)/serial_hid_bu86x.Plo
+	-rm -f src/$(DEPDIR)/serial_hid_ch9325.Plo
+	-rm -f src/$(DEPDIR)/serial_hid_cp2110.Plo
+	-rm -f src/$(DEPDIR)/serial_hid_victor.Plo
+	-rm -f src/$(DEPDIR)/serial_libsp.Plo
 	-rm -f src/$(DEPDIR)/session.Plo
 	-rm -f src/$(DEPDIR)/session_driver.Plo
 	-rm -f src/$(DEPDIR)/session_file.Plo
@@ -4694,8 +4896,10 @@ maintainer-clean: maintainer-clean-am
 	-rm -f src/$(DEPDIR)/trigger.Plo
 	-rm -f src/$(DEPDIR)/usb.Plo
 	-rm -f src/$(DEPDIR)/version.Plo
+	-rm -f src/bt/$(DEPDIR)/bt_bluez.Plo
 	-rm -f src/dmm/$(DEPDIR)/asycii.Plo
 	-rm -f src/dmm/$(DEPDIR)/bm25x.Plo
+	-rm -f src/dmm/$(DEPDIR)/bm86x.Plo
 	-rm -f src/dmm/$(DEPDIR)/dtm0660.Plo
 	-rm -f src/dmm/$(DEPDIR)/eev121gw.Plo
 	-rm -f src/dmm/$(DEPDIR)/es519xx.Plo
@@ -4703,6 +4907,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f src/dmm/$(DEPDIR)/fs9922.Plo
 	-rm -f src/dmm/$(DEPDIR)/m2110.Plo
 	-rm -f src/dmm/$(DEPDIR)/metex14.Plo
+	-rm -f src/dmm/$(DEPDIR)/ms2115b.Plo
 	-rm -f src/dmm/$(DEPDIR)/ms8250d.Plo
 	-rm -f src/dmm/$(DEPDIR)/rs9lcd.Plo
 	-rm -f src/dmm/$(DEPDIR)/ut372.Plo
@@ -4726,8 +4931,6 @@ maintainer-clean: maintainer-clean-am
 	-rm -f src/hardware/beaglelogic/$(DEPDIR)/beaglelogic_native.Plo
 	-rm -f src/hardware/beaglelogic/$(DEPDIR)/beaglelogic_tcp.Plo
 	-rm -f src/hardware/beaglelogic/$(DEPDIR)/protocol.Plo
-	-rm -f src/hardware/brymen-bm86x/$(DEPDIR)/api.Plo
-	-rm -f src/hardware/brymen-bm86x/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/brymen-dmm/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/brymen-dmm/$(DEPDIR)/parser.Plo
 	-rm -f src/hardware/brymen-dmm/$(DEPDIR)/protocol.Plo
@@ -4793,10 +4996,16 @@ maintainer-clean: maintainer-clean-am
 	-rm -f src/hardware/lecroy-xstream/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/manson-hcs-3xxx/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/manson-hcs-3xxx/$(DEPDIR)/protocol.Plo
+	-rm -f src/hardware/mastech-ms6514/$(DEPDIR)/api.Plo
+	-rm -f src/hardware/mastech-ms6514/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/maynuo-m97/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/maynuo-m97/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/mic-985xx/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/mic-985xx/$(DEPDIR)/protocol.Plo
+	-rm -f src/hardware/microchip-pickit2/$(DEPDIR)/api.Plo
+	-rm -f src/hardware/microchip-pickit2/$(DEPDIR)/protocol.Plo
+	-rm -f src/hardware/mooshimeter-dmm/$(DEPDIR)/api.Plo
+	-rm -f src/hardware/mooshimeter-dmm/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/motech-lps-30x/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/motech-lps-30x/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/norma-dmm/$(DEPDIR)/api.Plo
@@ -4817,12 +5026,15 @@ maintainer-clean: maintainer-clean-am
 	-rm -f src/hardware/saleae-logic-pro/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/saleae-logic16/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/saleae-logic16/$(DEPDIR)/protocol.Plo
+	-rm -f src/hardware/scpi-dmm/$(DEPDIR)/api.Plo
+	-rm -f src/hardware/scpi-dmm/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/scpi-pps/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/scpi-pps/$(DEPDIR)/profiles.Plo
 	-rm -f src/hardware/scpi-pps/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/serial-dmm/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/serial-dmm/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/serial-lcr/$(DEPDIR)/api.Plo
+	-rm -f src/hardware/serial-lcr/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/siglent-sds/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/siglent-sds/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/sysclk-lwla/$(DEPDIR)/api.Plo
@@ -4830,6 +5042,8 @@ maintainer-clean: maintainer-clean-am
 	-rm -f src/hardware/sysclk-lwla/$(DEPDIR)/lwla1016.Plo
 	-rm -f src/hardware/sysclk-lwla/$(DEPDIR)/lwla1034.Plo
 	-rm -f src/hardware/sysclk-lwla/$(DEPDIR)/protocol.Plo
+	-rm -f src/hardware/sysclk-sla5032/$(DEPDIR)/api.Plo
+	-rm -f src/hardware/sysclk-sla5032/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/teleinfo/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/teleinfo/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/testo/$(DEPDIR)/api.Plo
@@ -4840,8 +5054,6 @@ maintainer-clean: maintainer-clean-am
 	-rm -f src/hardware/uni-t-dmm/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/uni-t-ut32x/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/uni-t-ut32x/$(DEPDIR)/protocol.Plo
-	-rm -f src/hardware/victor-dmm/$(DEPDIR)/api.Plo
-	-rm -f src/hardware/victor-dmm/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/yokogawa-dlm/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/yokogawa-dlm/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/yokogawa-dlm/$(DEPDIR)/protocol_wrappers.Plo
@@ -4862,6 +5074,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f src/input/$(DEPDIR)/vcd.Plo
 	-rm -f src/input/$(DEPDIR)/wav.Plo
 	-rm -f src/lcr/$(DEPDIR)/es51919.Plo
+	-rm -f src/lcr/$(DEPDIR)/vc4080.Plo
 	-rm -f src/modbus/$(DEPDIR)/modbus.Plo
 	-rm -f src/modbus/$(DEPDIR)/modbus_serial_rtu.Plo
 	-rm -f src/output/$(DEPDIR)/analog.Plo
@@ -4877,6 +5090,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f src/output/$(DEPDIR)/srzip.Plo
 	-rm -f src/output/$(DEPDIR)/vcd.Plo
 	-rm -f src/output/$(DEPDIR)/wav.Plo
+	-rm -f src/output/$(DEPDIR)/wavedrom.Plo
 	-rm -f src/scale/$(DEPDIR)/kern.Plo
 	-rm -f src/scpi/$(DEPDIR)/scpi.Plo
 	-rm -f src/scpi/$(DEPDIR)/scpi_libgpib.Plo
@@ -4981,7 +5195,7 @@ libsigrok-uninstall:
 	-rmdir $(DESTDIR)$(includedir)/libsigrok
 
 @BINDINGS_CXX_TRUE@doxy/xml/index.xml: include/libsigrok/libsigrok.h
-@BINDINGS_CXX_TRUE@	$(AM_V_GEN)cd $(srcdir) && BUILDDIR=$(abs_builddir)/ doxygen Doxyfile 2>/dev/null
+@BINDINGS_CXX_TRUE@	$(AM_V_GEN)cd $(srcdir) && SRCDIR=$(abs_srcdir)/ BUILDDIR=$(abs_builddir)/ doxygen Doxyfile 2>/dev/null
 
 @BINDINGS_CXX_TRUE@bindings/swig/enums.i: bindings/cxx/enums.timestamp
 @BINDINGS_CXX_TRUE@bindings/cxx/enums.cpp: bindings/cxx/enums.timestamp
@@ -5008,7 +5222,7 @@ libsigrok-uninstall:
 
 $(CPPXMLDOC): bindings/cxx/include/libsigrokcxx/libsigrokcxx.hpp \
 		bindings/cxx/enums.timestamp
-	$(AM_V_GEN)cd $(srcdir)/bindings/cxx && BUILDDIR=$(abs_builddir)/bindings/cxx/ doxygen Doxyfile 2>/dev/null
+	$(AM_V_GEN)cd $(srcdir)/bindings/cxx && SRCDIR=$(abs_srcdir)/bindings/cxx/ BUILDDIR=$(abs_builddir)/bindings/cxx/ doxygen Doxyfile 2>/dev/null
 
 @BINDINGS_PYTHON_TRUE@$(PDOC_START): $(srcdir)/bindings/swig/doc.py $(CPPXMLDOC)
 @BINDINGS_PYTHON_TRUE@	$(AM_V_at)test -d $(PDIR)/sigrok/core || $(MKDIR_P) $(PDIR)/sigrok/core
@@ -5043,7 +5257,7 @@ $(CPPXMLDOC): bindings/cxx/include/libsigrokcxx/libsigrokcxx.hpp \
 @BINDINGS_PYTHON_TRUE@	-$(AM_V_at)$(setup_py) clean --all 2>/dev/null
 
 @BINDINGS_PYTHON_TRUE@python-doc:
-@BINDINGS_PYTHON_TRUE@	$(AM_V_at)cd $(srcdir)/$(PDIR) && BUILDDIR="$(abs_builddir)/$(PDIR)/" doxygen Doxyfile 2>/dev/null
+@BINDINGS_PYTHON_TRUE@	$(AM_V_at)cd $(srcdir)/$(PDIR) && SRCDIR="$(abs_srcdir)/$(PDIR)/" BUILDDIR="$(abs_builddir)/$(PDIR)/" doxygen Doxyfile 2>/dev/null
 
 @BINDINGS_RUBY_TRUE@$(RDOC): $(srcdir)/bindings/swig/doc.py $(CPPXMLDOC)
 @BINDINGS_RUBY_TRUE@	$(AM_V_at)test -d $(RDIR) || $(MKDIR_P) $(RDIR)
@@ -5124,7 +5338,7 @@ $(CPPXMLDOC): bindings/cxx/include/libsigrokcxx/libsigrokcxx.hpp \
 @BINDINGS_JAVA_TRUE@	-$(AM_V_at)rm -fr $(JDIR)/doxy
 
 @BINDINGS_JAVA_TRUE@java-doc:
-@BINDINGS_JAVA_TRUE@	$(AM_V_at)cd $(srcdir)/$(JDIR) && BUILDDIR="$(abs_builddir)/$(JDIR)/" doxygen Doxyfile
+@BINDINGS_JAVA_TRUE@	$(AM_V_at)cd $(srcdir)/$(JDIR) && SRCDIR="$(abs_srcdir)/$(JDIR)/" BUILDDIR="$(abs_builddir)/$(JDIR)/" doxygen Doxyfile
 
 all-local: $(BUILD_EXTRA)
 install-exec-local: $(INSTALL_EXTRA)

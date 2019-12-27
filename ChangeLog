@@ -1,3 +1,57 @@
+commit a6b07d7e28fe445afccf36922ef7d20e63e54fe6
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Tue Dec 24 16:29:32 2019 +0100
+
+    Bump package version to 0.5.2.
+
+commit c66fde84f68cc88014c5cbc0a13df7761aa47c97
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Tue Dec 24 16:29:18 2019 +0100
+
+    configure.ac: Bump libtool/library version from 5:0:1 to 5:1:1.
+    
+    The libtool current:revision:age numbers change from 5:0:1 to 5:1:1
+    since no new APIs were added and no existing ones were changed or
+    removed. Thus, revision is incremented, current and age stay unchanged.
+    
+    Details:
+    http://www.gnu.org/software/libtool/manual/libtool.html#Updating-version-info
+    
+    This changes the library filename (e.g. on Linux) from
+    libsigrok.so.4.1.0 to libsigrok.so.4.1.1, the SONAME
+    (+symlink) remains the same, though (libsigrok.so.4).
+
+commit c1a8e19d9a3dcb511fd96913fa40862691d74102
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Mon Dec 23 14:18:05 2019 +0100
+
+    Doxyfile: Set version to 0.5.2.
+
+commit fdb297c6de08cf7f2c2aedd5e0399bda2dd60a5d
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Mon Dec 23 14:15:01 2019 +0100
+
+    NEWS: Add list of user-visible changes so far.
+
+commit e4204b1757459a03c0a70849a659f27387edc295
+Author: Uwe Hermann <uwe@hermann-uwe.de>
+Date:   Mon Dec 23 13:53:55 2019 +0100
+
+    Backport recent changes from mainline.
+    
+    This includes all changes from
+    
+      4c660b46c11f8a84941194f60e4f48e57b0a86b7
+      Makefile.am: Add missing src/serial_hid.h.
+    
+    up to
+    
+      39ea7b7d390c4f1d4a697a40769ce364de9c97d0
+      dmm/eev121gw: add missing scale items for sub display in power modes
+    
+    This is possible since none of the changes above change or
+    remove public API calls of the library.
+
 commit 8686b747cd40695c36f998603f6e853ee5eea883
 Author: Uwe Hermann <uwe@hermann-uwe.de>
 Date:   Sun Oct 14 19:50:04 2018 +0200
@@ -30746,7 +30800,7 @@ Date:   Sun Mar 18 12:57:34 2012 +0100
     logic analyzer hardware).
 
 commit 21b50ee1831602bd6c1f223fb200e2c298885aa3
-Merge: 9289e273 ecc16ed0
+Merge: 9289e273b ecc16ed07
 Author: Bert Vermeulen <bert@biot.com>
 Date:   Fri Mar 16 00:04:51 2012 +0100
 
@@ -33658,7 +33712,7 @@ Date:   Mon Jan 10 22:49:38 2011 +0100
     demo: Add missing copyright line.
 
 commit 2566bd4884bf33518488504575ba62e99ef43a7b
-Merge: 01cf8814 882e2075
+Merge: 01cf88149 882e2075b
 Author: Daniel Ribeiro <drwyrm@gmail.com>
 Date:   Mon Jan 10 15:58:05 2011 -0200
 
@@ -33724,7 +33778,7 @@ Date:   Mon Jan 10 12:39:53 2011 +0100
     cli: new option to list output modules
 
 commit 43275b4712b0ad5baea1c7d71fdb710249a46681
-Merge: e006af11 9d4bde70
+Merge: e006af111 9d4bde70f
 Author: Daniel Ribeiro <drwyrm@gmail.com>
 Date:   Mon Jan 10 02:36:50 2011 -0200
 
@@ -33740,7 +33794,7 @@ Date:   Mon Jan 10 02:21:07 2011 -0200
     and flocontrol settings.
 
 commit e006af1116adb76014e77db718bb8673137a8bf5
-Merge: 1ff7712c 9b36e360
+Merge: 1ff7712c9 9b36e360f
 Author: Daniel Ribeiro <drwyrm@gmail.com>
 Date:   Mon Jan 10 02:28:59 2011 -0200
 
