@@ -6,11 +6,20 @@
 /* The canonical host libsigrok will run on. */
 #undef CONF_HOST
 
+/* Build-time version of libbluez. */
+#undef CONF_LIBBLUEZ_VERSION
+
 /* Build-time version of libftdi. */
 #undef CONF_LIBFTDI_VERSION
 
+/* Build-time version of libgio. */
+#undef CONF_LIBGIO_VERSION
+
 /* Build-time version of libgpib. */
 #undef CONF_LIBGPIB_VERSION
+
+/* Build-time version of libhidapi. */
+#undef CONF_LIBHIDAPI_VERSION
 
 /* Build-time version of librevisa. */
 #undef CONF_LIBREVISA_VERSION
@@ -23,6 +32,12 @@
 
 /* Build-time version of libzip. */
 #undef CONF_LIBZIP_VERSION
+
+/* Specifies whether Bluetooth communication is supported. */
+#undef HAVE_BLUETOOTH
+
+/* Specifies whether we have bt_put_le16(). */
+#undef HAVE_BT_PUT_LE16
 
 /* define if the compiler supports basic C++11 syntax */
 #undef HAVE_CXX11
@@ -53,9 +68,6 @@
 
 /* Whether to support BeagleLogic device. */
 #undef HAVE_HW_BEAGLELOGIC
-
-/* Whether to support Brymen BM86x device. */
-#undef HAVE_HW_BRYMEN_BM86X
 
 /* Whether to support Brymen DMM device. */
 #undef HAVE_HW_BRYMEN_DMM
@@ -153,11 +165,20 @@
 /* Whether to support Manson HCS-3xxx device. */
 #undef HAVE_HW_MANSON_HCS_3XXX
 
+/* Whether to support Mastech MS6514 device. */
+#undef HAVE_HW_MASTECH_MS6514
+
 /* Whether to support maynuo-m97 device. */
 #undef HAVE_HW_MAYNUO_M97
 
+/* Whether to support Microchip PICkit2 device. */
+#undef HAVE_HW_MICROCHIP_PICKIT2
+
 /* Whether to support MIC 985xx device. */
 #undef HAVE_HW_MIC_985XX
+
+/* Whether to support Mooshimeter DMM device. */
+#undef HAVE_HW_MOOSHIMETER_DMM
 
 /* Whether to support Motech LPS 30x device. */
 #undef HAVE_HW_MOTECH_LPS_30X
@@ -189,6 +210,9 @@
 /* Whether to support Saleae Logic Pro device. */
 #undef HAVE_HW_SALEAE_LOGIC_PRO
 
+/* Whether to support SCPI DMM device. */
+#undef HAVE_HW_SCPI_DMM
+
 /* Whether to support SCPI PPS device. */
 #undef HAVE_HW_SCPI_PPS
 
@@ -203,6 +227,9 @@
 
 /* Whether to support Sysclk LWLA device. */
 #undef HAVE_HW_SYSCLK_LWLA
+
+/* Whether to support Sysclk SLA5032 device. */
+#undef HAVE_HW_SYSCLK_SLA5032
 
 /* Whether to support Teleinfo device. */
 #undef HAVE_HW_TELEINFO
@@ -219,9 +246,6 @@
 /* Whether to support UNI-T UT32x device. */
 #undef HAVE_HW_UNI_T_UT32X
 
-/* Whether to support Victor DMM device. */
-#undef HAVE_HW_VICTOR_DMM
-
 /* Whether to support Yokogawa DL/DLM device. */
 #undef HAVE_HW_YOKOGAWA_DLM
 
@@ -234,11 +258,20 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Whether libbluez is available. */
+#undef HAVE_LIBBLUEZ
+
 /* Whether libftdi is available. */
 #undef HAVE_LIBFTDI
 
+/* Whether libgio is available. */
+#undef HAVE_LIBGIO
+
 /* Whether libgpib is available. */
 #undef HAVE_LIBGPIB
+
+/* Whether libhidapi is available. */
+#undef HAVE_LIBHIDAPI
 
 /* Whether libieee1284 is available. */
 #undef HAVE_LIBIEEE1284
@@ -260,6 +293,9 @@
 
 /* Specifies whether we have RPC support. */
 #undef HAVE_RPC
+
+/* Specifies whether serial communication is supported. */
+#undef HAVE_SERIAL_COMM
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
