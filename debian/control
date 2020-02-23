@@ -27,8 +27,13 @@ Section: libdevel
 Architecture: any
 Multi-Arch: same
 Depends: libsigrok4 (= ${binary:Version}), ${misc:Depends},
- libglib2.0-dev (>= 2.32.0), libserialport-dev (>= 0.1.0),
- libusb-1.0-0-dev (>= 1.0.16), libzip-dev (>= 0.10), libftdi1-dev
+	libbluetooth-dev,
+	libftdi1-dev,
+	libglib2.0-dev (>= 2.32.0),
+	libhidapi-dev,
+	libserialport-dev (>= 0.1.0),
+	libusb-1.0-0-dev (>= 1.0.16),
+	libzip-dev (>= 0.10)
 Description: sigrok hardware driver library - development files
  libsigrok is a shared library which provides basic hardware access
  drivers for logic analyzers, as well as input/output file format support.
