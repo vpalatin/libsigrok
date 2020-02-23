@@ -15,7 +15,7 @@ Build-Depends: check,
 	libusb-1.0-0-dev (>= 1.0.16),
 	libzip-dev (>= 0.10),
 	pkg-config (>= 0.22)
-Standards-Version: 4.2.1
+Standards-Version: 4.5.0
 Section: libs
 Homepage: http://sigrok.org/wiki/Libsigrok
 Vcs-Browser: https://salsa.debian.org/electronics-team/sigrok/libsigrok
