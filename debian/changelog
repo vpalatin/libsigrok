@@ -1,4 +1,4 @@
-libsigrok (0.5.2-2) UNRELEASED; urgency=medium
+libsigrok (0.5.2-2) unstable; urgency=medium
 
   * Add -dev deps on libbluetooth-dev + libhidapi-dev (Closes: #951980, #952272)
   * Update Standards-Version to 4.5.0
