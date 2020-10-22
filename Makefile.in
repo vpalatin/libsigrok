@@ -186,253 +186,258 @@ host_triplet = @host@
 @HW_CENTER_3XX_TRUE@	src/hardware/center-3xx/protocol.c \
 @HW_CENTER_3XX_TRUE@	src/hardware/center-3xx/api.c
 
-@HW_CHRONOVU_LA_TRUE@am__append_19 = \
+@HW_CHROMIUM_TWINKIE_TRUE@am__append_19 = \
+@HW_CHROMIUM_TWINKIE_TRUE@	src/hardware/chromium-twinkie/protocol.h \
+@HW_CHROMIUM_TWINKIE_TRUE@	src/hardware/chromium-twinkie/protocol.c \
+@HW_CHROMIUM_TWINKIE_TRUE@	src/hardware/chromium-twinkie/api.c
+
+@HW_CHRONOVU_LA_TRUE@am__append_20 = \
 @HW_CHRONOVU_LA_TRUE@	src/hardware/chronovu-la/protocol.h \
 @HW_CHRONOVU_LA_TRUE@	src/hardware/chronovu-la/protocol.c \
 @HW_CHRONOVU_LA_TRUE@	src/hardware/chronovu-la/api.c
 
-@HW_COLEAD_SLM_TRUE@am__append_20 = \
+@HW_COLEAD_SLM_TRUE@am__append_21 = \
 @HW_COLEAD_SLM_TRUE@	src/hardware/colead-slm/protocol.h \
 @HW_COLEAD_SLM_TRUE@	src/hardware/colead-slm/protocol.c \
 @HW_COLEAD_SLM_TRUE@	src/hardware/colead-slm/api.c
 
-@HW_CONRAD_DIGI_35_CPU_TRUE@am__append_21 = \
+@HW_CONRAD_DIGI_35_CPU_TRUE@am__append_22 = \
 @HW_CONRAD_DIGI_35_CPU_TRUE@	src/hardware/conrad-digi-35-cpu/protocol.h \
 @HW_CONRAD_DIGI_35_CPU_TRUE@	src/hardware/conrad-digi-35-cpu/protocol.c \
 @HW_CONRAD_DIGI_35_CPU_TRUE@	src/hardware/conrad-digi-35-cpu/api.c
 
-@HW_DEMO_TRUE@am__append_22 = \
+@HW_DEMO_TRUE@am__append_23 = \
 @HW_DEMO_TRUE@	src/hardware/demo/protocol.h \
 @HW_DEMO_TRUE@	src/hardware/demo/protocol.c \
 @HW_DEMO_TRUE@	src/hardware/demo/api.c
 
-@HW_DREAMSOURCELAB_DSLOGIC_TRUE@am__append_23 = \
+@HW_DREAMSOURCELAB_DSLOGIC_TRUE@am__append_24 = \
 @HW_DREAMSOURCELAB_DSLOGIC_TRUE@	src/hardware/dreamsourcelab-dslogic/protocol.h \
 @HW_DREAMSOURCELAB_DSLOGIC_TRUE@	src/hardware/dreamsourcelab-dslogic/protocol.c \
 @HW_DREAMSOURCELAB_DSLOGIC_TRUE@	src/hardware/dreamsourcelab-dslogic/api.c
 
-@HW_FLUKE_45_TRUE@am__append_24 = \
+@HW_FLUKE_45_TRUE@am__append_25 = \
 @HW_FLUKE_45_TRUE@	src/hardware/fluke-45/protocol.h \
 @HW_FLUKE_45_TRUE@	src/hardware/fluke-45/protocol.c \
 @HW_FLUKE_45_TRUE@	src/hardware/fluke-45/api.c
 
-@HW_FLUKE_DMM_TRUE@am__append_25 = \
+@HW_FLUKE_DMM_TRUE@am__append_26 = \
 @HW_FLUKE_DMM_TRUE@	src/hardware/fluke-dmm/protocol.h \
 @HW_FLUKE_DMM_TRUE@	src/hardware/fluke-dmm/protocol.c \
 @HW_FLUKE_DMM_TRUE@	src/hardware/fluke-dmm/api.c
 
-@HW_FTDI_LA_TRUE@am__append_26 = \
+@HW_FTDI_LA_TRUE@am__append_27 = \
 @HW_FTDI_LA_TRUE@	src/hardware/ftdi-la/protocol.h \
 @HW_FTDI_LA_TRUE@	src/hardware/ftdi-la/protocol.c \
 @HW_FTDI_LA_TRUE@	src/hardware/ftdi-la/api.c
 
-@HW_FX2LAFW_TRUE@am__append_27 = \
+@HW_FX2LAFW_TRUE@am__append_28 = \
 @HW_FX2LAFW_TRUE@	src/hardware/fx2lafw/protocol.h \
 @HW_FX2LAFW_TRUE@	src/hardware/fx2lafw/protocol.c \
 @HW_FX2LAFW_TRUE@	src/hardware/fx2lafw/api.c
 
-@HW_GMC_MH_1X_2X_TRUE@am__append_28 = \
+@HW_GMC_MH_1X_2X_TRUE@am__append_29 = \
 @HW_GMC_MH_1X_2X_TRUE@	src/hardware/gmc-mh-1x-2x/protocol.h \
 @HW_GMC_MH_1X_2X_TRUE@	src/hardware/gmc-mh-1x-2x/protocol.c \
 @HW_GMC_MH_1X_2X_TRUE@	src/hardware/gmc-mh-1x-2x/api.c
 
-@HW_GWINSTEK_GDS_800_TRUE@am__append_29 = \
+@HW_GWINSTEK_GDS_800_TRUE@am__append_30 = \
 @HW_GWINSTEK_GDS_800_TRUE@	src/hardware/gwinstek-gds-800/protocol.h \
 @HW_GWINSTEK_GDS_800_TRUE@	src/hardware/gwinstek-gds-800/protocol.c \
 @HW_GWINSTEK_GDS_800_TRUE@	src/hardware/gwinstek-gds-800/api.c
 
-@HW_GWINSTEK_GPD_TRUE@am__append_30 = \
+@HW_GWINSTEK_GPD_TRUE@am__append_31 = \
 @HW_GWINSTEK_GPD_TRUE@	src/hardware/gwinstek-gpd/protocol.h \
 @HW_GWINSTEK_GPD_TRUE@	src/hardware/gwinstek-gpd/protocol.c \
 @HW_GWINSTEK_GPD_TRUE@	src/hardware/gwinstek-gpd/api.c
 
-@HW_HAMEG_HMO_TRUE@am__append_31 = \
+@HW_HAMEG_HMO_TRUE@am__append_32 = \
 @HW_HAMEG_HMO_TRUE@	src/hardware/hameg-hmo/protocol.h \
 @HW_HAMEG_HMO_TRUE@	src/hardware/hameg-hmo/protocol.c \
 @HW_HAMEG_HMO_TRUE@	src/hardware/hameg-hmo/api.c
 
-@HW_HANTEK_4032L_TRUE@am__append_32 = \
+@HW_HANTEK_4032L_TRUE@am__append_33 = \
 @HW_HANTEK_4032L_TRUE@	src/hardware/hantek-4032l/protocol.h \
 @HW_HANTEK_4032L_TRUE@	src/hardware/hantek-4032l/protocol.c \
 @HW_HANTEK_4032L_TRUE@	src/hardware/hantek-4032l/api.c
 
-@HW_HANTEK_6XXX_TRUE@am__append_33 = \
+@HW_HANTEK_6XXX_TRUE@am__append_34 = \
 @HW_HANTEK_6XXX_TRUE@	src/hardware/hantek-6xxx/protocol.h \
 @HW_HANTEK_6XXX_TRUE@	src/hardware/hantek-6xxx/protocol.c \
 @HW_HANTEK_6XXX_TRUE@	src/hardware/hantek-6xxx/api.c
 
-@HW_HANTEK_DSO_TRUE@am__append_34 = \
+@HW_HANTEK_DSO_TRUE@am__append_35 = \
 @HW_HANTEK_DSO_TRUE@	src/hardware/hantek-dso/protocol.h \
 @HW_HANTEK_DSO_TRUE@	src/hardware/hantek-dso/protocol.c \
 @HW_HANTEK_DSO_TRUE@	src/hardware/hantek-dso/api.c
 
-@HW_HP_3457A_TRUE@am__append_35 = \
+@HW_HP_3457A_TRUE@am__append_36 = \
 @HW_HP_3457A_TRUE@	src/hardware/hp-3457a/protocol.h \
 @HW_HP_3457A_TRUE@	src/hardware/hp-3457a/protocol.c \
 @HW_HP_3457A_TRUE@	src/hardware/hp-3457a/api.c
 
-@HW_HP_3478A_TRUE@am__append_36 = \
+@HW_HP_3478A_TRUE@am__append_37 = \
 @HW_HP_3478A_TRUE@	src/hardware/hp-3478a/protocol.h \
 @HW_HP_3478A_TRUE@	src/hardware/hp-3478a/protocol.c \
 @HW_HP_3478A_TRUE@	src/hardware/hp-3478a/api.c
 
-@HW_HUNG_CHANG_DSO_2100_TRUE@am__append_37 = \
+@HW_HUNG_CHANG_DSO_2100_TRUE@am__append_38 = \
 @HW_HUNG_CHANG_DSO_2100_TRUE@	src/hardware/hung-chang-dso-2100/protocol.h \
 @HW_HUNG_CHANG_DSO_2100_TRUE@	src/hardware/hung-chang-dso-2100/protocol.c \
 @HW_HUNG_CHANG_DSO_2100_TRUE@	src/hardware/hung-chang-dso-2100/api.c
 
-@HW_IKALOGIC_SCANALOGIC2_TRUE@am__append_38 = \
+@HW_IKALOGIC_SCANALOGIC2_TRUE@am__append_39 = \
 @HW_IKALOGIC_SCANALOGIC2_TRUE@	src/hardware/ikalogic-scanalogic2/protocol.h \
 @HW_IKALOGIC_SCANALOGIC2_TRUE@	src/hardware/ikalogic-scanalogic2/protocol.c \
 @HW_IKALOGIC_SCANALOGIC2_TRUE@	src/hardware/ikalogic-scanalogic2/api.c
 
-@HW_IKALOGIC_SCANAPLUS_TRUE@am__append_39 = \
+@HW_IKALOGIC_SCANAPLUS_TRUE@am__append_40 = \
 @HW_IKALOGIC_SCANAPLUS_TRUE@	src/hardware/ikalogic-scanaplus/protocol.h \
 @HW_IKALOGIC_SCANAPLUS_TRUE@	src/hardware/ikalogic-scanaplus/protocol.c \
 @HW_IKALOGIC_SCANAPLUS_TRUE@	src/hardware/ikalogic-scanaplus/api.c
 
-@HW_IPDBG_LA_TRUE@am__append_40 = \
+@HW_IPDBG_LA_TRUE@am__append_41 = \
 @HW_IPDBG_LA_TRUE@	src/hardware/ipdbg-la/protocol.h \
 @HW_IPDBG_LA_TRUE@	src/hardware/ipdbg-la/protocol.c \
 @HW_IPDBG_LA_TRUE@	src/hardware/ipdbg-la/api.c
 
-@HW_KECHENG_KC_330B_TRUE@am__append_41 = \
+@HW_KECHENG_KC_330B_TRUE@am__append_42 = \
 @HW_KECHENG_KC_330B_TRUE@	src/hardware/kecheng-kc-330b/protocol.h \
 @HW_KECHENG_KC_330B_TRUE@	src/hardware/kecheng-kc-330b/protocol.c \
 @HW_KECHENG_KC_330B_TRUE@	src/hardware/kecheng-kc-330b/api.c
 
-@HW_KERN_SCALE_TRUE@am__append_42 = \
+@HW_KERN_SCALE_TRUE@am__append_43 = \
 @HW_KERN_SCALE_TRUE@	src/hardware/kern-scale/protocol.h \
 @HW_KERN_SCALE_TRUE@	src/hardware/kern-scale/protocol.c \
 @HW_KERN_SCALE_TRUE@	src/hardware/kern-scale/api.c
 
-@HW_KORAD_KAXXXXP_TRUE@am__append_43 = \
+@HW_KORAD_KAXXXXP_TRUE@am__append_44 = \
 @HW_KORAD_KAXXXXP_TRUE@	src/hardware/korad-kaxxxxp/protocol.h \
 @HW_KORAD_KAXXXXP_TRUE@	src/hardware/korad-kaxxxxp/protocol.c \
 @HW_KORAD_KAXXXXP_TRUE@	src/hardware/korad-kaxxxxp/api.c
 
-@HW_LASCAR_EL_USB_TRUE@am__append_44 = \
+@HW_LASCAR_EL_USB_TRUE@am__append_45 = \
 @HW_LASCAR_EL_USB_TRUE@	src/hardware/lascar-el-usb/protocol.h \
 @HW_LASCAR_EL_USB_TRUE@	src/hardware/lascar-el-usb/protocol.c \
 @HW_LASCAR_EL_USB_TRUE@	src/hardware/lascar-el-usb/api.c
 
-@HW_LECROY_LOGICSTUDIO_TRUE@am__append_45 = \
+@HW_LECROY_LOGICSTUDIO_TRUE@am__append_46 = \
 @HW_LECROY_LOGICSTUDIO_TRUE@	src/hardware/lecroy-logicstudio/protocol.h \
 @HW_LECROY_LOGICSTUDIO_TRUE@	src/hardware/lecroy-logicstudio/protocol.c \
 @HW_LECROY_LOGICSTUDIO_TRUE@	src/hardware/lecroy-logicstudio/api.c
 
-@HW_LECROY_XSTREAM_TRUE@am__append_46 = \
+@HW_LECROY_XSTREAM_TRUE@am__append_47 = \
 @HW_LECROY_XSTREAM_TRUE@	src/hardware/lecroy-xstream/protocol.h \
 @HW_LECROY_XSTREAM_TRUE@	src/hardware/lecroy-xstream/protocol.c \
 @HW_LECROY_XSTREAM_TRUE@	src/hardware/lecroy-xstream/api.c
 
-@HW_MANSON_HCS_3XXX_TRUE@am__append_47 = \
+@HW_MANSON_HCS_3XXX_TRUE@am__append_48 = \
 @HW_MANSON_HCS_3XXX_TRUE@	src/hardware/manson-hcs-3xxx/protocol.h \
 @HW_MANSON_HCS_3XXX_TRUE@	src/hardware/manson-hcs-3xxx/protocol.c \
 @HW_MANSON_HCS_3XXX_TRUE@	src/hardware/manson-hcs-3xxx/api.c
 
-@HW_MASTECH_MS6514_TRUE@am__append_48 = \
+@HW_MASTECH_MS6514_TRUE@am__append_49 = \
 @HW_MASTECH_MS6514_TRUE@	src/hardware/mastech-ms6514/protocol.h \
 @HW_MASTECH_MS6514_TRUE@	src/hardware/mastech-ms6514/protocol.c \
 @HW_MASTECH_MS6514_TRUE@	src/hardware/mastech-ms6514/api.c
 
-@HW_MAYNUO_M97_TRUE@am__append_49 = \
+@HW_MAYNUO_M97_TRUE@am__append_50 = \
 @HW_MAYNUO_M97_TRUE@	src/hardware/maynuo-m97/protocol.h \
 @HW_MAYNUO_M97_TRUE@	src/hardware/maynuo-m97/protocol.c \
 @HW_MAYNUO_M97_TRUE@	src/hardware/maynuo-m97/api.c
 
-@HW_MICROCHIP_PICKIT2_TRUE@am__append_50 = \
+@HW_MICROCHIP_PICKIT2_TRUE@am__append_51 = \
 @HW_MICROCHIP_PICKIT2_TRUE@	src/hardware/microchip-pickit2/protocol.h \
 @HW_MICROCHIP_PICKIT2_TRUE@	src/hardware/microchip-pickit2/protocol.c \
 @HW_MICROCHIP_PICKIT2_TRUE@	src/hardware/microchip-pickit2/api.c
 
-@HW_MIC_985XX_TRUE@am__append_51 = \
+@HW_MIC_985XX_TRUE@am__append_52 = \
 @HW_MIC_985XX_TRUE@	src/hardware/mic-985xx/protocol.h \
 @HW_MIC_985XX_TRUE@	src/hardware/mic-985xx/protocol.c \
 @HW_MIC_985XX_TRUE@	src/hardware/mic-985xx/api.c
 
-@HW_MOOSHIMETER_DMM_TRUE@am__append_52 = \
+@HW_MOOSHIMETER_DMM_TRUE@am__append_53 = \
 @HW_MOOSHIMETER_DMM_TRUE@	src/hardware/mooshimeter-dmm/protocol.h \
 @HW_MOOSHIMETER_DMM_TRUE@	src/hardware/mooshimeter-dmm/protocol.c \
 @HW_MOOSHIMETER_DMM_TRUE@	src/hardware/mooshimeter-dmm/api.c
 
-@HW_MOTECH_LPS_30X_TRUE@am__append_53 = \
+@HW_MOTECH_LPS_30X_TRUE@am__append_54 = \
 @HW_MOTECH_LPS_30X_TRUE@	src/hardware/motech-lps-30x/protocol.h \
 @HW_MOTECH_LPS_30X_TRUE@	src/hardware/motech-lps-30x/protocol.c \
 @HW_MOTECH_LPS_30X_TRUE@	src/hardware/motech-lps-30x/api.c
 
-@HW_NORMA_DMM_TRUE@am__append_54 = \
+@HW_NORMA_DMM_TRUE@am__append_55 = \
 @HW_NORMA_DMM_TRUE@	src/hardware/norma-dmm/protocol.h \
 @HW_NORMA_DMM_TRUE@	src/hardware/norma-dmm/protocol.c \
 @HW_NORMA_DMM_TRUE@	src/hardware/norma-dmm/api.c
 
-@HW_OPENBENCH_LOGIC_SNIFFER_TRUE@am__append_55 = \
+@HW_OPENBENCH_LOGIC_SNIFFER_TRUE@am__append_56 = \
 @HW_OPENBENCH_LOGIC_SNIFFER_TRUE@	src/hardware/openbench-logic-sniffer/protocol.h \
 @HW_OPENBENCH_LOGIC_SNIFFER_TRUE@	src/hardware/openbench-logic-sniffer/protocol.c \
 @HW_OPENBENCH_LOGIC_SNIFFER_TRUE@	src/hardware/openbench-logic-sniffer/api.c
 
-@HW_PCE_322A_TRUE@am__append_56 = \
+@HW_PCE_322A_TRUE@am__append_57 = \
 @HW_PCE_322A_TRUE@	src/hardware/pce-322a/protocol.h \
 @HW_PCE_322A_TRUE@	src/hardware/pce-322a/protocol.c \
 @HW_PCE_322A_TRUE@	src/hardware/pce-322a/api.c
 
-@HW_PIPISTRELLO_OLS_TRUE@am__append_57 = \
+@HW_PIPISTRELLO_OLS_TRUE@am__append_58 = \
 @HW_PIPISTRELLO_OLS_TRUE@	src/hardware/pipistrello-ols/protocol.h \
 @HW_PIPISTRELLO_OLS_TRUE@	src/hardware/pipistrello-ols/protocol.c \
 @HW_PIPISTRELLO_OLS_TRUE@	src/hardware/pipistrello-ols/api.c
 
-@HW_RDTECH_DPS_TRUE@am__append_58 = \
+@HW_RDTECH_DPS_TRUE@am__append_59 = \
 @HW_RDTECH_DPS_TRUE@	src/hardware/rdtech-dps/protocol.h \
 @HW_RDTECH_DPS_TRUE@	src/hardware/rdtech-dps/protocol.c \
 @HW_RDTECH_DPS_TRUE@	src/hardware/rdtech-dps/api.c
 
-@HW_RIGOL_DS_TRUE@am__append_59 = \
+@HW_RIGOL_DS_TRUE@am__append_60 = \
 @HW_RIGOL_DS_TRUE@	src/hardware/rigol-ds/protocol.h \
 @HW_RIGOL_DS_TRUE@	src/hardware/rigol-ds/protocol.c \
 @HW_RIGOL_DS_TRUE@	src/hardware/rigol-ds/api.c
 
-@HW_ROHDE_SCHWARZ_SME_0X_TRUE@am__append_60 = \
+@HW_ROHDE_SCHWARZ_SME_0X_TRUE@am__append_61 = \
 @HW_ROHDE_SCHWARZ_SME_0X_TRUE@	src/hardware/rohde-schwarz-sme-0x/protocol.h \
 @HW_ROHDE_SCHWARZ_SME_0X_TRUE@	src/hardware/rohde-schwarz-sme-0x/protocol.c \
 @HW_ROHDE_SCHWARZ_SME_0X_TRUE@	src/hardware/rohde-schwarz-sme-0x/api.c
 
-@HW_SALEAE_LOGIC16_TRUE@am__append_61 = \
+@HW_SALEAE_LOGIC16_TRUE@am__append_62 = \
 @HW_SALEAE_LOGIC16_TRUE@	src/hardware/saleae-logic16/protocol.h \
 @HW_SALEAE_LOGIC16_TRUE@	src/hardware/saleae-logic16/protocol.c \
 @HW_SALEAE_LOGIC16_TRUE@	src/hardware/saleae-logic16/api.c
 
-@HW_SALEAE_LOGIC_PRO_TRUE@am__append_62 = \
+@HW_SALEAE_LOGIC_PRO_TRUE@am__append_63 = \
 @HW_SALEAE_LOGIC_PRO_TRUE@	src/hardware/saleae-logic-pro/protocol.h \
 @HW_SALEAE_LOGIC_PRO_TRUE@	src/hardware/saleae-logic-pro/protocol.c \
 @HW_SALEAE_LOGIC_PRO_TRUE@	src/hardware/saleae-logic-pro/api.c
 
-@HW_SCPI_DMM_TRUE@am__append_63 = \
+@HW_SCPI_DMM_TRUE@am__append_64 = \
 @HW_SCPI_DMM_TRUE@	src/hardware/scpi-dmm/protocol.h \
 @HW_SCPI_DMM_TRUE@	src/hardware/scpi-dmm/protocol.c \
 @HW_SCPI_DMM_TRUE@	src/hardware/scpi-dmm/api.c
 
-@HW_SCPI_PPS_TRUE@am__append_64 = \
+@HW_SCPI_PPS_TRUE@am__append_65 = \
 @HW_SCPI_PPS_TRUE@	src/hardware/scpi-pps/protocol.h \
 @HW_SCPI_PPS_TRUE@	src/hardware/scpi-pps/protocol.c \
 @HW_SCPI_PPS_TRUE@	src/hardware/scpi-pps/profiles.c \
 @HW_SCPI_PPS_TRUE@	src/hardware/scpi-pps/api.c
 
-@HW_SERIAL_DMM_TRUE@am__append_65 = \
+@HW_SERIAL_DMM_TRUE@am__append_66 = \
 @HW_SERIAL_DMM_TRUE@	src/hardware/serial-dmm/protocol.h \
 @HW_SERIAL_DMM_TRUE@	src/hardware/serial-dmm/protocol.c \
 @HW_SERIAL_DMM_TRUE@	src/hardware/serial-dmm/api.c
 
-@HW_SERIAL_LCR_TRUE@am__append_66 = \
+@HW_SERIAL_LCR_TRUE@am__append_67 = \
 @HW_SERIAL_LCR_TRUE@	src/hardware/serial-lcr/protocol.h \
 @HW_SERIAL_LCR_TRUE@	src/hardware/serial-lcr/protocol.c \
 @HW_SERIAL_LCR_TRUE@	src/hardware/serial-lcr/api.c
 
-@HW_SIGLENT_SDS_TRUE@am__append_67 = \
+@HW_SIGLENT_SDS_TRUE@am__append_68 = \
 @HW_SIGLENT_SDS_TRUE@	src/hardware/siglent-sds/protocol.h \
 @HW_SIGLENT_SDS_TRUE@	src/hardware/siglent-sds/protocol.c \
 @HW_SIGLENT_SDS_TRUE@	src/hardware/siglent-sds/api.c
 
-@HW_SYSCLK_LWLA_TRUE@am__append_68 = \
+@HW_SYSCLK_LWLA_TRUE@am__append_69 = \
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/lwla.h \
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/lwla.c \
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/lwla1016.c \
@@ -441,44 +446,44 @@ host_triplet = @host@
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/protocol.c \
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/api.c
 
-@HW_SYSCLK_SLA5032_TRUE@am__append_69 = \
+@HW_SYSCLK_SLA5032_TRUE@am__append_70 = \
 @HW_SYSCLK_SLA5032_TRUE@	src/hardware/sysclk-sla5032/protocol.h \
 @HW_SYSCLK_SLA5032_TRUE@	src/hardware/sysclk-sla5032/protocol.c \
 @HW_SYSCLK_SLA5032_TRUE@	src/hardware/sysclk-sla5032/api.c
 
-@HW_TELEINFO_TRUE@am__append_70 = \
+@HW_TELEINFO_TRUE@am__append_71 = \
 @HW_TELEINFO_TRUE@	src/hardware/teleinfo/protocol.h \
 @HW_TELEINFO_TRUE@	src/hardware/teleinfo/protocol.c \
 @HW_TELEINFO_TRUE@	src/hardware/teleinfo/api.c
 
-@HW_TESTO_TRUE@am__append_71 = \
+@HW_TESTO_TRUE@am__append_72 = \
 @HW_TESTO_TRUE@	src/hardware/testo/protocol.h \
 @HW_TESTO_TRUE@	src/hardware/testo/protocol.c \
 @HW_TESTO_TRUE@	src/hardware/testo/api.c
 
-@HW_TONDAJ_SL_814_TRUE@am__append_72 = \
+@HW_TONDAJ_SL_814_TRUE@am__append_73 = \
 @HW_TONDAJ_SL_814_TRUE@	src/hardware/tondaj-sl-814/protocol.h \
 @HW_TONDAJ_SL_814_TRUE@	src/hardware/tondaj-sl-814/protocol.c \
 @HW_TONDAJ_SL_814_TRUE@	src/hardware/tondaj-sl-814/api.c
 
-@HW_UNI_T_DMM_TRUE@am__append_73 = \
+@HW_UNI_T_DMM_TRUE@am__append_74 = \
 @HW_UNI_T_DMM_TRUE@	src/hardware/uni-t-dmm/protocol.h \
 @HW_UNI_T_DMM_TRUE@	src/hardware/uni-t-dmm/protocol.c \
 @HW_UNI_T_DMM_TRUE@	src/hardware/uni-t-dmm/api.c
 
-@HW_UNI_T_UT32X_TRUE@am__append_74 = \
+@HW_UNI_T_UT32X_TRUE@am__append_75 = \
 @HW_UNI_T_UT32X_TRUE@	src/hardware/uni-t-ut32x/protocol.h \
 @HW_UNI_T_UT32X_TRUE@	src/hardware/uni-t-ut32x/protocol.c \
 @HW_UNI_T_UT32X_TRUE@	src/hardware/uni-t-ut32x/api.c
 
-@HW_YOKOGAWA_DLM_TRUE@am__append_75 = \
+@HW_YOKOGAWA_DLM_TRUE@am__append_76 = \
 @HW_YOKOGAWA_DLM_TRUE@	src/hardware/yokogawa-dlm/protocol.h \
 @HW_YOKOGAWA_DLM_TRUE@	src/hardware/yokogawa-dlm/protocol.c \
 @HW_YOKOGAWA_DLM_TRUE@	src/hardware/yokogawa-dlm/protocol_wrappers.h \
 @HW_YOKOGAWA_DLM_TRUE@	src/hardware/yokogawa-dlm/protocol_wrappers.c \
 @HW_YOKOGAWA_DLM_TRUE@	src/hardware/yokogawa-dlm/api.c
 
-@HW_ZEROPLUS_LOGIC_CUBE_TRUE@am__append_76 = \
+@HW_ZEROPLUS_LOGIC_CUBE_TRUE@am__append_77 = \
 @HW_ZEROPLUS_LOGIC_CUBE_TRUE@	src/hardware/zeroplus-logic-cube/analyzer.c \
 @HW_ZEROPLUS_LOGIC_CUBE_TRUE@	src/hardware/zeroplus-logic-cube/analyzer.h \
 @HW_ZEROPLUS_LOGIC_CUBE_TRUE@	src/hardware/zeroplus-logic-cube/gl_usb.h \
@@ -487,28 +492,28 @@ host_triplet = @host@
 @HW_ZEROPLUS_LOGIC_CUBE_TRUE@	src/hardware/zeroplus-logic-cube/protocol.c \
 @HW_ZEROPLUS_LOGIC_CUBE_TRUE@	src/hardware/zeroplus-logic-cube/api.c
 
-@HW_ZKETECH_EBD_USB_TRUE@am__append_77 = \
+@HW_ZKETECH_EBD_USB_TRUE@am__append_78 = \
 @HW_ZKETECH_EBD_USB_TRUE@	src/hardware/zketech-ebd-usb/protocol.h \
 @HW_ZKETECH_EBD_USB_TRUE@	src/hardware/zketech-ebd-usb/protocol.c \
 @HW_ZKETECH_EBD_USB_TRUE@	src/hardware/zketech-ebd-usb/api.c
 
 @HAVE_CHECK_TRUE@TESTS = tests/main$(EXEEXT)
 @HAVE_CHECK_TRUE@check_PROGRAMS = $(am__EXEEXT_1)
-@BINDINGS_CXX_TRUE@am__append_78 = bindings/cxx/libsigrokcxx.la
-@BINDINGS_CXX_TRUE@am__append_79 = bindings/cxx/libsigrokcxx.pc
-@BINDINGS_CXX_TRUE@am__append_80 = cxx-clean
-@BINDINGS_CXX_TRUE@am__append_81 = cxx-uninstall
-@BINDINGS_PYTHON_TRUE@am__append_82 = python-build
-@BINDINGS_PYTHON_TRUE@am__append_83 = python-install
-@BINDINGS_PYTHON_TRUE@am__append_84 = python-clean
-@BINDINGS_RUBY_TRUE@am__append_85 = ruby-build
-@BINDINGS_RUBY_TRUE@am__append_86 = ruby-install
-@BINDINGS_RUBY_TRUE@am__append_87 = ruby-uninstall
-@BINDINGS_RUBY_TRUE@am__append_88 = ruby-clean
-@BINDINGS_JAVA_TRUE@am__append_89 = java-build
-@BINDINGS_JAVA_TRUE@am__append_90 = java-install
-@BINDINGS_JAVA_TRUE@am__append_91 = java-uninstall
-@BINDINGS_JAVA_TRUE@am__append_92 = java-clean
+@BINDINGS_CXX_TRUE@am__append_79 = bindings/cxx/libsigrokcxx.la
+@BINDINGS_CXX_TRUE@am__append_80 = bindings/cxx/libsigrokcxx.pc
+@BINDINGS_CXX_TRUE@am__append_81 = cxx-clean
+@BINDINGS_CXX_TRUE@am__append_82 = cxx-uninstall
+@BINDINGS_PYTHON_TRUE@am__append_83 = python-build
+@BINDINGS_PYTHON_TRUE@am__append_84 = python-install
+@BINDINGS_PYTHON_TRUE@am__append_85 = python-clean
+@BINDINGS_RUBY_TRUE@am__append_86 = ruby-build
+@BINDINGS_RUBY_TRUE@am__append_87 = ruby-install
+@BINDINGS_RUBY_TRUE@am__append_88 = ruby-uninstall
+@BINDINGS_RUBY_TRUE@am__append_89 = ruby-clean
+@BINDINGS_JAVA_TRUE@am__append_90 = java-build
+@BINDINGS_JAVA_TRUE@am__append_91 = java-install
+@BINDINGS_JAVA_TRUE@am__append_92 = java-uninstall
+@BINDINGS_JAVA_TRUE@am__append_93 = java-clean
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_cxx_compile_stdcxx.m4 \
@@ -700,6 +705,9 @@ am__src_libdrivers_la_SOURCES_DIST = src/drivers.c \
 	src/hardware/center-3xx/protocol.h \
 	src/hardware/center-3xx/protocol.c \
 	src/hardware/center-3xx/api.c \
+	src/hardware/chromium-twinkie/protocol.h \
+	src/hardware/chromium-twinkie/protocol.c \
+	src/hardware/chromium-twinkie/api.c \
 	src/hardware/chronovu-la/protocol.h \
 	src/hardware/chronovu-la/protocol.c \
 	src/hardware/chronovu-la/api.c \
@@ -898,154 +906,156 @@ am__src_libdrivers_la_SOURCES_DIST = src/drivers.c \
 @HW_CENTER_3XX_TRUE@am__objects_17 =  \
 @HW_CENTER_3XX_TRUE@	src/hardware/center-3xx/protocol.lo \
 @HW_CENTER_3XX_TRUE@	src/hardware/center-3xx/api.lo
-@HW_CHRONOVU_LA_TRUE@am__objects_18 =  \
+@HW_CHROMIUM_TWINKIE_TRUE@am__objects_18 = src/hardware/chromium-twinkie/protocol.lo \
+@HW_CHROMIUM_TWINKIE_TRUE@	src/hardware/chromium-twinkie/api.lo
+@HW_CHRONOVU_LA_TRUE@am__objects_19 =  \
 @HW_CHRONOVU_LA_TRUE@	src/hardware/chronovu-la/protocol.lo \
 @HW_CHRONOVU_LA_TRUE@	src/hardware/chronovu-la/api.lo
-@HW_COLEAD_SLM_TRUE@am__objects_19 =  \
+@HW_COLEAD_SLM_TRUE@am__objects_20 =  \
 @HW_COLEAD_SLM_TRUE@	src/hardware/colead-slm/protocol.lo \
 @HW_COLEAD_SLM_TRUE@	src/hardware/colead-slm/api.lo
-@HW_CONRAD_DIGI_35_CPU_TRUE@am__objects_20 = src/hardware/conrad-digi-35-cpu/protocol.lo \
+@HW_CONRAD_DIGI_35_CPU_TRUE@am__objects_21 = src/hardware/conrad-digi-35-cpu/protocol.lo \
 @HW_CONRAD_DIGI_35_CPU_TRUE@	src/hardware/conrad-digi-35-cpu/api.lo
-@HW_DEMO_TRUE@am__objects_21 = src/hardware/demo/protocol.lo \
+@HW_DEMO_TRUE@am__objects_22 = src/hardware/demo/protocol.lo \
 @HW_DEMO_TRUE@	src/hardware/demo/api.lo
-@HW_DREAMSOURCELAB_DSLOGIC_TRUE@am__objects_22 = src/hardware/dreamsourcelab-dslogic/protocol.lo \
+@HW_DREAMSOURCELAB_DSLOGIC_TRUE@am__objects_23 = src/hardware/dreamsourcelab-dslogic/protocol.lo \
 @HW_DREAMSOURCELAB_DSLOGIC_TRUE@	src/hardware/dreamsourcelab-dslogic/api.lo
-@HW_FLUKE_45_TRUE@am__objects_23 = src/hardware/fluke-45/protocol.lo \
+@HW_FLUKE_45_TRUE@am__objects_24 = src/hardware/fluke-45/protocol.lo \
 @HW_FLUKE_45_TRUE@	src/hardware/fluke-45/api.lo
-@HW_FLUKE_DMM_TRUE@am__objects_24 =  \
+@HW_FLUKE_DMM_TRUE@am__objects_25 =  \
 @HW_FLUKE_DMM_TRUE@	src/hardware/fluke-dmm/protocol.lo \
 @HW_FLUKE_DMM_TRUE@	src/hardware/fluke-dmm/api.lo
-@HW_FTDI_LA_TRUE@am__objects_25 = src/hardware/ftdi-la/protocol.lo \
+@HW_FTDI_LA_TRUE@am__objects_26 = src/hardware/ftdi-la/protocol.lo \
 @HW_FTDI_LA_TRUE@	src/hardware/ftdi-la/api.lo
-@HW_FX2LAFW_TRUE@am__objects_26 = src/hardware/fx2lafw/protocol.lo \
+@HW_FX2LAFW_TRUE@am__objects_27 = src/hardware/fx2lafw/protocol.lo \
 @HW_FX2LAFW_TRUE@	src/hardware/fx2lafw/api.lo
-@HW_GMC_MH_1X_2X_TRUE@am__objects_27 =  \
+@HW_GMC_MH_1X_2X_TRUE@am__objects_28 =  \
 @HW_GMC_MH_1X_2X_TRUE@	src/hardware/gmc-mh-1x-2x/protocol.lo \
 @HW_GMC_MH_1X_2X_TRUE@	src/hardware/gmc-mh-1x-2x/api.lo
-@HW_GWINSTEK_GDS_800_TRUE@am__objects_28 = src/hardware/gwinstek-gds-800/protocol.lo \
+@HW_GWINSTEK_GDS_800_TRUE@am__objects_29 = src/hardware/gwinstek-gds-800/protocol.lo \
 @HW_GWINSTEK_GDS_800_TRUE@	src/hardware/gwinstek-gds-800/api.lo
-@HW_GWINSTEK_GPD_TRUE@am__objects_29 =  \
+@HW_GWINSTEK_GPD_TRUE@am__objects_30 =  \
 @HW_GWINSTEK_GPD_TRUE@	src/hardware/gwinstek-gpd/protocol.lo \
 @HW_GWINSTEK_GPD_TRUE@	src/hardware/gwinstek-gpd/api.lo
-@HW_HAMEG_HMO_TRUE@am__objects_30 =  \
+@HW_HAMEG_HMO_TRUE@am__objects_31 =  \
 @HW_HAMEG_HMO_TRUE@	src/hardware/hameg-hmo/protocol.lo \
 @HW_HAMEG_HMO_TRUE@	src/hardware/hameg-hmo/api.lo
-@HW_HANTEK_4032L_TRUE@am__objects_31 =  \
+@HW_HANTEK_4032L_TRUE@am__objects_32 =  \
 @HW_HANTEK_4032L_TRUE@	src/hardware/hantek-4032l/protocol.lo \
 @HW_HANTEK_4032L_TRUE@	src/hardware/hantek-4032l/api.lo
-@HW_HANTEK_6XXX_TRUE@am__objects_32 =  \
+@HW_HANTEK_6XXX_TRUE@am__objects_33 =  \
 @HW_HANTEK_6XXX_TRUE@	src/hardware/hantek-6xxx/protocol.lo \
 @HW_HANTEK_6XXX_TRUE@	src/hardware/hantek-6xxx/api.lo
-@HW_HANTEK_DSO_TRUE@am__objects_33 =  \
+@HW_HANTEK_DSO_TRUE@am__objects_34 =  \
 @HW_HANTEK_DSO_TRUE@	src/hardware/hantek-dso/protocol.lo \
 @HW_HANTEK_DSO_TRUE@	src/hardware/hantek-dso/api.lo
-@HW_HP_3457A_TRUE@am__objects_34 = src/hardware/hp-3457a/protocol.lo \
+@HW_HP_3457A_TRUE@am__objects_35 = src/hardware/hp-3457a/protocol.lo \
 @HW_HP_3457A_TRUE@	src/hardware/hp-3457a/api.lo
-@HW_HP_3478A_TRUE@am__objects_35 = src/hardware/hp-3478a/protocol.lo \
+@HW_HP_3478A_TRUE@am__objects_36 = src/hardware/hp-3478a/protocol.lo \
 @HW_HP_3478A_TRUE@	src/hardware/hp-3478a/api.lo
-@HW_HUNG_CHANG_DSO_2100_TRUE@am__objects_36 = src/hardware/hung-chang-dso-2100/protocol.lo \
+@HW_HUNG_CHANG_DSO_2100_TRUE@am__objects_37 = src/hardware/hung-chang-dso-2100/protocol.lo \
 @HW_HUNG_CHANG_DSO_2100_TRUE@	src/hardware/hung-chang-dso-2100/api.lo
-@HW_IKALOGIC_SCANALOGIC2_TRUE@am__objects_37 = src/hardware/ikalogic-scanalogic2/protocol.lo \
+@HW_IKALOGIC_SCANALOGIC2_TRUE@am__objects_38 = src/hardware/ikalogic-scanalogic2/protocol.lo \
 @HW_IKALOGIC_SCANALOGIC2_TRUE@	src/hardware/ikalogic-scanalogic2/api.lo
-@HW_IKALOGIC_SCANAPLUS_TRUE@am__objects_38 = src/hardware/ikalogic-scanaplus/protocol.lo \
+@HW_IKALOGIC_SCANAPLUS_TRUE@am__objects_39 = src/hardware/ikalogic-scanaplus/protocol.lo \
 @HW_IKALOGIC_SCANAPLUS_TRUE@	src/hardware/ikalogic-scanaplus/api.lo
-@HW_IPDBG_LA_TRUE@am__objects_39 = src/hardware/ipdbg-la/protocol.lo \
+@HW_IPDBG_LA_TRUE@am__objects_40 = src/hardware/ipdbg-la/protocol.lo \
 @HW_IPDBG_LA_TRUE@	src/hardware/ipdbg-la/api.lo
-@HW_KECHENG_KC_330B_TRUE@am__objects_40 = src/hardware/kecheng-kc-330b/protocol.lo \
+@HW_KECHENG_KC_330B_TRUE@am__objects_41 = src/hardware/kecheng-kc-330b/protocol.lo \
 @HW_KECHENG_KC_330B_TRUE@	src/hardware/kecheng-kc-330b/api.lo
-@HW_KERN_SCALE_TRUE@am__objects_41 =  \
+@HW_KERN_SCALE_TRUE@am__objects_42 =  \
 @HW_KERN_SCALE_TRUE@	src/hardware/kern-scale/protocol.lo \
 @HW_KERN_SCALE_TRUE@	src/hardware/kern-scale/api.lo
-@HW_KORAD_KAXXXXP_TRUE@am__objects_42 =  \
+@HW_KORAD_KAXXXXP_TRUE@am__objects_43 =  \
 @HW_KORAD_KAXXXXP_TRUE@	src/hardware/korad-kaxxxxp/protocol.lo \
 @HW_KORAD_KAXXXXP_TRUE@	src/hardware/korad-kaxxxxp/api.lo
-@HW_LASCAR_EL_USB_TRUE@am__objects_43 =  \
+@HW_LASCAR_EL_USB_TRUE@am__objects_44 =  \
 @HW_LASCAR_EL_USB_TRUE@	src/hardware/lascar-el-usb/protocol.lo \
 @HW_LASCAR_EL_USB_TRUE@	src/hardware/lascar-el-usb/api.lo
-@HW_LECROY_LOGICSTUDIO_TRUE@am__objects_44 = src/hardware/lecroy-logicstudio/protocol.lo \
+@HW_LECROY_LOGICSTUDIO_TRUE@am__objects_45 = src/hardware/lecroy-logicstudio/protocol.lo \
 @HW_LECROY_LOGICSTUDIO_TRUE@	src/hardware/lecroy-logicstudio/api.lo
-@HW_LECROY_XSTREAM_TRUE@am__objects_45 = src/hardware/lecroy-xstream/protocol.lo \
+@HW_LECROY_XSTREAM_TRUE@am__objects_46 = src/hardware/lecroy-xstream/protocol.lo \
 @HW_LECROY_XSTREAM_TRUE@	src/hardware/lecroy-xstream/api.lo
-@HW_MANSON_HCS_3XXX_TRUE@am__objects_46 = src/hardware/manson-hcs-3xxx/protocol.lo \
+@HW_MANSON_HCS_3XXX_TRUE@am__objects_47 = src/hardware/manson-hcs-3xxx/protocol.lo \
 @HW_MANSON_HCS_3XXX_TRUE@	src/hardware/manson-hcs-3xxx/api.lo
-@HW_MASTECH_MS6514_TRUE@am__objects_47 = src/hardware/mastech-ms6514/protocol.lo \
+@HW_MASTECH_MS6514_TRUE@am__objects_48 = src/hardware/mastech-ms6514/protocol.lo \
 @HW_MASTECH_MS6514_TRUE@	src/hardware/mastech-ms6514/api.lo
-@HW_MAYNUO_M97_TRUE@am__objects_48 =  \
+@HW_MAYNUO_M97_TRUE@am__objects_49 =  \
 @HW_MAYNUO_M97_TRUE@	src/hardware/maynuo-m97/protocol.lo \
 @HW_MAYNUO_M97_TRUE@	src/hardware/maynuo-m97/api.lo
-@HW_MICROCHIP_PICKIT2_TRUE@am__objects_49 = src/hardware/microchip-pickit2/protocol.lo \
+@HW_MICROCHIP_PICKIT2_TRUE@am__objects_50 = src/hardware/microchip-pickit2/protocol.lo \
 @HW_MICROCHIP_PICKIT2_TRUE@	src/hardware/microchip-pickit2/api.lo
-@HW_MIC_985XX_TRUE@am__objects_50 =  \
+@HW_MIC_985XX_TRUE@am__objects_51 =  \
 @HW_MIC_985XX_TRUE@	src/hardware/mic-985xx/protocol.lo \
 @HW_MIC_985XX_TRUE@	src/hardware/mic-985xx/api.lo
-@HW_MOOSHIMETER_DMM_TRUE@am__objects_51 = src/hardware/mooshimeter-dmm/protocol.lo \
+@HW_MOOSHIMETER_DMM_TRUE@am__objects_52 = src/hardware/mooshimeter-dmm/protocol.lo \
 @HW_MOOSHIMETER_DMM_TRUE@	src/hardware/mooshimeter-dmm/api.lo
-@HW_MOTECH_LPS_30X_TRUE@am__objects_52 = src/hardware/motech-lps-30x/protocol.lo \
+@HW_MOTECH_LPS_30X_TRUE@am__objects_53 = src/hardware/motech-lps-30x/protocol.lo \
 @HW_MOTECH_LPS_30X_TRUE@	src/hardware/motech-lps-30x/api.lo
-@HW_NORMA_DMM_TRUE@am__objects_53 =  \
+@HW_NORMA_DMM_TRUE@am__objects_54 =  \
 @HW_NORMA_DMM_TRUE@	src/hardware/norma-dmm/protocol.lo \
 @HW_NORMA_DMM_TRUE@	src/hardware/norma-dmm/api.lo
-@HW_OPENBENCH_LOGIC_SNIFFER_TRUE@am__objects_54 = src/hardware/openbench-logic-sniffer/protocol.lo \
+@HW_OPENBENCH_LOGIC_SNIFFER_TRUE@am__objects_55 = src/hardware/openbench-logic-sniffer/protocol.lo \
 @HW_OPENBENCH_LOGIC_SNIFFER_TRUE@	src/hardware/openbench-logic-sniffer/api.lo
-@HW_PCE_322A_TRUE@am__objects_55 = src/hardware/pce-322a/protocol.lo \
+@HW_PCE_322A_TRUE@am__objects_56 = src/hardware/pce-322a/protocol.lo \
 @HW_PCE_322A_TRUE@	src/hardware/pce-322a/api.lo
-@HW_PIPISTRELLO_OLS_TRUE@am__objects_56 = src/hardware/pipistrello-ols/protocol.lo \
+@HW_PIPISTRELLO_OLS_TRUE@am__objects_57 = src/hardware/pipistrello-ols/protocol.lo \
 @HW_PIPISTRELLO_OLS_TRUE@	src/hardware/pipistrello-ols/api.lo
-@HW_RDTECH_DPS_TRUE@am__objects_57 =  \
+@HW_RDTECH_DPS_TRUE@am__objects_58 =  \
 @HW_RDTECH_DPS_TRUE@	src/hardware/rdtech-dps/protocol.lo \
 @HW_RDTECH_DPS_TRUE@	src/hardware/rdtech-dps/api.lo
-@HW_RIGOL_DS_TRUE@am__objects_58 = src/hardware/rigol-ds/protocol.lo \
+@HW_RIGOL_DS_TRUE@am__objects_59 = src/hardware/rigol-ds/protocol.lo \
 @HW_RIGOL_DS_TRUE@	src/hardware/rigol-ds/api.lo
-@HW_ROHDE_SCHWARZ_SME_0X_TRUE@am__objects_59 = src/hardware/rohde-schwarz-sme-0x/protocol.lo \
+@HW_ROHDE_SCHWARZ_SME_0X_TRUE@am__objects_60 = src/hardware/rohde-schwarz-sme-0x/protocol.lo \
 @HW_ROHDE_SCHWARZ_SME_0X_TRUE@	src/hardware/rohde-schwarz-sme-0x/api.lo
-@HW_SALEAE_LOGIC16_TRUE@am__objects_60 = src/hardware/saleae-logic16/protocol.lo \
+@HW_SALEAE_LOGIC16_TRUE@am__objects_61 = src/hardware/saleae-logic16/protocol.lo \
 @HW_SALEAE_LOGIC16_TRUE@	src/hardware/saleae-logic16/api.lo
-@HW_SALEAE_LOGIC_PRO_TRUE@am__objects_61 = src/hardware/saleae-logic-pro/protocol.lo \
+@HW_SALEAE_LOGIC_PRO_TRUE@am__objects_62 = src/hardware/saleae-logic-pro/protocol.lo \
 @HW_SALEAE_LOGIC_PRO_TRUE@	src/hardware/saleae-logic-pro/api.lo
-@HW_SCPI_DMM_TRUE@am__objects_62 = src/hardware/scpi-dmm/protocol.lo \
+@HW_SCPI_DMM_TRUE@am__objects_63 = src/hardware/scpi-dmm/protocol.lo \
 @HW_SCPI_DMM_TRUE@	src/hardware/scpi-dmm/api.lo
-@HW_SCPI_PPS_TRUE@am__objects_63 = src/hardware/scpi-pps/protocol.lo \
+@HW_SCPI_PPS_TRUE@am__objects_64 = src/hardware/scpi-pps/protocol.lo \
 @HW_SCPI_PPS_TRUE@	src/hardware/scpi-pps/profiles.lo \
 @HW_SCPI_PPS_TRUE@	src/hardware/scpi-pps/api.lo
-@HW_SERIAL_DMM_TRUE@am__objects_64 =  \
+@HW_SERIAL_DMM_TRUE@am__objects_65 =  \
 @HW_SERIAL_DMM_TRUE@	src/hardware/serial-dmm/protocol.lo \
 @HW_SERIAL_DMM_TRUE@	src/hardware/serial-dmm/api.lo
-@HW_SERIAL_LCR_TRUE@am__objects_65 =  \
+@HW_SERIAL_LCR_TRUE@am__objects_66 =  \
 @HW_SERIAL_LCR_TRUE@	src/hardware/serial-lcr/protocol.lo \
 @HW_SERIAL_LCR_TRUE@	src/hardware/serial-lcr/api.lo
-@HW_SIGLENT_SDS_TRUE@am__objects_66 =  \
+@HW_SIGLENT_SDS_TRUE@am__objects_67 =  \
 @HW_SIGLENT_SDS_TRUE@	src/hardware/siglent-sds/protocol.lo \
 @HW_SIGLENT_SDS_TRUE@	src/hardware/siglent-sds/api.lo
-@HW_SYSCLK_LWLA_TRUE@am__objects_67 =  \
+@HW_SYSCLK_LWLA_TRUE@am__objects_68 =  \
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/lwla.lo \
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/lwla1016.lo \
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/lwla1034.lo \
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/protocol.lo \
 @HW_SYSCLK_LWLA_TRUE@	src/hardware/sysclk-lwla/api.lo
-@HW_SYSCLK_SLA5032_TRUE@am__objects_68 = src/hardware/sysclk-sla5032/protocol.lo \
+@HW_SYSCLK_SLA5032_TRUE@am__objects_69 = src/hardware/sysclk-sla5032/protocol.lo \
 @HW_SYSCLK_SLA5032_TRUE@	src/hardware/sysclk-sla5032/api.lo
-@HW_TELEINFO_TRUE@am__objects_69 = src/hardware/teleinfo/protocol.lo \
+@HW_TELEINFO_TRUE@am__objects_70 = src/hardware/teleinfo/protocol.lo \
 @HW_TELEINFO_TRUE@	src/hardware/teleinfo/api.lo
-@HW_TESTO_TRUE@am__objects_70 = src/hardware/testo/protocol.lo \
+@HW_TESTO_TRUE@am__objects_71 = src/hardware/testo/protocol.lo \
 @HW_TESTO_TRUE@	src/hardware/testo/api.lo
-@HW_TONDAJ_SL_814_TRUE@am__objects_71 =  \
+@HW_TONDAJ_SL_814_TRUE@am__objects_72 =  \
 @HW_TONDAJ_SL_814_TRUE@	src/hardware/tondaj-sl-814/protocol.lo \
 @HW_TONDAJ_SL_814_TRUE@	src/hardware/tondaj-sl-814/api.lo
-@HW_UNI_T_DMM_TRUE@am__objects_72 =  \
+@HW_UNI_T_DMM_TRUE@am__objects_73 =  \
 @HW_UNI_T_DMM_TRUE@	src/hardware/uni-t-dmm/protocol.lo \
 @HW_UNI_T_DMM_TRUE@	src/hardware/uni-t-dmm/api.lo
-@HW_UNI_T_UT32X_TRUE@am__objects_73 =  \
+@HW_UNI_T_UT32X_TRUE@am__objects_74 =  \
 @HW_UNI_T_UT32X_TRUE@	src/hardware/uni-t-ut32x/protocol.lo \
 @HW_UNI_T_UT32X_TRUE@	src/hardware/uni-t-ut32x/api.lo
-@HW_YOKOGAWA_DLM_TRUE@am__objects_74 =  \
+@HW_YOKOGAWA_DLM_TRUE@am__objects_75 =  \
 @HW_YOKOGAWA_DLM_TRUE@	src/hardware/yokogawa-dlm/protocol.lo \
 @HW_YOKOGAWA_DLM_TRUE@	src/hardware/yokogawa-dlm/protocol_wrappers.lo \
 @HW_YOKOGAWA_DLM_TRUE@	src/hardware/yokogawa-dlm/api.lo
-@HW_ZEROPLUS_LOGIC_CUBE_TRUE@am__objects_75 = src/hardware/zeroplus-logic-cube/analyzer.lo \
+@HW_ZEROPLUS_LOGIC_CUBE_TRUE@am__objects_76 = src/hardware/zeroplus-logic-cube/analyzer.lo \
 @HW_ZEROPLUS_LOGIC_CUBE_TRUE@	src/hardware/zeroplus-logic-cube/gl_usb.lo \
 @HW_ZEROPLUS_LOGIC_CUBE_TRUE@	src/hardware/zeroplus-logic-cube/protocol.lo \
 @HW_ZEROPLUS_LOGIC_CUBE_TRUE@	src/hardware/zeroplus-logic-cube/api.lo
-@HW_ZKETECH_EBD_USB_TRUE@am__objects_76 = src/hardware/zketech-ebd-usb/protocol.lo \
+@HW_ZKETECH_EBD_USB_TRUE@am__objects_77 = src/hardware/zketech-ebd-usb/protocol.lo \
 @HW_ZKETECH_EBD_USB_TRUE@	src/hardware/zketech-ebd-usb/api.lo
 am_src_libdrivers_la_OBJECTS = src/drivers.lo $(am__objects_8) \
 	$(am__objects_9) $(am__objects_10) $(am__objects_11) \
@@ -1070,7 +1080,7 @@ am_src_libdrivers_la_OBJECTS = src/drivers.lo $(am__objects_8) \
 	$(am__objects_66) $(am__objects_67) $(am__objects_68) \
 	$(am__objects_69) $(am__objects_70) $(am__objects_71) \
 	$(am__objects_72) $(am__objects_73) $(am__objects_74) \
-	$(am__objects_75) $(am__objects_76)
+	$(am__objects_75) $(am__objects_76) $(am__objects_77)
 src_libdrivers_la_OBJECTS = $(am_src_libdrivers_la_OBJECTS)
 src_libdrivers_head_la_LIBADD =
 am_src_libdrivers_head_la_OBJECTS = src/driver_list_start.lo
@@ -1156,6 +1166,8 @@ am__depfiles_remade = bindings/cxx/$(DEPDIR)/classes.Plo \
 	src/hardware/cem-dt-885x/$(DEPDIR)/protocol.Plo \
 	src/hardware/center-3xx/$(DEPDIR)/api.Plo \
 	src/hardware/center-3xx/$(DEPDIR)/protocol.Plo \
+	src/hardware/chromium-twinkie/$(DEPDIR)/api.Plo \
+	src/hardware/chromium-twinkie/$(DEPDIR)/protocol.Plo \
 	src/hardware/chronovu-la/$(DEPDIR)/api.Plo \
 	src/hardware/chronovu-la/$(DEPDIR)/protocol.Plo \
 	src/hardware/colead-slm/$(DEPDIR)/api.Plo \
@@ -1788,7 +1800,7 @@ AM_CPPFLAGS = $(local_includes) $(global_defs)
 # python bindings CFLAGS are a superset of the C++ bindings CFLAGS.
 AM_CFLAGS = $(SR_EXTRA_CFLAGS) $(SR_WFLAGS) $(TESTS_CFLAGS)
 AM_CXXFLAGS = $(SR_WXXFLAGS) $(LIBSIGROKCXX_CFLAGS)
-lib_LTLIBRARIES = libsigrok.la $(am__append_78)
+lib_LTLIBRARIES = libsigrok.la $(am__append_79)
 
 # Backend files
 
@@ -1861,7 +1873,7 @@ src_libdrivers_la_SOURCES = src/drivers.c $(am__append_9) \
 	$(am__append_67) $(am__append_68) $(am__append_69) \
 	$(am__append_70) $(am__append_71) $(am__append_72) \
 	$(am__append_73) $(am__append_74) $(am__append_75) \
-	$(am__append_76) $(am__append_77)
+	$(am__append_76) $(am__append_77) $(am__append_78)
 libsigrok_la_LIBADD = src/libdrivers.lo $(SR_EXTRA_LIBS) $(LIBSIGROK_LIBS)
 libsigrok_la_LDFLAGS = -version-info $(SR_LIB_VERSION) -no-undefined
 library_includedir = $(includedir)/libsigrok
@@ -1874,7 +1886,7 @@ nodist_library_include_HEADERS = \
 
 noinst_HEADERS = src/libsigrok-internal.h
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libsigrok.pc $(am__append_79)
+pkgconfig_DATA = libsigrok.pc $(am__append_80)
 mimeappdir = $(datadir)/mime/packages
 mimeapp_DATA = contrib/vnd.sigrok.session.xml
 mimeicondir = $(datadir)/icons/hicolor/48x48/mimetypes
@@ -1932,12 +1944,12 @@ tests_main_SOURCES = \
 	tests/analog.c
 
 tests_main_LDADD = libsigrok.la $(SR_EXTRA_LIBS) $(TESTS_LIBS)
-BUILD_EXTRA = $(am__append_82) $(am__append_85) $(am__append_89)
-INSTALL_EXTRA = $(am__append_83) $(am__append_86) $(am__append_90)
-UNINSTALL_EXTRA = libsigrok-uninstall $(am__append_81) \
-	$(am__append_87) $(am__append_91)
-CLEAN_EXTRA = $(am__append_80) $(am__append_84) $(am__append_88) \
-	$(am__append_92)
+BUILD_EXTRA = $(am__append_83) $(am__append_86) $(am__append_90)
+INSTALL_EXTRA = $(am__append_84) $(am__append_87) $(am__append_91)
+UNINSTALL_EXTRA = libsigrok-uninstall $(am__append_82) \
+	$(am__append_88) $(am__append_92)
+CLEAN_EXTRA = $(am__append_81) $(am__append_85) $(am__append_89) \
+	$(am__append_93)
 @BINDINGS_CXX_TRUE@bindings_cxx_libsigrokcxx_la_SOURCES = bindings/cxx/classes.cpp
 @BINDINGS_CXX_TRUE@bindings_cxx_libsigrokcxx_la_LIBADD = libsigrok.la $(SR_EXTRA_LIBS) $(LIBSIGROKCXX_LIBS) $(SR_EXTRA_CXX_LIBS)
 @BINDINGS_CXX_TRUE@bindings_cxx_libsigrokcxx_la_LDFLAGS = -version-info $(SR_LIB_VERSION) -no-undefined
@@ -2453,6 +2465,18 @@ src/hardware/center-3xx/protocol.lo:  \
 src/hardware/center-3xx/api.lo:  \
 	src/hardware/center-3xx/$(am__dirstamp) \
 	src/hardware/center-3xx/$(DEPDIR)/$(am__dirstamp)
+src/hardware/chromium-twinkie/$(am__dirstamp):
+	@$(MKDIR_P) src/hardware/chromium-twinkie
+	@: > src/hardware/chromium-twinkie/$(am__dirstamp)
+src/hardware/chromium-twinkie/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/hardware/chromium-twinkie/$(DEPDIR)
+	@: > src/hardware/chromium-twinkie/$(DEPDIR)/$(am__dirstamp)
+src/hardware/chromium-twinkie/protocol.lo:  \
+	src/hardware/chromium-twinkie/$(am__dirstamp) \
+	src/hardware/chromium-twinkie/$(DEPDIR)/$(am__dirstamp)
+src/hardware/chromium-twinkie/api.lo:  \
+	src/hardware/chromium-twinkie/$(am__dirstamp) \
+	src/hardware/chromium-twinkie/$(DEPDIR)/$(am__dirstamp)
 src/hardware/chronovu-la/$(am__dirstamp):
 	@$(MKDIR_P) src/hardware/chronovu-la
 	@: > src/hardware/chronovu-la/$(am__dirstamp)
@@ -3244,6 +3268,8 @@ mostlyclean-compile:
 	-rm -f src/hardware/cem-dt-885x/*.lo
 	-rm -f src/hardware/center-3xx/*.$(OBJEXT)
 	-rm -f src/hardware/center-3xx/*.lo
+	-rm -f src/hardware/chromium-twinkie/*.$(OBJEXT)
+	-rm -f src/hardware/chromium-twinkie/*.lo
 	-rm -f src/hardware/chronovu-la/*.$(OBJEXT)
 	-rm -f src/hardware/chronovu-la/*.lo
 	-rm -f src/hardware/colead-slm/*.$(OBJEXT)
@@ -3455,6 +3481,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/cem-dt-885x/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/center-3xx/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/center-3xx/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/hardware/chromium-twinkie/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@src/hardware/chromium-twinkie/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/chronovu-la/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/chronovu-la/$(DEPDIR)/protocol.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@src/hardware/colead-slm/$(DEPDIR)/api.Plo@am__quote@ # am--include-marker
@@ -3710,6 +3738,7 @@ clean-libtool:
 	-rm -rf src/hardware/brymen-dmm/.libs src/hardware/brymen-dmm/_libs
 	-rm -rf src/hardware/cem-dt-885x/.libs src/hardware/cem-dt-885x/_libs
 	-rm -rf src/hardware/center-3xx/.libs src/hardware/center-3xx/_libs
+	-rm -rf src/hardware/chromium-twinkie/.libs src/hardware/chromium-twinkie/_libs
 	-rm -rf src/hardware/chronovu-la/.libs src/hardware/chronovu-la/_libs
 	-rm -rf src/hardware/colead-slm/.libs src/hardware/colead-slm/_libs
 	-rm -rf src/hardware/conrad-digi-35-cpu/.libs src/hardware/conrad-digi-35-cpu/_libs
@@ -4412,6 +4441,8 @@ distclean-generic:
 	-rm -f src/hardware/cem-dt-885x/$(am__dirstamp)
 	-rm -f src/hardware/center-3xx/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/hardware/center-3xx/$(am__dirstamp)
+	-rm -f src/hardware/chromium-twinkie/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/hardware/chromium-twinkie/$(am__dirstamp)
 	-rm -f src/hardware/chronovu-la/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/hardware/chronovu-la/$(am__dirstamp)
 	-rm -f src/hardware/colead-slm/$(DEPDIR)/$(am__dirstamp)
@@ -4632,6 +4663,8 @@ distclean: distclean-am
 	-rm -f src/hardware/cem-dt-885x/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/center-3xx/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/center-3xx/$(DEPDIR)/protocol.Plo
+	-rm -f src/hardware/chromium-twinkie/$(DEPDIR)/api.Plo
+	-rm -f src/hardware/chromium-twinkie/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/chronovu-la/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/chronovu-la/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/colead-slm/$(DEPDIR)/api.Plo
@@ -4938,6 +4971,8 @@ maintainer-clean: maintainer-clean-am
 	-rm -f src/hardware/cem-dt-885x/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/center-3xx/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/center-3xx/$(DEPDIR)/protocol.Plo
+	-rm -f src/hardware/chromium-twinkie/$(DEPDIR)/api.Plo
+	-rm -f src/hardware/chromium-twinkie/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/chronovu-la/$(DEPDIR)/api.Plo
 	-rm -f src/hardware/chronovu-la/$(DEPDIR)/protocol.Plo
 	-rm -f src/hardware/colead-slm/$(DEPDIR)/api.Plo

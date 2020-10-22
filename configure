@@ -853,6 +853,8 @@ HW_COLEAD_SLM_FALSE
 HW_COLEAD_SLM_TRUE
 HW_CHRONOVU_LA_FALSE
 HW_CHRONOVU_LA_TRUE
+HW_CHROMIUM_TWINKIE_FALSE
+HW_CHROMIUM_TWINKIE_TRUE
 HW_CENTER_3XX_FALSE
 HW_CENTER_3XX_TRUE
 HW_CEM_DT_885X_FALSE
@@ -1053,6 +1055,7 @@ enable_beaglelogic
 enable_brymen_dmm
 enable_cem_dt_885x
 enable_center_3xx
+enable_chromium_twinkie
 enable_chronovu_la
 enable_colead_slm
 enable_conrad_digi_35_cpu
@@ -1802,6 +1805,8 @@ Optional Features:
   --enable-brymen-dmm     enable Brymen DMM support
   --enable-cem-dt-885x    enable CEM DT-885x support
   --enable-center-3xx     enable Center 3xx support
+  --enable-chromium-twinkie
+                          enable Chromium Twinkie support
   --enable-chronovu-la    enable ChronoVu LA support
   --enable-colead-slm     enable Colead SLM support
   --enable-conrad-digi-35-cpu
@@ -19389,6 +19394,41 @@ $as_echo "#define HAVE_DRIVERS 1" >>confdefs.h
 fi
 
 
+	# Check whether --enable-chromium-twinkie was given.
+if test "${enable_chromium_twinkie+set}" = set; then :
+  enableval=$enable_chromium_twinkie; HW_CHROMIUM_TWINKIE=$enableval
+else
+  HW_CHROMIUM_TWINKIE=$enable_all_drivers
+fi
+
+
+	if test "x$HW_CHROMIUM_TWINKIE" = xyes; then :
+  sr_hw_info=yes
+		sr_check_driver_deps libusb \
+			|| HW_CHROMIUM_TWINKIE=no sr_hw_info="no (missing: $sr_deps_missing)"
+
+else
+  sr_hw_info='no (disabled)'
+fi
+	sr_driver_summary_append "chromium-twinkie" "$sr_hw_info"
+
+	 if test "x$HW_CHROMIUM_TWINKIE" = xyes; then
+  HW_CHROMIUM_TWINKIE_TRUE=
+  HW_CHROMIUM_TWINKIE_FALSE='#'
+else
+  HW_CHROMIUM_TWINKIE_TRUE='#'
+  HW_CHROMIUM_TWINKIE_FALSE=
+fi
+
+	if test -z "$HW_CHROMIUM_TWINKIE_TRUE"; then :
+
+$as_echo "#define HAVE_HW_CHROMIUM_TWINKIE 1" >>confdefs.h
+
+$as_echo "#define HAVE_DRIVERS 1" >>confdefs.h
+
+fi
+
+
 	# Check whether --enable-chronovu-la was given.
 if test "${enable_chronovu_la+set}" = set; then :
   enableval=$enable_chronovu_la; HW_CHRONOVU_LA=$enableval
@@ -24149,6 +24189,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HW_CENTER_3XX_TRUE}" && test -z "${HW_CENTER_3XX_FALSE}"; then
   as_fn_error $? "conditional \"HW_CENTER_3XX\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HW_CHROMIUM_TWINKIE_TRUE}" && test -z "${HW_CHROMIUM_TWINKIE_FALSE}"; then
+  as_fn_error $? "conditional \"HW_CHROMIUM_TWINKIE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HW_CHRONOVU_LA_TRUE}" && test -z "${HW_CHRONOVU_LA_FALSE}"; then

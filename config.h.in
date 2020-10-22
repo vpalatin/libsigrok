@@ -78,6 +78,9 @@
 /* Whether to support Center 3xx device. */
 #undef HAVE_HW_CENTER_3XX
 
+/* Whether to support Chromium Twinkie device. */
+#undef HAVE_HW_CHROMIUM_TWINKIE
+
 /* Whether to support ChronoVu LA device. */
 #undef HAVE_HW_CHRONOVU_LA
 
