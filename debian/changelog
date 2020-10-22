@@ -1,3 +1,9 @@
+libsigrok (0.5.2-2+twinkie) unstable; urgency=medium
+
+  * Add the chromium-twinkie driver.
+
+ -- Vincent Palatin <vpalatin@chromium.org>  Thu, 22 Oct 2020 22:06:19 +0002
+
 libsigrok (0.5.2-2) unstable; urgency=medium
 
   * Add -dev deps on libbluetooth-dev + libhidapi-dev (Closes: #951980, #952272)
